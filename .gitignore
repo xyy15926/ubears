@@ -1,0 +1,32 @@
+# tmp files
+tmp/
+temp/
+dist/
+outputs/
+Session.vim
+
+# executable directories
+bin/
+gen/
+out/
+build/
+__pycache__/
+
+# executable files
+*.pyc
+*.exe
+*.xlsx
+*.db
+
+# log files
+*.log
+*.egg-info
+
+# setting files
+.classpath
+.project
+.vscode
+.idle
+# pixi environments
+.pixi/*
+!.pixi/config.toml

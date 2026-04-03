@@ -1,0 +1,156 @@
+# Ref:
+# - https://pixi.sh/latest/reference/pixi_manifest/
+[workspace]
+channels = [
+	"https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge",
+	"https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/pytorch",
+	"https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/pytorch-lts",
+	"https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/pytorch-test",
+	"conda-forge",
+	"pytorch",
+	"pytorch-test",
+]
+platforms = ["linux-64", "win-64"]
+name = "statbear"
+version = "0.1.1"
+authors = [
+	"UBeaRLy <ubearly@outlook.com>",
+]
+description = "A project with some out-of-box utils for data analysis."
+license = "Apache-2.0"
+license-file = "license.txt"
+readme = "README.md"
+homepage = "https://github.com/xyy15926"
+repository = "https://github.com/xyy15926"
+documentation = "https://github.com/xyy15926"
+channel-priority = "strict"
+requires-pixi = ">=0.55"
+# Enable Pixi's preview features.
+preview = ["pixi-build"]
+
+[pypi-options]
+index-url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
+# `extra-index-urls` has higher priority than `index-url`.
+extra-index-urls = [
+	# "https://mirrors.aliyun.com/pytorch-wheels/xpu/",
+	# "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple",
+]
+# Or true/false for all
+no-build-isolation = []
+no-build = []
+no-binary = []
+
+[system-requirements]
+libc = "2.28"
+# cuda = "12"
+
+[dependencies]
+# Pixi will always try to install the latest version of python and then
+# try to solve the dependencies without try to downgrade the version of
+# python(ABI).
+python				= ">=3.9"
+
+[feature.dev.pypi-dependencies]
+ipython				= "*"
+ruff				= "*"
+pytest				= "*"
+pip					= "*"
+hatchling			= "*"
+build				= ">=1.3.0, <2"
+twine				= ">=6.2.0, <7"
+
+[feature.this.pypi-dependencies]
+statbear			= { path = ".", editable = true, extras = [] }
+
+[feature.prod-test.pypi-dependencies]
+pandas				= ">=2.0, <3.0"
+
+[environments.default]
+features = [ "dev", "this", "prod-test" ]
+solve-group = "dev"
+no-default-feature = false
+
+# Ref
+# - https://pixi.sh/latest/workspace/advanced_tasks/
+# - https://github.com/prefix-dev/pixi/issues/4350
+# 1. Tasks with no-prefix is set for default feature only.
+# 2. Tasks has to be redefined explicitly for feature of the environment with
+#   `no-default-feature` set.
+[tasks.test-all]
+depends-on = [
+	{ task = "test", environment = "default" },
+]
+
+[feature.dev.tasks]
+test = { cmd = "pytest" }
+pypi-build = { cmd = "python -m build" }
+pypi-check = { cmd = "python -m twine check dist/*" }
+# Ref: https://zhuanlan.zhihu.com/p/682004873
+pypi-uptest = { cmd = "python -m twine upload --repository testpypi dist/*" }
+pypi-upload = { cmd = "python -m twine upload dist/*" }
+
+[activation]
+scripts = []
+env = {}
+
+# Ref
+# - https://pixi.sh/latest/build/getting_started/
+# - https://pixi.sh/latest/build/dependency_types/
+# - https://pixi.sh/latest/build/python/
+# - https://pixi.sh/latest/build/backends/
+# - https://prefix-dev.github.io/pixi-build-backends/backends/pixi-build-python/
+[package]
+# Inherit from the workspace manifest.
+name			= { workspace = true }
+version			= { workspace = true }
+authors			= { workspace = true }
+description		= { workspace = true }
+documentation	= { workspace = true }
+homepage		= { workspace = true }
+license			= { workspace = true }
+license-file	= { workspace = true }
+readme			= { workspace = true }
+repository		= { workspace = true }
+
+[package.build]
+source = { path = "src" }
+
+[package.build.backend]
+# `pixi-build-python` turns Python package into a conda package.
+name = "pixi-build-python"
+version = "*"
+# `channels` here will be overriden by `workspace.channels`.
+channels = [
+	"conda-forge",
+	"pytorch",
+	"pytorch-test",
+]
+
+[package.build.config]
+noarch = true
+env = {}
+# ignore-pyproject-manifest = true
+
+[package.build-dependencies]
+# Dependencies for build environment when building.
+# 1. It seems that `setuptools` is not compatiable with the `pixi`.
+#   So `hatchling` is used to package.
+# 2. The build metadata for python package is in 'pyproject.toml`.
+python				= ">=3.9"
+pip					= "*"
+hatchling			= "*"
+# setuptools			= ">=60.0"
+# cmake = "*"
+# git = "*"
+
+[package.host-dependencies]
+# Dependecies for host when building.
+python				= ">=3.9"
+hatchling			= "*"
+
+[package.run-dependencies]
+python				= ">=3.9"
+numpy				= ">=2.0, <3.0"
+numpy-financial		= "*"
+scipy				= "*"
+scikit-learn		= "*"

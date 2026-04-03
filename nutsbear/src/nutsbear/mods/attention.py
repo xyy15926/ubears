@@ -1,0 +1,757 @@
+#!/usr/bin/env python3
+# ---------------------------------------------------------
+#   Name: attention.py
+#   Author: xyy15926
+#   Created: 2025-06-17 12:01:06
+#   Updated: 2025-11-21 15:01:47
+#   Description:
+# ---------------------------------------------------------
+
+# %%
+from __future__ import annotations
+from typing import List, Tuple
+import logging
+
+import numpy as np
+import torch
+from torch import nn
+from torch.nn import functional as F
+from torch.nn.init import constant_, xavier_normal_, xavier_uniform_
+from nutsbear.mods.fixture import ssoftmax
+# from IPython.core.debugger import set_trace
+
+# %%
+logging.basicConfig(
+    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
+    level=logging.INFO,
+    force=(__name__ == "__main__"),
+)
+logger = logging.getLogger()
+logger.info("Logging Start.")
+
+
+# %%
+def scaled_dot_product_attention(
+    query: torch.Tensor,
+    key: torch.Tensor,
+    value: torch.Tensor,
+    attn_mask: torch.Tensor = None,
+    dropout_p: float = 0.0,
+    is_causal: bool = False,
+    safe_softmax: bool = True,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Scaled dot product attention.
+
+    1. Doesn't support NestedTensor.
+    **** Different from `F.scaled_dot_product_attention`:
+    2. True represents to mask the correspondant position, which is
+      controversary to `F.scaled_dot_product_attention`, so to keep up with
+      `nn.MultiheadAttention` behavior.
+    3. `is_causal` and `attn_mask` could be set together, with warning log as
+      reminder, and merge will be done.
+    4. NaN won't filled with 0 after the softmax.
+    **** The same with `F.scaled_dot_product_attention` in PyTorch >= 2.8:
+    4. NaN will be filled with 0, for masked positions mostly, so to keep up
+      with `F.scaled_dot_product_attention`.
+
+    Ref:
+    ---------------------------
+    - F.scaled_dot_product_attention:
+      - https://pytorch.ac.cn/docs/stable/generated/torch.nn.functional.scaled_dot_product_attention.html
+    - Transformer Code Analysis:
+      - https://ifwind.github.io/2021/08/19/Transformer%E7%9B%B8%E5%85%B3%E2%80%94%E2%80%94%EF%BC%8810%EF%BC%89Transformer%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90
+
+    Params:
+    --------------------------
+    query: Query input Tensor
+    key: Key input Tensor.
+    value: Value input Tensor.
+    attn_mask: 2D or 3D mask to prevent attention to certain position between
+      query and key sequences.
+      2D-mask: Mask that is same for all batches, which may be the mask
+        representint the relations between the query and the key, namely
+        "attention-mask".
+      3D-mask: Mask that fit for batches seperately, which should the
+        merged mask of "attention-mask" and "padding-mask",
+        or just "padding-mask" if the `.size(1) == 1`.
+    is_causal: If to enforce causality, namely tokens can only attend to
+      previous tokens.
+    safe_softmax: Use `ssoftmax` instead of `F.softmax` to prevent NaN for
+      all-NInf, which will lead to NaN in `.grad` after backward.
+
+    Shape:
+    --------------------------
+    query: (..., q_seq_len, qksz)
+    key: (..., kv_seq_len, qksz)
+    value: (..., kv_seq_len, vsz)
+    attn_mask: ([bsz,] q_seq_len, kv_seq_len)
+    ...(mostly): (bsz, heads_n)
+
+    Return Shape:
+    --------------------------
+    attn_weight: (..., q_seq_len, kv_seq_len)
+    output: (..., seq_len, vsz)
+
+    Return:
+    --------------------------
+    attn_weight: Weights for values.
+    output: Scaled-dot-product result.
+    """
+    *_____, qslen, qksz = query.size()
+    *_____, kvslen, vsz = value.size()
+    dtype = query.dtype
+    device = query.device
+
+    # Init mask with ninf.
+    if (attn_mask is not None
+            and attn_mask.dtype != torch.bool
+            and not is_causal):
+        bias_mask = attn_mask
+    else:
+        bias_mask = torch.zeros(
+            qslen, kvslen,
+            dtype=dtype,
+            device=device,
+        )
+        # Causal mask.
+        if is_causal:
+            if attn_mask is not None:
+                logger.warning(
+                    "Explicit attn_mask and is_causal are be set simultaneously."
+                )
+            tril_mask = torch.ones(
+                qslen,
+                kvslen,
+                dtype=torch.bool,
+                device=device
+            ).tril(diagonal=0)
+            bias_mask.masked_fill_(tril_mask.logical_not(), float("-inf"))
+            bias_mask.to(query.dtype)
+        # Padding mask or attention mask.
+        # set_trace()
+        if attn_mask is not None:
+            # Broadcast to fit for 3D merged or padding mask.
+            if attn_mask.dim() == 3:
+                tgt_shape = torch.broadcast_shapes(
+                    (1, *(bias_mask.size())),
+                    attn_mask.size(),
+                )
+                bias_mask = torch.broadcast_to(bias_mask, tgt_shape).clone()
+            # Convert bool mask to float mask with ninf for softmax.
+            if attn_mask.dtype == torch.bool:
+                bias_mask.masked_fill_(attn_mask, float("-inf"))
+            else:
+                bias_mask = attn_mask + bias_mask
+
+    # Fit mask for query and key.
+    if bias_mask.dim() == 3:
+        for _____ in range(query.dim() - 3):
+            bias_mask.unsqueeze_(1)
+
+    # (bsz,..., qslen, qksz) * (bsz,..., qksz, kvslen)
+    # => (bsz,..., qslen, kvslen)
+    q_scaled = query * np.sqrt(1.0 / qksz)
+    scaled_dot = q_scaled @ key.transpose(-2, -1)
+    scaled_dot += bias_mask
+    if safe_softmax:
+        attn_weight = ssoftmax(scaled_dot, dim=-1)
+    else:
+        attn_weight = F.softmax(scaled_dot, dim=-1)
+    # attn_weight = torch.nan_to_num(attn_weight, 0.0)
+    if dropout_p:
+        attn_weight = F.dropout(scaled_dot, p=dropout_p)
+
+    # (bsz, qslen, kvslen) * (bsz, kvslen, vsz)
+    # => (bsz, qslen, vsz)
+    output = attn_weight @ value
+
+    # Fill `nan` with 0 to keep with `F.SDPA` for straight-masked-line
+    #  in `attn_mask`.
+    return output, attn_weight
+
+
+# %%
+class MultiheadAttention(nn.Module):
+    """Multi-head attention.
+
+    1. NestedTensor compatiable.
+    2. Inner projection output-size for query, key and value are presumed to
+      the same, though the output-size of query/key could be different from
+      the value.
+    3. Inner projection will be packed together if the size of inputs of
+      query, key and value are the same.
+
+    Ref:
+    --------------------------
+    -  Accelerating transformer with NestedTensor:
+      - https://docs.pytorch.org/tutorials/intermediate/transformer_building_blocks.html
+      - https://pytorch.ac.cn/tutorials/intermediate/transformer_building_blocks.html
+
+    Attrs:
+    --------------------------
+    heads_n: Int.
+      The number of the multi-heads.
+    hsz: Int.
+      The size of one attention head.
+    dropout_p: Float.
+      The probability of the dropout.
+    bias: Bool.
+      If to enable bias in projection.
+    q_proj: nn.Linear
+      Linear projection for query input.
+    k_proj: nn.Linear
+      Linear projection for key input.
+    v_proj: nn.Linear
+      Linear projection for value input.
+    out_proj: nn.Linear
+      Linear projection for concated attention ouptut of multi-heads.
+    """
+    def __init__(
+        self,
+        qsz: int,
+        heads_n: int,
+        ksz: int = None,
+        vsz: int = None,
+        tsz: int = None,
+        dropout_p: float = 0.0,
+        bias: bool = True,
+        device: str = None,
+        dtype: str = None,
+    ):
+        """MultiheadAttention initialization.
+
+        Params:
+        ----------------------------
+        qsz: The (embedding)size of the query.
+        heads_n: The number the heads.
+        ksz: The (embedding)size of the key.
+        vsz: The (embedding)size of the value.
+        tsz: The sum of the (hidden)sizes of output of the multi-heads.
+        dropout_p: The probability of the dropout.
+        bias: If to use bias in the projection for Q, K, V.
+        device:
+        dtype:
+
+        Return:
+        ----------------------------
+        None
+        """
+        ksz = qsz if ksz is None else ksz
+        vsz = qsz if vsz is None else vsz
+        tsz = qsz if tsz is None else tsz
+        factory_kwargs = {"device": device, "dtype": dtype}
+        super().__init__()
+        self.heads_n = heads_n
+        assert tsz % heads_n == 0, "Embedding dim is not divisible by nheads."
+        self.hsz = tsz // heads_n
+        self.dropout_p = dropout_p
+        self._qkv_same_embed_dim = qsz == ksz and ksz == vsz
+        # Pack inner projection up.
+        if self._qkv_same_embed_dim:
+            self.in_proj = nn.Linear(
+                qsz, tsz * 3, bias=bias, **factory_kwargs)
+        else:
+            self.q_proj = nn.Linear(qsz, tsz, bias=bias, **factory_kwargs)
+            self.k_proj = nn.Linear(ksz, tsz, bias=bias, **factory_kwargs)
+            self.v_proj = nn.Linear(vsz, tsz, bias=bias, **factory_kwargs)
+        self.out_proj = nn.Linear(tsz, qsz, bias=bias, **factory_kwargs)
+        self.bias = bias
+
+        # Init parameters.
+        self._reset_parameter()
+
+    def forward(
+        self,
+        query: torch.Tensor,
+        key: torch.Tensor,
+        value: torch.Tensor,
+        key_padding_mask: torch.Tensor = None,
+        attn_mask: torch.Tensor = None,
+        is_causal: bool = False,
+        need_weights: bool = True,
+    ) -> torch.Tensor:
+        """Multi-head attention forward step.
+
+        1. Packed linear projection and chunk will be performed instead of
+          3 linear projection for query, key and value input seperately if
+          query, key and value are the exact one tensor.
+          (NestedTensor excluded.)
+        **** Different from `nn.MultiheadAttention`:
+        2. NaN will be always filled with 0 for query with all keys masked
+          whether `need_weights` is set since `ssoftmax` will fill NaN with 0
+          for all-NInf axis just like `F.scaled_dot_product_attention`, which
+          will be called only when `nn.MultiheadAttention.forward` is called
+          with `need_weights` unset.
+        3. `is_causal` and `attn_mask` are independent here and merge will be
+          done if both provided,
+          while `is_causal` in `nn.MultiheadAttention` is just a hint for
+          accelaration and doesn't make any differences in
+          `nn.MultiheadAttention`, or `F.multi_head_attention_foward`
+          preciesly, if `attn_mask` is set in same cases, `need_weights` set
+          for example.
+
+        Ref:
+        --------------------------
+        - torch.nn.functional.multi_head_attention_forward
+          - https://github.com/pytorch/pytorch/blob/main/torch/nn/functional.py#L6083
+          - https://github.com/pytorch/pytorch/blob/main/torch/nn/functional.py#L6492
+        - torch.nested._internal.sdpa.py:
+          - https://github.com/pytorch/pytorch/blob/main/torch/nested/_internal/sdpa.py
+          - `nested._internal.sdpa._can_use_flash_spda_jagged`
+
+        Params:
+        --------------------------
+        query: Query input Tensor
+        key: Key input Tensor.
+        value: Value input Tensor.
+        key_padding_mask: Padding mask for key sequence.
+        attn_mask: Mask for the attending relations between query and key.
+        is_causal: If to enforce causality, namely tokens can only attend to
+          previous tokens.
+        need_weights: If return valid attention weights.
+
+        Shape:
+        --------------------------
+        query: (bsz, query_seq_len, qsz)
+        key: (bsz, kv_seq_len, ksz)
+        value: (bsz, kv_seq_len, vsz)
+        key_padding_mask: (bsz, kv_seq_len)
+        attn_mask: (query_seq_len, kv_seq_len)
+        RETURN: (bsz, query_seq_len, qsz)
+
+        Return:
+        --------------------------
+        Attention outpout.
+        """
+        # 1. Apply input projection.
+        if self._qkv_same_embed_dim:
+            # `NJT` will be uncontiguous after chunk and the exact C-style
+            # contiguous isn't compatiable with `F.SPDA`, namely simple
+            # `NJT.contiguous` doesn't work.
+            if query is key and key is value and not query.is_nested:
+                result = self.in_proj(query)
+                query, key, value = torch.chunk(result, 3, dim=-1)
+            else:
+                qw, kw, vw = torch.chunk(self.in_proj.weight, 3, dim=0)
+                if self.bias:
+                    qb, kb, vb = torch.chunk(self.in_proj.bias, 3, dim=0)
+                else:
+                    qb, kb, vb = None, None, None
+                query = F.linear(query, qw, qb)
+                key = F.linear(key, kw, kb)
+                value = F.linear(value, vw, vb)
+        else:
+            query = self.q_proj(query)
+            key = self.k_proj(key)
+            value = self.v_proj(value)
+
+        # 2. Split heads for SDPA.
+        # (bsz, seq_len, heads_n * hsz)
+        # => (bsz, seq_len, heads_n, hsz)
+        # => (bsz, heads_n, seq_len, hsz)
+        query = query.unflatten(-1, [self.heads_n, self.hsz]).transpose(1, 2)
+        key = key.unflatten(-1, [self.heads_n, self.hsz]).transpose(1, 2)
+        value = value.unflatten(-1, [self.heads_n, self.hsz]).transpose(1, 2)
+
+        # 3. SDPA.
+        dropout_p = self.dropout_p if self.training else 0.0
+        # Merged `bias_mask` could be passed to `scaled_dot_product_attention`
+        # directly.
+        # if key_padding_mask is not None or is_causal:
+        #     bias_mask = self.merge_masks(
+        #         key_padding_mask,
+        #         attn_mask,
+        #         is_causal=is_causal,
+        #         query=query,
+        #     )
+        # else:
+        #     if attn_mask is None:
+        #         bias_mask = None
+        #     elif attn_mask.dtype == torch.bool:
+        #         bias_mask = (torch.zeros_like(attn_mask, dtype=query.dtype)
+        #                      .masked_fill(attn_mask, float("-inf")))
+        #     else:
+        #         bias_mask = attn_mask
+
+        # `merge_mask` will preprocess all masks properly.
+        bias_mask = self.merge_masks(
+            key_padding_mask,
+            attn_mask,
+            is_causal=is_causal,
+            query=query,
+            key=key,
+        )
+
+        if need_weights:
+            attn_val, attn_ws = scaled_dot_product_attention(
+                query, key, value,
+                attn_mask=bias_mask,
+                dropout_p=dropout_p,
+                is_causal=False,
+            )
+        else:
+            # Attention: `F.scaled_dot_product_attention`'s `attn_mask` mask
+            # logic is opposite to the all others.
+            # Match the attention mask for SPDA of (bsz, heads_n, qslen, kvslen).
+            # from (bsz, qslen, kvslen) or (qslen, kvslen)
+            if bias_mask is not None:
+                # set_trace()
+                if bias_mask.dim() == 3:
+                    bias_mask = bias_mask.unsqueeze(1)
+                elif bias_mask.dim() == 2:
+                    bias_mask = bias_mask.unsqueeze(0).unsqueeze(0)
+            attn_val = F.scaled_dot_product_attention(
+                query, key, value,
+                attn_mask=bias_mask,
+                dropout_p=dropout_p,
+                is_causal=False,
+            )
+            attn_ws = None
+        # (bsz, heads_n, seq_len, hsz)
+        # => (bsz, seq_len, heads_n, hsz)
+        # => (bsz, seq_len, heads_n * hsz)
+        attn_val = attn_val.transpose(1, 2).flatten(-2)
+        # Use the average weight of the all heads.
+        if attn_ws is not None:
+            attn_ws = attn_ws.transpose(1, 2).mean(dim=-2)
+
+        return self.out_proj(attn_val), attn_ws
+
+    def _reset_parameter(self):
+        """Init parameters with xavier_uniform."""
+        if self._qkv_same_embed_dim:
+            xavier_uniform_(self.in_proj.weight)
+            if self.bias:
+                constant_(self.in_proj.bias, 0.0)
+        else:
+            xavier_uniform_(self.q_proj.weight)
+            xavier_uniform_(self.k_proj.weight)
+            xavier_uniform_(self.v_proj.weight)
+            if self.bias:
+                constant_(self.q_proj.bias, 0.0)
+                constant_(self.k_proj.bias, 0.0)
+                constant_(self.v_proj.bias, 0.0)
+
+        xavier_uniform_(self.out_proj.weight)
+        if self.bias:
+            constant_(self.out_proj.bias, 0.0)
+
+    @classmethod
+    def merge_masks(
+        cls,
+        key_padding_mask: torch.Tensor,
+        attn_mask: torch.Tensor = None,
+        is_causal: bool = False,
+        query: torch.Tensor = None,
+        key: torch.Tensor = None,
+        # dtype: str = None,
+        # device: str = None,
+    ) -> torch.Tensor | None:
+        """Combine padding mask and attenion mask.
+
+        1. `query_padding_mask` isn't added, which is the same with the
+          `nn.MultiheadAttention`, since the query's mask will be handled by
+          users lately somehow.
+        2. True represents to mask the correspondant position, which is
+          controversary to `F.scaled_dot_product_attention`, so to keep up with
+          `nn.MultiheadAttention` behavior.
+
+        Ref:
+        --------------------------
+        - torch.nn.modules.activation.MultiheadAttention.merge_masks:
+          - https://github.com/pytorch/pytorch/blob/main/torch/nn/modules/activation.py#L1406
+
+        Params:
+        --------------------------
+        key_padding_mask: Mask for padding in key sequence.
+        attn_mask: Mask to mark the position that shouldn't be attented.
+        is_causal: Generate causal mask for Q,K.
+        query: Query tensor.
+        key: Key tensor.
+        dtype:
+        device:
+
+        Shape:
+        --------------------------
+        key_padding_mask: (batch_size, key_seq_len)
+        attn_mask: ([batch_size,]query_seq_len, key_seq_len)
+        query: (..., query_seq_len, embed_sz)
+        key: (..., key_seq_len, embed_sz)
+        RETURN:(batch_size, query_seq_len, key_seq_len)
+
+        Return:
+        --------------------------
+        Tensor[ninf, 0.0] or None
+        """
+        # Return None directly if no mask need to be generated.
+        if (key_padding_mask is None
+                and attn_mask is None
+                and not is_causal):
+            return None
+        # Query length is required to generate causal mask.
+        assert not (is_causal and query is None and attn_mask is None), (
+            "Query or attn_mask is required to generate causal attention mask."
+        )
+        assert key_padding_mask is None or key_padding_mask.dim() == 2, (
+            "Only 2D key padding mask with shape(bsz, kvslen) is allowed."
+        )
+
+        # Get mask sizes: bsz, qslen, kslen.
+        bsz = 1
+        if key_padding_mask is not None:
+            bsz = key_padding_mask.size(0)
+        elif attn_mask is not None:
+            if attn_mask.dim() == 3:
+                bsz = attn_mask.size(0)
+
+        if attn_mask is not None:
+            qslen = attn_mask.size(-2)
+        elif is_causal and query is not None:
+            qslen = query.size(-2)
+        else:
+            qslen = 1
+
+        if key_padding_mask is not None:
+            kslen = key_padding_mask.size(-1)
+        elif attn_mask is not None:
+            kslen = attn_mask.size(-1)
+        elif is_causal and key is not None:
+            kslen = key.size(-2)
+        else:
+            kslen = qslen
+
+        # Get device.
+        device = None
+        for tt in [query, key, attn_mask, key_padding_mask]:
+            if tt is not None:
+                device = tt.device
+                break
+
+        # Return attention mask directly.
+        if (attn_mask is not None
+                and attn_mask.dtype != torch.bool
+                and key_padding_mask is None
+                and not is_causal):
+            if attn_mask.dim() == 3:
+                return attn_mask.to(device)
+            else:
+                # Add the first dimension for batch-size.
+                return attn_mask.unsqueeze(0).to(device)
+
+        # set_trace()
+        # Init bias mask.
+        bias_mask = torch.zeros(bsz, qslen, kslen, device=device)
+        if is_causal:
+            # set_trace()
+            tril_mask = torch.ones(
+                qslen,
+                kslen,
+                dtype=torch.bool,
+                device=device
+            ).tril(diagonal=0)
+            bias_mask.masked_fill_(tril_mask.logical_not(), float("-inf"))
+
+        # Merge key_padding_mask and attention mask.
+        if key_padding_mask is not None:
+            if key_padding_mask.dtype == torch.bool:
+                bias_mask.masked_fill_(
+                    key_padding_mask.view(bsz, 1, kslen),
+                    float("-inf")
+                )
+            else:
+                bias_mask += key_padding_mask.broadcast_to(bsz, qslen, kslen)
+        if attn_mask is not None:
+            if attn_mask.dtype == torch.bool:
+                bias_mask.masked_fill_(
+                    attn_mask.view(1, qslen, kslen),
+                    float("-inf")
+                )
+            else:
+                bias_mask += attn_mask.broadcast_to(bsz, qslen, kslen)
+
+        return bias_mask
+
+
+# %%
+class SimpleMHA(nn.Module):
+    """Simplified MultiheadAttention.
+
+    1. Keep only one attention weight matrix for Query and Key, with presuming
+      the embedding size of query and key are the same and should share the
+      same weight matrix in some certain extent.
+    2. Drop the weight matrix for Value if not necessary, especially the
+      the embedding size of Value is the same as the Query and some more
+      linear transformation will be stacked later.
+
+    Notes:
+    1. Both Query and key should be applied linear transformation before
+    dot-production.
+    2. Presuming that no linear applied on Query or key, the dot-production
+      after splitting heads will only take the correspondant component of the
+      Query or Key, namely only single head attention make sense.
+    3. For example,
+      $$
+      (q @ w_q^T) @ (k @ w_k^T)^T
+        = q @ (w_q^T @ w_k) @ k^T
+        = q @ (w_k^T @ w_q)^T @ k^T
+      $$
+      take `w_a = w^k^T @ w_q` will achieve the effect of the `w_q` and `w_k`
+      for single head but not for multi-heads.
+
+
+    Attrs:
+    --------------------------
+    heads_n: Int.
+      The number of the multi-heads.
+    hsz: Int.
+      The size of one attention head.
+    dropout_p: Float.
+      The probability of the dropout.
+    bias: Bool.
+      If to enable bias in projection.
+    q_proj: nn.Linear
+      Linear projection for query input.
+    k_proj: nn.Linear
+      Linear projection for key input.
+    v_proj: nn.Linear
+      Linear projection for value input.
+    out_proj: nn.Linear
+      Linear projection for concated attention ouptut of multi-heads.
+    """
+    def __init__(
+        self,
+        qksz: int,
+        heads_n: int,
+        vsz: int = None,
+        tsz: int = None,
+        dropout_p: float = 0.0,
+        bias: bool = True,
+        out_proj: bool = False,
+        device: str = None,
+        dtype: str = None,
+    ):
+        """Simplified MultiheadAttention initialization.
+
+        Params:
+        ----------------------------
+        qksz: The (embedding)size of the query and key.
+        heads_n: The number the heads.
+        vsz: The (embedding)size of the value.
+        dropout_p: The probability of the dropout.
+        bias: If to use bias in the projection for Q, K, V.
+        device:
+        dtype:
+
+        Return:
+        ----------------------------
+        """
+        vsz = qksz if vsz is None else vsz
+        tsz = qksz if tsz is None else tsz
+        factory_kwargs = {"device": device, "dtype": dtype}
+        super().__init__()
+        self.heads_n = heads_n
+        self.hsz = tsz // heads_n
+        assert tsz % heads_n == 0, "Embeding dim is not divisible by nheads."
+        self.dropout_p = dropout_p
+        if not out_proj and qksz != vsz:
+            logger.warning("Output size isn't the same with the query size.")
+
+        # Query and key will share the same linear transformation.
+        self.attn_proj = nn.Linear(qksz, tsz, bias=bias, **factory_kwargs)
+        if out_proj:
+            self.out_proj = nn.Linear(vsz, qksz, bias=bias, **factory_kwargs)
+        else:
+            self.out_proj = None
+        self.bias = bias
+
+        # Init parameters.
+        self._reset_parameter()
+
+    def _reset_parameter(self):
+        """Init parameters with xavier_uniform."""
+        xavier_uniform_(self.attn_proj.weight)
+        if self.bias:
+            constant_(self.attn_proj.bias, 0.0)
+        if self.out_proj:
+            xavier_uniform_(self.out_proj.weight)
+            if self.bias:
+                constant_(self.out_proj.bias, 0.0)
+
+    def forward(
+        self,
+        query: torch.Tensor,
+        key: torch.Tensor,
+        value: torch.Tensor,
+        key_padding_mask: torch.Tensor = None,
+        attn_mask: torch.Tensor = None,
+        is_causal: bool = False,
+        need_weights: bool = False,
+    ) -> torch.Tensor:
+        """Simplifed Multi-head Attention forward step.
+
+        Params:
+        --------------------------
+        query: Query input Tensor
+        key: Key input Tensor.
+        value: Value input Tensor.
+        key_padding_mask: Padding mask for key sequence.
+        attn_mask: Mask for the attending relations between query and key.
+        is_causal: If to enforce causality, namely tokens can only attend to
+          previous tokens.
+        need_weights: If return valid attention weights.
+          Always return valid attention weights and keep untouched here just
+          to keep up with MHA.
+
+        Shape:
+        --------------------------
+        query: (bsz, query_seq_len, qsz)
+        key: (bsz, kv_seq_len, ksz)
+        value: (bsz, kv_seq_len, vsz)
+        key_padding_mask: (bsz, kv_seq_len)
+        attn_mask: (query_seq_len, kv_seq_len)
+        RETURN: (bsz, query_seq_len, qsz)
+
+        Return:
+        --------------------------
+        Attention outpout.
+        """
+        hn = self.heads_n
+        qksz = query.size(-1)
+        # Merge masks.
+        bias_mask = MultiheadAttention.merge_masks(
+            key_padding_mask,
+            attn_mask,
+            is_causal=is_causal,
+            query=query,
+            key=key,
+        )
+        if bias_mask is not None:
+            bias_mask = bias_mask.unsqueeze(1)
+
+        # (bsz, slen, qsz)
+        # => (bsz, slen, ksz)
+        # => (bsz, slen, heads_n, hsz)
+        # => (bsz, heads_n, slen, hsz)
+        q = self.attn_proj(query).unflatten(-1, (hn, -1)).transpose(1, 2)
+        q *= np.sqrt(1.0 / qksz)
+        k = self.attn_proj(key).unflatten(-1, (hn, -1)).transpose(1, 2)
+        v = value.unflatten(-1, (hn, -1)).transpose(1, 2)
+        # (bsz, heads_n, qslen, kvslen)
+        attn_ = q @ k.transpose(-1, -2)
+        if bias_mask is not None:
+            attn_ += bias_mask
+        attn_ws = ssoftmax(attn_, dim=-1)
+
+        # Apply dropout.
+        dropout_p = self.dropout_p if self.training else 0.0
+        if dropout_p:
+            attn_ws = F.dropout(attn_ws, dropout_p)
+
+        # (bsz, heads_n, qslen, kvslen)
+        # => (bsz, heads_n, qslen, hsz)
+        attn_ret = (attn_ws @ v).transpose(1, 2).flatten(-2)
+        if self.out_proj:
+            attn_ret = self.out_proj(attn_ret)
+        attn_ws = attn_ws.transpose(1, 2).mean(dim=-2)
+
+        return attn_ret, attn_ws

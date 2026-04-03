@@ -1,0 +1,128 @@
+[project]
+name = "statbear"
+dynamic = [
+	"version",
+]
+authors = [
+	{name = "UBeaRLy", email = "ubearly@outlook.com"},
+]
+description = "A project for collecting some tricks."
+long_description_content_type = "text/x-rst"
+long_description = "README.md"
+readme = { file = "README.md", content-type = "text/plain" }
+classifiers = [
+	"Development Status :: 3 - Alpha",
+	"Environment :: Console",
+	"Programming Language :: Python",
+	"Programming Language :: Python :: 3 :: Only",
+	"Programming Language :: Python :: 3.9",
+	"Programming Language :: Python :: 3.10",
+	"Programming Language :: Python :: 3.11",
+	"Programming Language :: Python :: 3.12",
+]
+license-files = [ "license.txt" ]
+requires-python = ">=3.9"
+dependencies = [
+	"numpy >=2.0, <3.0",
+	"numpy-financial",
+	"scipy",
+	"scikit-learn",
+	"TA-lib",
+]
+
+[project.urls]
+homepage = "https://github.com/xyy15926"
+
+
+# ***************************** Build with hatcling
+# Hatchling ref:
+# - https://hatch.pypa.io/latest/config/build/
+[build-system]
+requires = [ "hatchling" ]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.version]
+path = "src/statbear/__init__.py"
+
+[tool.hatch.build]
+skip-excluded-dirs = true
+directory = "dist"
+# Directories that should be included in the development environment.
+dev-mode-dirs = ["src"]
+
+# Build source distribution.
+[tool.hatch.build.targets.sdist]
+# 1. Merge all files under `sources` together, just like searching paths.
+sources = [ "src" ]
+# 2. Ignore `.gitignore`，`.hgignore`.
+ignore-vcs = false
+# 3. Select the files with git-style glob pattern, with `exclude` taking
+#   precedence.
+include = [
+	"src/**/*.py",
+	"src/**/*.csv",
+	"src/**/*.json",
+	"src/**/*.toml",
+]
+exclude = []
+
+# Build binary distribution.
+# According to hatchling building log: `wheel` will be built from `sdist`.
+# So the items in `targets.wheel`, `packages` for example, should be set based
+#   on the `targets.sdist`.
+[tool.hatch.build.targets.wheel]
+# 1. The children pacakges will be packaged recursively, which is different
+#   from the `setuptools`.
+packages = [ "statbear" ]
+# 2. `artifacts` is semantically equivalent to `include` but not affected by
+# `exclude`.
+# 2.1 But `"!"` could be used to excluded more generic items in `artifacts`.
+artifacts = [
+	"*.so",
+	"*.dll",
+	"!tmp/*.so",
+	"!tmp/*.dll",
+]
+# 3. Include other files besides `.py` and `artifacts` in packages.
+only-packages = false
+
+# ***************************** Lint with Ruff
+# Ruff ref:
+# - https://docs.astral.ac.cn/ruff/linter/
+# - https://docs.astral.ac.cn/ruff/configuration/
+[tool.ruff]
+include = [
+	"pyproject.toml",
+	"pixi.toml",
+	"src/**/*.py",
+	"scripts/**/*.py",
+	"examples/**/*.py",
+	"contrib/**/*.py",
+	"demos/**/*.py",
+]
+line-length = 88
+indent-width = 4
+target-version = "py313"
+
+[tool.ruff.lint]
+# select = ["E4", "E7", "E9", "F"]
+select = ["E", "F", "B"]
+ignore = []
+fixable = ["ALL"]
+unfixable = []
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402"]
+
+[tool.ruff.format]
+exclude = ["*.ipynb"]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = true
+docstring-code-line-length = "dynamic"

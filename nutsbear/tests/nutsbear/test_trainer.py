@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+# ---------------------------------------------------------
+#   Name: test_trainer.py
+#   Author: xyy15926
+#   Created: 2025-07-08 16:09:07
+#   Updated: 2026-04-02 18:40:06
+#   Description:
+# ---------------------------------------------------------
+
+# %%
+import pytest
+import torch
+from torch.nn import functional as F
+from torch.utils.data import DataLoader, TensorDataset
+if __name__ == "__main__":
+    from importlib import reload
+    from nutsbear.demos import deepfm
+    from nutsbear import trainer
+    reload(deepfm)
+    reload(trainer)
+
+from nutsbear.demos.deepfm import DeepFM
+from nutsbear.trainer import Trainer
+
+
+# %%
+def mock_ctr(
+    fea_catn: int = 5,
+    sample_n: int = 100,
+    sparse_n: int = 4,
+    dense_n: int = 5,
+):
+    inp_idx = torch.randint(0, fea_catn, (sample_n, sparse_n + dense_n))
+    inp_idx[:, sparse_n:] = 0
+    inp_val = torch.ones(sample_n, sparse_n + dense_n, dtype=torch.float)
+    torch.rand((sample_n, dense_n), out=inp_val[:, sparse_n:])
+    label = torch.randint(0, 2, (sample_n,), dtype=torch.float16)
+
+    return inp_idx, inp_val, label
+
+
+# %%
+def test_Trainer():
+    sparse_n, dense_n = 4, 5
+    sample_n = 100
+    fea_catn = 5
+    inp_idx, inp_val, label = mock_ctr(fea_catn, sample_n, sparse_n, dense_n)
+    dataset = TensorDataset(inp_idx, inp_val, label)
+    dloader = DataLoader(dataset, 5)
+
+    # Trainer with customed pred_fn and loss_fn.
+    mod_name = "deepfm_trainer_test"
+    mod = DeepFM([fea_catn] * sparse_n + [1] * dense_n)
+
+    def pred_loss_fn(mod, idx, val, label):
+        pred = mod(idx, val)
+        loss = F.binary_cross_entropy_with_logits(pred, label)
+        return loss
+
+    trn = Trainer(
+        mod,
+        pred_loss_fn=pred_loss_fn,
+        mod_name=mod_name,
+    )
+    trn.fit(dloader, 2, 4)
+
+    # Save and load test.
+    trn.save()
+    sdict = mod.state_dict()
+    new_mod = DeepFM([fea_catn] * sparse_n + [1] * dense_n)
+    Trainer.load(new_mod, mod_name)
+    new_sdict = new_mod.state_dict()
+    for key, val in sdict.items():
+        assert torch.all(val == new_sdict[key])
