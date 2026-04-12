@@ -3,7 +3,7 @@
 #   Name: finer.py
 #   Author: xyy15926
 #   Created: 2024-06-24 14:04:14
-#   Updated: 2026-04-03 10:52:18
+#   Updated: 2026-04-12 21:52:57
 #   Description:
 # ---------------------------------------------------------
 
@@ -111,7 +111,7 @@ def date_order_mark(
       Regex will be used to search all file matched.
     alts: Alternatives names among which will be searched to match the
       pattern form `kstr` to get the start point of the order.
-    rdmark: The date mark for the file with format `%Y%m%d`.
+    rdmark: Regex with format `%Y%m%d` representing date mark for the file.
       "today": Today will be used as default.
       None: All proper date string with format `%Y%m%d` will be fine enough,
         and the latest date will be used.
@@ -156,9 +156,9 @@ def date_order_mark(
 def tmp_file(
     fname: str = "tmp.tmp",
     dmark: str | None = "today",
-    incr: int = 1
+    incr: int = 1,
 ) -> Path:
-    """Generate file absolute path in TMP dir.
+    """Generate absolute file path with date-mark and order-mark in TMP dir.
 
     The filename will be consist of the date and inscreasing order mark so
     that the file with the same key name won't be overlapped, as this is
@@ -187,10 +187,90 @@ def tmp_file(
 
     # Split basename and extname.
     basename, extname = os.path.splitext(tfname.name)
-    tbname = date_order_mark(basename,
-                             (fd.name for fd in tfname.parent.iterdir()),
-                             dmark,
-                             incr)
+    tbname = date_order_mark(
+        basename,
+        (fd.name for fd in tfname.parent.iterdir()),
+        dmark,
+        incr
+    )
     tfname = tfname.with_name(tbname + extname)
 
     return tfname
+
+
+# %%
+def use_file(
+    fname: str | Path = "tmp.tmp",
+    dmark: str | None = "today",
+    incr: int = 1,
+) -> Path:
+    """Prepare to use the filename.
+
+    1. If the `fname` is an explicit absolute pathname or relative pathname,
+      which should start with `/` or `.`, use the pathname directly.
+    2. Else construct an absolute file pathname in TMP with `tmp_file`.
+
+    Params:
+    ------------------------
+    fname: Filename, full path or relative path.
+    dmark: The date mark for the file with format `%Y%m%d`.
+      "today": Today will be used as default.
+      None: All proper date string with format `%Y%m%d` will be fine enough,
+        and the latest date will be used.
+    incr: The increasement for the order mark
+      `1` will be used as default, namely the next proper filename will be
+        returned.
+      And `0` will return the latest existing filename.
+
+    Return:
+    ------------------------
+    Pathname.
+    """
+    if str(fname)[0] == "." or str(fname)[0] == "/":
+        tfname = Path(fname)
+        if not tfname.parent.is_dir():
+            tfname.parent.mkdir(parents=True)
+        return tfname
+    else:
+        return tmp_file(fname, dmark, incr)
+
+
+# %%
+def use_dir(
+    dname: str | Path = "tmpdir",
+    dmark: str | None = "today",
+    incr: int = 1,
+) -> Path:
+    """Prepare to use the dirname.
+
+    1. If the `dname` is an explicit absolute pathname or relative pathname,
+      which should start with `/` or `.`, use the pathname directly.
+    2. Else construct an absolute directory pathname in TMP with `tmp_file`.
+
+    ATTENTION: The exact directory will be created directly.
+
+    Params:
+    ------------------------
+    fname: Dirname, full path or relative path.
+    dmark: The date mark for the directory with format `%Y%m%d`.
+      "today": Today will be used as default.
+      None: All proper date string with format `%Y%m%d` will be fine enough,
+        and the latest date will be used.
+    incr: The increasement for the order mark
+      `1` will be used as default, namely the next proper filename will be
+        returned.
+      And `0` will return the latest existing filename.
+
+    Return:
+    ------------------------
+    Pathname.
+    """
+    if str(dname)[0] == "." or str(dname)[0] == "/":
+        tdname = Path(dname)
+        if not tdname.is_dir():
+            tdname.mkdir(parents=True)
+        return tdname
+    else:
+        tdname = tmp_file(dname, dmark, incr)
+        tdname.mkdir()
+        return tdname

@@ -3,7 +3,7 @@
 #   Name: test_finer.py
 #   Author: xyy15926
 #   Created: 2024-10-24 20:18:21
-#   Updated: 2026-04-02 15:46:55
+#   Updated: 2026-04-12 21:58:55
 #   Description:
 # ---------------------------------------------------------
 
@@ -17,15 +17,20 @@ if __name__ == "__main__":
 
 import re
 from datetime import date
-from flagbear.slp.finer import date_order_mark, tmp_file, get_tmp_path
+import shutil
+from flagbear.slp.finer import (
+    date_order_mark,
+    tmp_file,
+    get_tmp_path,
+    use_file,
+    use_dir,
+)
 
 TMP_DIR = "pytest_tmpdir"
 TMP_FNAME = f"{TMP_DIR}/tmpf.tmp"
 TMP_FNAME_REGEX = f"{TMP_DIR}/tmpf_E0006.tmp"
 _PTN = r"E\d{4}"
 TMP_FNAME_REGEX_PTN = rf"{TMP_DIR}/tmpf_{_PTN}.tmp"
-TMP_DB = "pytest_tmpdb.db"
-TMP_TBL = "tmp_tbl"
 
 
 # %%
@@ -65,43 +70,99 @@ def test_date_order_mark():
 
 # %%
 @pytest.fixture(scope="function", autouse=False)
-def tmpfile(request):
+def tmpfile_fixture(request):
     # Process before test.
     print(request)
-    tfname = tmp_file(TMP_FNAME)
-    tfrname = tmp_file(TMP_FNAME_REGEX)
-    tfname.touch()
-    tfrname.touch()
+    tmp_fname = tmp_file(TMP_FNAME)
+    regex_tfname = tmp_file(TMP_FNAME_REGEX)
+    tmp_fname.touch()
+    regex_tfname.touch()
 
     # Return the result.
-    yield tfname, tfrname
+    yield tmp_fname, regex_tfname
 
     # Process after test.
-    tfname.unlink()
-    tfrname.unlink()
     tfdir = get_tmp_path() / TMP_DIR
-    if not any(tfdir.iterdir()):
-        tfdir.rmdir()
+    shutil.rmtree(tfdir, ignore_errors=True)
     if not any(get_tmp_path().iterdir()):
         get_tmp_path().rmdir()
 
 
 # %%
-def test_tmp_file(tmpfile):
-    tf, tfr = tmpfile
-    assert tf.is_file()
-    assert tfr.is_file()
+def test_tmp_file(tmpfile_fixture):
+    tmp_fname, regex_tfname = tmpfile_fixture
+    assert tmp_fname.is_file()
+    assert regex_tfname.is_file()
 
-    # Raise FileExistsError since `tf1` exists.
+    # Raise FileExistsError since `tmp_file` exists, and directory with
+    # the same name can't be made.
     with pytest.raises(FileExistsError):
-        tmp_file(tf / "any_file")
+        tmp_file(tmp_fname / "any_file")
 
     # `tmp_file` will update order mark automatically.
-    ordix = re.search(r"_(\d{4})\.", tf.name).groups()[0]
-    nbname = tf.name.replace(ordix, f"{int(ordix) + 1:04}")
+    ordix = re.search(r"_(\d{4})\.", tmp_fname.name).groups()[0]
+    nbname = tmp_fname.name.replace(ordix, f"{int(ordix) + 1:04}")
     assert tmp_file(TMP_FNAME).name == nbname
 
     # `tmp_file` can return exact filename with fuzzy regex.
-    ordix = re.search(r"_(\d{4})\.", tfr.name).groups()[0]
-    nbname = tfr.name.replace(ordix, f"{int(ordix) + 1:04}")
+    ordix = re.search(r"_(\d{4})\.", regex_tfname.name).groups()[0]
+    nbname = regex_tfname.name.replace(ordix, f"{int(ordix) + 1:04}")
     assert tmp_file(TMP_FNAME_REGEX_PTN).name == nbname
+
+    assert tmp_file(TMP_FNAME, None, 0) == tmp_fname
+    assert tmp_file(TMP_FNAME_REGEX_PTN, None, 0) == regex_tfname
+
+
+# %%
+def test_use_file(tmpfile_fixture):
+    tmp_fname, regex_tfname = tmpfile_fixture
+
+    # `use_file` will update order mark automatically.
+    ordix = re.search(r"_(\d{4})\.", tmp_fname.name).groups()[0]
+    nbname = tmp_fname.name.replace(ordix, f"{int(ordix) + 1:04}")
+    assert use_file(TMP_FNAME).name == nbname
+
+    # `use_file` can return exact filename with fuzzy regex.
+    ordix = re.search(r"_(\d{4})\.", regex_tfname.name).groups()[0]
+    nbname = regex_tfname.name.replace(ordix, f"{int(ordix) + 1:04}")
+    assert use_file(TMP_FNAME_REGEX_PTN).name == nbname
+
+    # `use_file` will try to use the exact absolute path name if provide.
+    assert use_file(str(tmp_fname)) == tmp_fname
+    # `use_file` accept `Path` as the argument.
+    assert use_file(tmp_fname) == tmp_fname
+
+    assert use_file(TMP_FNAME, None, 0) == tmp_fname
+    assert use_file(TMP_FNAME_REGEX_PTN, None, 0) == regex_tfname
+
+
+# %%
+def test_use_dir(tmpfile_fixture):
+    tmp_fname, regex_tfname = tmpfile_fixture
+
+    # `use_dir` will update order mark automatically.
+    ordix = re.search(r"_(\d{4})\.", tmp_fname.name).groups()[0]
+    nbname = tmp_fname.name.replace(ordix, f"{int(ordix) + 1:04}")
+    new_dir = use_dir(TMP_FNAME)
+    assert new_dir.name == nbname
+    assert new_dir.is_dir()
+
+    # `use_dir` can return exact filename with fuzzy regex.
+    ordix = re.search(r"_(\d{4})\.", regex_tfname.name).groups()[0]
+    nbname = regex_tfname.name.replace(ordix, f"{int(ordix) + 1:04}")
+    new_dir = use_dir(TMP_FNAME_REGEX_PTN)
+    assert new_dir.name == nbname
+    assert new_dir.is_dir()
+
+    # `use_dir` will try to use the exact absolute path name if provide.
+    new_dir = use_dir(str(tmp_fname.parent / nbname))
+    assert new_dir.is_dir()
+    assert new_dir.parent == regex_tfname.parent
+
+    # `use_dir` accept `Path` as the argument.
+    nbname = regex_tfname.name.replace(ordix, f"{int(ordix) + 2:04}")
+    new_dir = use_dir(tmp_fname.parent / nbname)
+    assert new_dir.is_dir()
+    assert new_dir.parent == regex_tfname.parent
+
+    assert use_file(TMP_FNAME_REGEX_PTN, None, 0).name == nbname
