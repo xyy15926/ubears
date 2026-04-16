@@ -67,6 +67,9 @@ statbear			= { path = "../statbear", editable = true, extras = [] }
 [feature.demo-only.pypi-dependencies]
 networkx			= "*"
 xgboost				= "*"
+polars				= "*"
+altair				= "*"
+akshare				= "*"
 
 [environments.default]
 features = [ "dev", "this", "demo-only" ]
@@ -160,7 +163,7 @@ SQLAlchemy			= ">=2.0"
 chinese_calendar	= "*"
 tqdm				= "*"
 pdfplumber			= "*"
-pyechart			= "*"
+pyecharts			= "*"
 jieba				= "*"
 flagbear			= "*"
 statbear			= "*"

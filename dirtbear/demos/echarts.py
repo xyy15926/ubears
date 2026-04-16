@@ -20,7 +20,7 @@ from pyecharts.faker import Faker
 from pyecharts.commons.utils import JsCode
 # from pyecharts.render import make_snapshot
 
-from suitbear.finer import get_assets_path, get_tmp_path
+from flagbear.slp.finer import get_assets_path, get_tmp_path
 
 fname = get_tmp_path() / "pyecharts.html"
 
