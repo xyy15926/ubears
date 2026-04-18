@@ -3,16 +3,15 @@
 #   Name: kline.py
 #   Author: xyy15926
 #   Created: 2024-11-29 12:13:36
-#   Updated: 2026-04-16 14:56:43
+#   Updated: 2026-04-18 20:04:29
 #   Description:
 # ---------------------------------------------------------
 
 # %%
 from __future__ import annotations
-from typing import Dict, List
+from typing import Dict, List, Any
 
 import logging
-import itertools
 import pandas as pd
 from pyecharts import options as opts
 from pyecharts.globals import ThemeType
@@ -29,30 +28,6 @@ logging.basicConfig(
 logger = logging.getLogger()
 logger.info("Logging Start.")
 
-
-# %%
-class ColorIterator:
-    def __init__(self, colors=None):
-        if colors is None:
-            self.colors = [
-                "#5470c6", "#91cc75", "#fac858", "#ee6666",
-                "#73c0de", "#3ba272", "#fc8452", "#9a60b4",
-                "#ea7ccc",
-            ]
-        else:
-            self.colors = colors
-        self.cycle = itertools.cycle(self.colors)
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        return next(self.cycle)
-
-    def getn(self, n=1):
-        return [next(self) for _ in range(n)]
-
-COLOR_ITER = ColorIterator()
 RED = "#EF232A"
 GREEN = "#14B14A"
 YELLOW = "#FFD700"
@@ -60,7 +35,7 @@ PURPLE = "#9370DB"
 
 
 # %%
-def compose_kline(
+def draw_kline(
     prices: pd.DataFrame,
     trades: pd.DataFrame,
     mas: Dict[str, list],
@@ -82,9 +57,9 @@ def compose_kline(
       price: Buy or sell price.
       lotn: Lots of buy or sell.
       cash: Remaining cash.
-      value: Sum of cash and share.
-    mas: Moving average of prices.
-    signals: Signals line of some score.
+      value: Sum of cash and stock.
+    mas: {ma_type: moving average of prices, }
+    signals: {signal_type: some kinds of scores, }
 
     Return:
     ------------------------
@@ -93,66 +68,95 @@ def compose_kline(
     xticks = prices["date"].tolist()
     prices_ = prices[["open_", "close", "high", "low"]].values.tolist()
     volume_mark = (prices["close"] > prices["open_"]).astype(int) * 2 - 1
-    volumes = list(zip(
-        range(len(prices)),
-        prices["volume"].values.tolist(),
-        volume_mark,
-        strict=True,
-    ))
+    volume = {
+        "volume": list(zip(
+            range(len(prices)),
+            prices["volume"].values.tolist(),
+            volume_mark,
+            strict=True,
+        ))
+    }
     bs_points = trades[["date", "price", "lotn" ]].values.tolist()
     cash = trades["cash"].values.tolist()
-    svalue = (trades["value"] - trades["cash"]).values.tolist()
+    stock = (trades["value"] - trades["cash"]).values.tolist()
 
-    # Prices KLine.
-    kline = prices_kline(xticks, prices_, bs_points)
-    kline.extend_axis(
-        yaxis=opts.AxisOpts(type_="value", position="right")
+    grid_chart = compose_kline(
+        xticks,
+        prices_,
+        volume,
+        mas,
+        signals,
+        bs_points,
+        cash,
+        stock,
     )
-    ma_line = prices_lines(xticks, mas, line=None)
-    if signals is not None:
-        ma_line = signal_lines(xticks, signals, line=ma_line)
-    kline = kline.overlap(ma_line)
+    return grid_chart
 
-    # Volume Bar.
-    vol_bar = volume_bar(xticks, volumes, 1, 2)
 
-    # Value.
-    values_bar = volume_bar(xticks, {"cash": cash, "share": svalue}, 2, 3)
+# %%
+def compose_kline(
+    xticks: List,
+    prices: List,
+    volume: List,
+    mas: Dict[str, List],
+    signals: Dict[str, List],
+    bs_points: List[Any, float, int],
+    cash: List,
+    stock: List,
+) -> GridChart:
+    """Compose different parts.
 
+    Params:
+    -------------------------------
+    xticks: Xaxis ticks, date in most cases.
+    prices: [[open, close, high, low], ]
+    volume: [[xidx, volume, pos or neg mark], ]
+    mas: {ma_type: moving average of prices, }
+    signals: {signal_type: some kinds of scores, }
+    bs_points: [[xtick, price, lots of buying or selling], ]
+    cash: Cash value.
+    stock: Stock value.
+
+    Return:
+    -------------------------------
+    GridChart
+    """
+    # Init Grid Chart.
     grid_chart = GridChart(init_opts = opts.InitOpts(
         width="1200px",
         height="800px",
         animation_opts=opts.AnimationOpts(animation=False),
         theme=ThemeType.INFOGRAPHIC,
     ))
-    grid_chart.add_chart(
-        kline,
-        opts.GridOpts(
-            pos_left="5%",
-            pos_right="5%",
-            pos_top="0%",
-            height="60%",
-        ),
-        1, 2,
-    ).add_chart(
-        vol_bar,
-        grid_opts=opts.GridOpts(
-            pos_left="5%",
-            pos_right="5%",
-            pos_top="65%",
-            height="15%",
-        ),
-    ).add_chart(
-        values_bar,
-        grid_opts=opts.GridOpts(
-            pos_left="5%",
-            pos_right="5%",
-            pos_top="85%",
-            height="5%",
-        ),
-    )
-    grid_chart.set_defualt_opts()
 
+    # Prices KLine.
+    kline = prices_kline(xticks, prices, bs_points)
+
+    # Additional lines.
+    ma_line = None
+    if mas is not None:
+        ma_line = prices_lines(xticks, mas, line=None)
+    if signals is not None:
+        kline.extend_axis(
+            yaxis=opts.AxisOpts(type_="value", position="right")
+        )
+        ma_line = signal_lines(xticks, signals, line=ma_line)
+    if ma_line is not None:
+        kline = kline.overlap(ma_line)
+    grid_chart.add_chart(kline)
+
+    # Bar of volume.
+    if volume is not None:
+        vol_bar = volume_bar(xticks, {"volume": volume}, 0, 0)
+        grid_chart.add_chart(vol_bar)
+
+    # Bar of cash and stock value.
+    if cash is not None:
+        values_bar = volume_bar(xticks, {"stock": stock, "cash": cash}, 0, 0)
+        grid_chart.add_chart(values_bar)
+
+    grid_chart.set_defualt_opts()
+    grid_chart.set_plain_layout([70, 15, 15], 100)
     return grid_chart
 
 
@@ -165,7 +169,7 @@ def prices_markpoints(
         opts.MarkPointItem(
             name=None,
             coord=[x, y],
-            value=f"{v}@{y}",
+            value=f"{v}",
             symbol="arrow" if v > 0 else "diamond",
             symbol_size=8,
             itemstyle_opts=opts.ItemStyleOpts(
@@ -239,7 +243,7 @@ def prices_lines(
             linestyle_opts=opts.LineStyleOpts(
                 width=2,
                 opacity=0.8,
-                color=next(COLOR_ITER)
+                # color=next(COLOR_ITER)
             ),
             label_opts=opts.LabelOpts(is_show=False),
         )
@@ -267,34 +271,38 @@ def signal_lines(
 # %%
 def volume_bar(
     xticks: list,
-    volumes: list | dict,
+    volume: list | dict,
     xaxis_index: int = 1,
     yaxis_index: int = 2,
     bar: Bar = None,
 ):
     bar = bar or Bar().add_xaxis(xaxis_data=xticks)
-    if isinstance(volumes, list):
-        volumes = {"": volumes}
-    for ser_name, vol in volumes.items():
-        color = next(COLOR_ITER)
-        bar.add_yaxis(
-            series_name=ser_name,
-            y_axis=vol,
-            xaxis_index=xaxis_index,
-            yaxis_index=yaxis_index,
-            itemstyle_opts=opts.ItemStyleOpts(
+    if isinstance(volume, list):
+        volume = {"": volume}
+    for ser_name, vol in volume.items():
+        if isinstance(vol[0], (tuple, list)) and len(vol[0]) == 3:
+            itemstyle_opts = opts.ItemStyleOpts(
                 color=JsCode(f"""
                     function(params) {{
                         console.log(params.values);
                         if (params.value instanceof Array){{
                             return params.value[2] > 0 ? '{RED}': '{GREEN}';
                         }} else {{
-                            return '{color}';
+                            return 'YELLOW';
                         }}
                     }}
                 """),
-            ),
+            )
+        else:
+            itemstyle_opts = None
+
+        bar.add_yaxis(
+            series_name=ser_name,
+            y_axis=vol,
+            xaxis_index=xaxis_index,
+            yaxis_index=yaxis_index,
             stack=f"stack{yaxis_index}",
+            itemstyle_opts=itemstyle_opts,
             label_opts=opts.LabelOpts(is_show=False),
         )
     bar.set_global_opts(

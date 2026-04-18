@@ -3,15 +3,15 @@
 #   Name: gridchart.py
 #   Author: xyy15926
 #   Created: 2026-04-15 22:56:58
-#   Updated: 2026-04-16 14:59:00
+#   Updated: 2026-04-18 18:58:54
 #   Description:
 # ---------------------------------------------------------
 
 # %%
 import logging
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Self
 
-from pyecharts.charts.chart import Chart
+from pyecharts.charts.chart import Chart, RectChart
 from pyecharts import options as opts
 from pyecharts.charts import Grid
 # from IPython.core.debugger import set_trace
@@ -37,12 +37,6 @@ class GridChart(Grid):
     -----------------------------
     charts: Int.
       Contained charts.
-    cur_grid_index: Int.
-      Current grid index for the chart that will be `add`ed.
-    cur_xaxis_index: Int.
-      Current xaxis index of the chart that will be `add`ed.
-    cur_yaxis_index: Int.
-      Current yaxis index of the chart that will be `add`ed.
     """
     def __init__(
         self,
@@ -50,46 +44,107 @@ class GridChart(Grid):
         render_opts: opts.RenderOpts | Dict = None,
     ):
         """Init GridChart."""
-        super().__init__(init_opts or {}, render_opts or {})
-        self.cur_xaxis_index = 0
-        self.cur_yaxis_index = 0
-        self.cur_grid_index = 0
-        self.charts = []
+        super().__init__(
+            init_opts or opts.InitOpts(),
+            render_opts or opts.InitOpts()
+        )
+        self.grid_xy = [(0, 0), ]
+
+    def cur_xidx(self) -> int:
+        """Xaxis index for newly added chart."""
+        if self.options is None:
+            return 0
+        return len(self.options.get("xAxis", []))
+
+    def cur_yidx(self) -> int:
+        """Yaxis index for newly added chart."""
+        if self.options is None:
+            return 0
+        return len(self.options.get("yAxis", []))
+
+    def cur_gidx(self) -> int:
+        """Grid index for newly added chart."""
+        if self.options is None:
+            return 0
+        return len(self.options.get("grid", []))
+
+    def update_unrect_series(
+        self,
+        grids: List[opts.GridOpts | Dict] = None,
+    ):
+        """Update the positions for series from non-RectChart.
+
+        Params:
+        ----------------------------
+        grids: List of GridOpts that should be refered by non-RectCharts to
+          determine their positions.
+        """
+        grids = grids or self.options["grid"]
+        for ser in self.options.get("series", []):
+            # Only series for non-RectChart will be added `grid_index`.
+            grid_index = ser.get("grid_index")
+            if grid_index is not None:
+                grid_opts = grids[grid_index]
+                grid_ = (grid_opts.opts if not isinstance(grid_opts, dict)
+                         else grid_opts)
+                for ele in ["top", "bottom", "left", "right", "width"]:
+                    ser[ele] = grid_[ele]
 
     def add_chart(
         self,
         chart: Chart,
-        grid_opts: opts.GridOpts | Dict,
-        xaxis_count: int = 1,
-        yaxis_count: int = 1,
-    ):
+        grid_opts: opts.GridOpts | Dict = None,
+    ) -> Self:
         """Add chart.
 
         Params:
         ----------------------------
         chart: Chart.
         grid_opts: Chart's grid options.
-        xaxis_count: The number of xaxis in the chart.
-        yaxis_count: The number of yaxis in the chart.
+          Remember to set the `option['grid']` later via `set_plain_layout`
+          or `set_global_opts` if not passed.
 
         Return:
         ----------------------------
         self
         """
+        # Update data series.
+        for ser in chart.options.get("series", []):
+            # Update xaxis and yaxis index for RectChart.
+            if isinstance(chart, RectChart):
+                if ser["xAxisIndex"] is None:
+                    ser["xAxisIndex"] = self.cur_xidx()
+                else:
+                    ser["xAxisIndex"] += self.cur_xidx()
+                if ser["yAxisIndex"] is None:
+                    ser["yAxisIndex"] = self.cur_yidx()
+                else:
+                    ser["yAxisIndex"] += self.cur_yidx()
+            # Update positions for non-RectChart which doesn't containing
+            # `grid_index` to related to the grid.
+            else:
+                grid_ = (grid_opts.opts if not isinstance(grid_opts, dict)
+                         else grid_opts)
+                for ele in ["top", "bottom", "left", "right", "width"]:
+                    ser[ele] = grid_[ele]
+                # Add `grid_index` so to relate to the grid.
+                ser["grid_index"] = self.cur_gidx()
+
+            # Add yAaxisIndex as the prefix so to distinct the stack group.
+            if ser.get("stack", None) is not None:
+                ser["stack"] = f'{ser["yAxisIndex"]}_{ser["stack"]}'
+
         self.add(
-            chart, grid_opts,
-            grid_index=self.cur_grid_index,
+            chart,
+            grid_opts or opts.GridOpts(),
+            grid_index=self.cur_gidx(),
             is_control_axis_index=True,
         )
-        xaxs = list(range(self.cur_xaxis_index, self.cur_xaxis_index + xaxis_count))
-        yaxs = list(range(self.cur_yaxis_index, self.cur_yaxis_index + yaxis_count))
-        self.charts.append((chart, xaxs, yaxs))
-        self.cur_grid_index += 1
-        self.cur_xaxis_index += xaxis_count
-        self.cur_yaxis_index += yaxis_count
+        self.grid_xy.append((self.cur_xidx(), self.cur_yidx()))
+
         return self
 
-    def set_global_opts(self, **kwargs):
+    def set_global_opts(self, **kwargs) -> Self:
         """Set global options.
 
         Params:
@@ -99,6 +154,7 @@ class GridChart(Grid):
         axispointer_opts: AxisPointerOpts or equivalent dict.
         legend_opts: LegendOpts, equivalent dict or list of those.
         title_opts: TitleOpts, equivalent dict or list of those.
+        grid_opts: List of GridOpts or equivalent dict of those.
 
         Return:
         ----------------------------
@@ -110,12 +166,15 @@ class GridChart(Grid):
             "axispointer_opts": ("axisPointer", opts.AxisPointerOpts),
             "legend_opts": ("legend", opts.LegendOpts),
             "title_opts": ("title", opts.TitleOpts),
+            "grid_opts": ("grid", opts.GridOpts),
+            "color": ("color", lambda x: x),
         }
         for key, opt in kwargs.items():
             # set_trace()
             opt_key, opt_wrapper = mapper.get(key, (None, None))
             if opt_key is None:
                 continue
+
             if isinstance(opt, dict):
                 opt = opt_wrapper(**opt)
             elif (isinstance(opt, list)
@@ -128,34 +187,44 @@ class GridChart(Grid):
             if opt_key == "title":
                 opt = opt.opts[0]
 
-            # Replace the options value entirely for both scalar and list-value options.
-            if isinstance(self.options[opt_key], list):
-                if isinstance(opt, list):
-                    self.options[opt_key] = opt
-                else:
-                    self.options[opt_key] = [opt, ]
-            else:
-                self.options[opt_key] = opt
+            # Replace the options value directly.
+            # As it seems that:
+            # 1. All options accept both list and dict/Opt, while
+            # 1.1 Some options, datazoom and title for example, will render
+            #   all the components.
+            # 1.2 Other options, tooltip for example, only render the exact
+            #   first one.
+            if not isinstance(opt, list):
+                opt = [opt, ]
+            self.options[opt_key] = opt
+
+            # Update non-RectChart's positions.
+            if opt_key == "grid":
+                self.update_unrect_series()
 
         return self
 
     def set_datazoom(
         self,
-        grid_x: List | str = "all",
-        grid_y: List | str = None,
+        xaxis_index: List | str = "all",
+        yaxis_index: List | str = None,
+        xzoom_type: List = ("inside", "slider"),
+        yzoom_type: List = ("inside", ),
         *,
         datazoom_opts: Dict = None,
-    ):
+    ) -> Self:
         """Set the datazoom.
 
         Params:
         -------------------------
-        grid_x: List of the grid_index of the chart that would zoom in or zoom
+        xaxis_index: List of the xaxis-index that would zoom in or zoom
           along the xaxis together.
-          "all": All the charts.
-        grid_y: List of the grid_index of the chart that would zoom in or zoom
+          "all": All the xaxis.
+        yaxis_index: List of the yaxis-index that would zoom in or zoom
           along the yaxis together.
           "all": All the charts.
+        xzoom_type: List of datazoom type for xaxis.
+        yzoom_type: List of datazoom type for yaxis.
         datazoom_opts: Dict of arguments of opts.DataZoomOpts.
 
         Return:
@@ -170,16 +239,16 @@ class GridChart(Grid):
             is_zoom_lock=False,
 
             # Prefered percentage range settings.
-            range_start=100,
+            range_start=90,
             range_end=100,
             # min_span=20,
-            # max_span=40,
+            max_span=100,
             # start_value=20,
             # end_value=100,
-            # The `min_value_span` will determine the really `range_start` as the
-            # `range_start = 100`.
+            # The `min_value_span` will determine the really `range_start` as
+            # `range_start` and `range_end` are close.
             min_value_span=20,
-            max_value_span=100,
+            # max_value_span=100,
 
             # Control xaxis.
             orient="horizontal",
@@ -192,30 +261,24 @@ class GridChart(Grid):
         if datazoom_opts is not None:
             conf.update(datazoom_opts)
 
-        xaxis_index = None
-        yaxis_index = None
-        if grid_x == "all":
-            xaxis_index = list(range(self.cur_xaxis_index))
-        elif isinstance(grid_x, (tuple, list)):
-            for idx in grid_x:
-                xaxis_index += self.charts[idx][-2]
-        if grid_y == "all":
-            yaxis_index = list(range(self.cur_yaxis_index))
-        elif isinstance(grid_y, (tuple, list)):
-            for idx in grid_y:
-                yaxis_index += self.charts[idx][-1]
+        if xaxis_index == "all":
+            xaxis_index = list(range(self.cur_xidx()))
+        if yaxis_index == "all":
+            yaxis_index = list(range(self.cur_yidx()))
 
         datazoom_opts = []
         if xaxis_index is not None:
-            for type_ in ["inside", "slider"]:
+            for type_ in xzoom_type:
                 conf["type_"] = type_
                 conf["orient"] = "horizontal"
                 conf["xaxis_index"] = xaxis_index
+                conf["yaxis_index"] = None
                 datazoom_opts.append(opts.DataZoomOpts(**conf))
         if yaxis_index is not None:
-            for type_ in ["inside", "slider"]:
+            for type_ in yzoom_type:
                 conf["type_"] = type_
                 conf["orient"] = "vertical"
+                conf["xaxis_index"] = None
                 conf["yaxis_index"] = yaxis_index
                 datazoom_opts.append(opts.DataZoomOpts(**conf))
 
@@ -228,7 +291,7 @@ class GridChart(Grid):
         *,
         tooltip_opts: Dict = None,
         axispointer_opts: Dict = None,
-    ):
+    ) -> Self:
         """Set the tooltip.
 
         Params:
@@ -298,7 +361,7 @@ class GridChart(Grid):
         pos_right: int | str = None,
         *,
         legend_opts: Dict = None,
-    ):
+    ) -> Self:
         """Set the legend.
 
         Params:
@@ -332,7 +395,7 @@ class GridChart(Grid):
         font_size: int = 18,
         *,
         title_opts: Dict = None,
-    ):
+    ) -> Self:
         """Set the title.
 
         Params:
@@ -365,10 +428,119 @@ class GridChart(Grid):
         self.set_global_opts(title_opts = title_opts)
         return self
 
-    def set_defualt_opts(self):
+    def set_color_map(self, color: List[str] = None) -> Self:
+        """Set the color map.
+
+        Params:
+        -------------------------
+        color: Color map, namely list of color.
+
+        Return:
+        -------------------------
+        Self
+        """
+        self.set_global_opts(color = color or [
+            "#5470c6", "#91cc75", "#fac858", "#ee6666",
+            "#73c0de", "#3ba272", "#fc8452", "#9a60b4",
+            "#ea7ccc",
+        ])
+        return self
+
+    def auto_margin(self) -> List[int]:
+        """Estimate the margin."""
+        # T, B, L, R
+        margin = [10, 10, 60, 10]
+        right_slider = 0
+        right_axis = 0
+        bottom_slider = 0
+        for dz in self.options["dataZoom"]:
+            if not isinstance(dz, dict):
+                dz = dz.opts
+            if (dz["show"]
+                and dz["type"] == "slider"
+                and dz["orient"] == "horizontal"):
+                bottom_slider = 50
+            if (dz["show"]
+                and dz["type"] == "slider"
+                and dz["orient"] == "vertical"):
+                right_slider = 50
+        for yax in self.options["yAxis"]:
+            if not isinstance(yax, dict):
+                yax = yax.opts
+            if (yax["show"]
+                and yax["position"] == "right"):
+                right_axis = 50
+
+        margin[1] += bottom_slider
+        margin[3] += right_slider + right_axis
+
+        return margin
+
+    def set_plain_layout(
+        self,
+        heights: List[int] | int = 100,
+        widths: List[int] | int = 100,
+        margin: List[int] = None,
+        gap: List[int] = None,
+    ) -> Self:
+        """Apply plain layout.
+
+        Params:
+        -------------------------
+        heights: The percentage of heights of each row.
+        widths: The percentage of widths of each columns.
+        margin: Margin with unit px.
+
+        Return:
+        -------------------------
+        Self
+        """
+        if isinstance(heights, int):
+            heights = [heights, ]
+        if isinstance(widths, int):
+            widths = [widths, ]
+
+        # Calculate the length of one percent of height and width.
+        margin = margin or self.auto_margin()
+        gap = gap or [20, 40]
+        hunit = (
+            int(self.height[:-2])
+            - margin[0] - margin[1]
+            - (len(heights) - 1) * gap[0]
+        ) / 100
+        wunit = (
+            int(self.width[:-2])
+            - margin[2] - margin[3]
+            - (len(widths) - 1) * gap[1]
+        ) / 100
+
+        grids = []
+        pos_top = margin[0]
+        for hele in heights:
+            pos_left = margin[2]
+            for wele in widths:
+                width = int(wele * wunit)
+                height = int(hele * hunit)
+                grid_opts = opts.GridOpts(
+                    is_show = True,
+                    pos_left = pos_left,
+                    pos_top = pos_top,
+                    width = width,
+                    height = height,
+                    is_contain_label = False,
+                )
+                pos_left += width + gap[1]
+                grids.append(grid_opts)
+            pos_top += height + gap[0]
+
+        self.set_global_opts(grid_opts = grids)
+        return self
+
+    def set_defualt_opts(self) -> Self:
         """Set with the default global options."""
-        self.set_datazoom()
+        self.set_datazoom(xaxis_index = "all")
         self.set_tooltip()
         self.set_legend()
         self.set_title()
+        self.set_color_map()
         return self
