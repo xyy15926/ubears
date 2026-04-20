@@ -3,7 +3,7 @@
 #   Name: kline.py
 #   Author: xyy15926
 #   Created: 2024-11-29 12:13:36
-#   Updated: 2026-04-18 20:04:29
+#   Updated: 2026-04-20 22:16:06
 #   Description:
 # ---------------------------------------------------------
 
@@ -104,7 +104,7 @@ def compose_kline(
     cash: List,
     stock: List,
 ) -> GridChart:
-    """Compose different parts.
+    """Compose different parts of KLine.
 
     Params:
     -------------------------------
@@ -147,12 +147,12 @@ def compose_kline(
 
     # Bar of volume.
     if volume is not None:
-        vol_bar = volume_bar(xticks, {"volume": volume}, 0, 0)
+        vol_bar = volume_bar(xticks, {"Volume": volume}, 0, 0)
         grid_chart.add_chart(vol_bar)
 
     # Bar of cash and stock value.
     if cash is not None:
-        values_bar = volume_bar(xticks, {"stock": stock, "cash": cash}, 0, 0)
+        values_bar = volume_bar(xticks, {"Stock": stock, "Cash": cash}, 0, 0)
         grid_chart.add_chart(values_bar)
 
     grid_chart.set_defualt_opts()
@@ -165,6 +165,7 @@ def prices_markpoints(
     xticks: list,
     prices: list,
 ) -> List[opts.MarkPointItem]:
+    """Generate markpoints on KLine."""
     points = [
         opts.MarkPointItem(
             name=None,
@@ -198,8 +199,9 @@ def prices_kline(
     xticks: list,
     prices: list,
     bs_points: list,
-    name: str = "prices",
+    name: str = "Prices",
 ) -> Kline:
+    """Draw KLine."""
     markpoints, mp_label_opts = prices_markpoints(xticks, bs_points)
     # Basic Kline.
     kline = (
@@ -232,6 +234,7 @@ def prices_lines(
     yaxis_index: int = 0,
     line: Line = None,
 ) -> Line:
+    """Draw lines on KLine."""
     line = line or Line().add_xaxis(xaxis_data=xticks)
     for name, price in prices.items():
         line.add_yaxis(
@@ -259,6 +262,7 @@ def signal_lines(
     yaxis_index: int = 1,
     line: Line = None,
 ) -> Line:
+    """Draw lines on KLine but rely on another yaxis by default."""
     return prices_lines(
         xticks,
         signals,
@@ -276,6 +280,7 @@ def volume_bar(
     yaxis_index: int = 2,
     bar: Bar = None,
 ):
+    """Draw bar with two color determined by the mark passed."""
     bar = bar or Bar().add_xaxis(xaxis_data=xticks)
     if isinstance(volume, list):
         volume = {"": volume}
