@@ -3,7 +3,7 @@
 #   Name: finer.py
 #   Author: xyy15926
 #   Created: 2024-06-24 14:04:14
-#   Updated: 2026-04-12 21:52:57
+#   Updated: 2026-04-20 19:58:21
 #   Description:
 # ---------------------------------------------------------
 
@@ -157,6 +157,7 @@ def tmp_file(
     fname: str = "tmp.tmp",
     dmark: str | None = "today",
     incr: int = 1,
+    dest: str = "tmp",
 ) -> Path:
     """Generate absolute file path with date-mark and order-mark in TMP dir.
 
@@ -175,13 +176,19 @@ def tmp_file(
       `1` will be used as default, namely the next proper filename will be
         returned.
       And `0` will return the latest existing filename.
+    dest: Root directory of temp file.
 
     Return:
     ----------------------
     Absolute file path with date and order tag `fname_<DATE>_<ORDER>.ext`.
     """
+    # Set the root directory with `get_tmp_path` if it's not a str that
+    # represents exact absolute or relative path.
+    if isinstance(dest, str) and dest[0] != "." and dest[0] != "/":
+        tfname = get_tmp_path(dest) / fname
+    else:
+        tfname = Path(dest) / fname
     # Mkdir if necessary.
-    tfname = get_tmp_path() / fname
     if not tfname.parent.is_dir():
         tfname.parent.mkdir(parents=True)
 
@@ -203,6 +210,7 @@ def use_file(
     fname: str | Path = "tmp.tmp",
     dmark: str | None = "today",
     incr: int = 1,
+    dest: str = "tmp",
 ) -> Path:
     """Prepare to use the filename.
 
@@ -221,18 +229,19 @@ def use_file(
       `1` will be used as default, namely the next proper filename will be
         returned.
       And `0` will return the latest existing filename.
+    dest: Root directory of temp file.
 
     Return:
     ------------------------
     Pathname.
     """
-    if str(fname)[0] == "." or str(fname)[0] == "/":
+    if isinstance(fname, str) and fname[0] != "." and fname[0] != "/":
+        return tmp_file(fname, dmark, incr, dest)
+    else:
         tfname = Path(fname)
         if not tfname.parent.is_dir():
             tfname.parent.mkdir(parents=True)
         return tfname
-    else:
-        return tmp_file(fname, dmark, incr)
 
 
 # %%
@@ -240,6 +249,7 @@ def use_dir(
     dname: str | Path = "tmpdir",
     dmark: str | None = "today",
     incr: int = 1,
+    dest: str = "tmp",
 ) -> Path:
     """Prepare to use the dirname.
 
@@ -260,17 +270,18 @@ def use_dir(
       `1` will be used as default, namely the next proper filename will be
         returned.
       And `0` will return the latest existing filename.
+    dest: Root directory of temp file.
 
     Return:
     ------------------------
     Pathname.
     """
-    if str(dname)[0] == "." or str(dname)[0] == "/":
+    if isinstance(dname, str) and dname[0] != "." and dname[0] != "/":
+        tdname = tmp_file(dname, dmark, incr, dest)
+        tdname.mkdir()
+        return tdname
+    else:
         tdname = Path(dname)
         if not tdname.is_dir():
             tdname.mkdir(parents=True)
-        return tdname
-    else:
-        tdname = tmp_file(dname, dmark, incr)
-        tdname.mkdir()
         return tdname

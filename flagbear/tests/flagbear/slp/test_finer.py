@@ -3,7 +3,7 @@
 #   Name: test_finer.py
 #   Author: xyy15926
 #   Created: 2024-10-24 20:18:21
-#   Updated: 2026-04-12 21:58:55
+#   Updated: 2026-04-20 20:02:54
 #   Description:
 # ---------------------------------------------------------
 
@@ -109,8 +109,13 @@ def test_tmp_file(tmpfile_fixture):
     nbname = regex_tfname.name.replace(ordix, f"{int(ordix) + 1:04}")
     assert tmp_file(TMP_FNAME_REGEX_PTN).name == nbname
 
+    # `tmp_file` with additional `dmark` and `incr`.
     assert tmp_file(TMP_FNAME, None, 0) == tmp_fname
     assert tmp_file(TMP_FNAME_REGEX_PTN, None, 0) == regex_tfname
+
+    # `tmp_file` with `dest`.
+    assert tmp_file(TMP_FNAME, None, 0, "tmp") == tmp_fname
+    assert tmp_file(TMP_FNAME, None, 0, get_tmp_path()) == tmp_fname
 
 
 # %%
