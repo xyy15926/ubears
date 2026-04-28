@@ -3,7 +3,7 @@
 #   Name: test_databundle.py
 #   Author: xyy15926
 #   Created: 2026-04-11 20:47:49
-#   Updated: 2026-04-20 20:07:27
+#   Updated: 2026-04-27 22:32:19
 #   Description:
 # ---------------------------------------------------------
 
@@ -133,7 +133,7 @@ def test_bundle_cache(tmpfile_fixture):
         return {"a": a, "b": b}
 
     ret1 = create_dict()
-    reg_name1 = concat_params(bundle_type)
+    reg_name1 = concat_params(bundle_type, (), {})
     bundle_file = bundle_dir / f"{reg_name1}_{today}_0001.zip"
     assert bundle_file.is_file()
 
@@ -146,7 +146,7 @@ def test_bundle_cache(tmpfile_fixture):
 
     # Function with different params will regist as different DataBundle.
     ret2 = create_dict(1, b = 3)
-    reg_name2 = concat_params(bundle_type, 1, b = 3)
+    reg_name2 = concat_params(bundle_type, (1,), {"b": 3})
     assert reg_name2 != reg_name1
     bundle_file2 = bundle_dir / f"{reg_name2}_{today}_0001.zip"
     assert bundle_file2.is_file()

@@ -65,6 +65,7 @@ flagbear			= { path = ".", editable = true, extras = [] }
 [feature.prod-test.pypi-dependencies]
 numpy				= "*"
 pandas				= "*"
+pyarrow				= "*"
 
 [environments.default]
 features = [ "dev", "this", "prod-test" ]

@@ -3,7 +3,7 @@
 #   Name: test_pipeline.py
 #   Author: xyy15926
 #   Created: 2026-04-12 14:06:07
-#   Updated: 2026-04-12 21:12:05
+#   Updated: 2026-04-21 10:03:04
 #   Description:
 # ---------------------------------------------------------
 
@@ -49,7 +49,7 @@ class NDABundle(DataBundle):
     def dumps_data(self):
         return self.data.dumps()
 
-    def loads_data(bytes_):
+    def loads_data(bytes_, metadata = None):
         return pickle.loads(bytes_)
 
 
@@ -139,7 +139,7 @@ def test_Pipeline(tmpfile_fixture):
             return bundle
 
     # Pipeline process.
-    pipeline = Pipeline("add12")
+    pipeline = Pipeline("add12", TMP_DIR)
     pipeline.add_pipe(Add1Pipe()).add_pipe(Add2Pipe())
     pipeline.process(bundle)
     assert np.all(bundle.data == nda_ori + 3)

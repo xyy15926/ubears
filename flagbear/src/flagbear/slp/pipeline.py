@@ -3,7 +3,7 @@
 #   Name: pipeline.py
 #   Author: xyy15926
 #   Created: 2026-04-09 19:16:01
-#   Updated: 2026-04-12 21:45:44
+#   Updated: 2026-04-27 22:30:27
 #   Description:
 # ---------------------------------------------------------
 
@@ -35,8 +35,19 @@ logger.info("Logging Start.")
 
 # %%
 class Pipe(ABC):
-    """One stage to process DataBundle."""
+    """One stage to process DataBundle.
+
+    Class Attrs:
+    ---------------------------
+    reg_name: Registry name in PipeFactory.
+
+    Attrs:
+    ---------------------------
+    config: Process config.
+    exec_count: Execution counts.
+    """
     def __init__(self, name: str = None, config: Dict = None):
+        """Init Pipe."""
         self.config = config or {}
         self.exec_count = 0
 
@@ -85,6 +96,7 @@ class PipeFactory:
                                 f"Pipe.")
             reg_name_ = reg_name or pipe_class.__name__
             cls._registry[reg_name_] = pipe_class
+            pipe_class.reg_name = reg_name_
             return pipe_class
         return decorator
 
@@ -100,6 +112,7 @@ class PipeFactory:
                 "process": process_method,
                 "__doc__": "Dynamic Pipe derived from {func.__name__}",
                 "__module__": func.__module__,
+                "reg_name": name,
             }
         )
         cls._registry[name] = new_class
@@ -141,14 +154,14 @@ class Pipeline:
           checkpoint directory and mark the DataBundle's lineage processed.
         stages: Dict of the pipe instances.
         checkpoint_dir: Directory to save the checkpoints.
-          `get_tmp_path() / name` will be used by default.
+          1. `use_dir(name)` will be used by default.
+          2. So an explicit `checkpoint_dir` must be passed, or a new
+            `checkpoint_dir` with data_order_mark will be made and used.
         """
         self.name = name
         self.stages: Dict[str, Type(Pipe)] = {}
         self.stage_counter = Counter()
-        self.checkpoint_dir = (get_tmp_path() / name
-                               if checkpoint_dir is None
-                               else Path(checkpoint_dir))
+        self.checkpoint_dir = use_dir(checkpoint_dir or name, "today", 1, "tmp")
 
     def add_pipe(self, pipe: Pipe, stage_key: str = None) -> Self:
         """Add a pipe.
@@ -164,10 +177,10 @@ class Pipeline:
                 logger.error(f"Stage {stage_key} exists.")
                 raise ValueError(f"Stage {stage_key} exists.")
         else:
-            pipe_cls_name = pipe.__class__.__name__
-            stage_key = f"{pipe_cls_name}_{self.stage_counter[pipe_cls_name]}"
+            reg_name = pipe.reg_name
+            stage_key = f"{reg_name}_{self.stage_counter[reg_name]}"
         self.stages[stage_key] = pipe
-        self.stage_counter.update([stage_key,])
+        self.stage_counter.update([pipe.reg_name, ])
         return self
 
     def load_checkpoint(self, stage_key: str) -> DataBundle:

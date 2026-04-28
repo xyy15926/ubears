@@ -3,7 +3,7 @@
 #   Name: databundle.py
 #   Author: xyy15926
 #   Created: 2026-04-10 11:52:19
-#   Updated: 2026-04-20 21:52:12
+#   Updated: 2026-04-21 22:40:04
 #   Description:
 # ---------------------------------------------------------
 
@@ -17,6 +17,7 @@ import pickle
 import json
 import inspect
 import zipfile
+import hashlib
 from functools import wraps
 
 if __name__ == "__main__":
@@ -41,14 +42,17 @@ DATABUNDLE_DIR = "databundle"
 class DataBundle(ABC):
     """Dataclass with data, metadata and lineage.
 
+    Class Attrs:
+    -------------------------------
+    reg_name: The name use to identify the exact derived DataBundle in
+      DataBundleFactory.
+
     Attrs:
     -------------------------------
     data: Data.
     metadata: Dict to describe the data.
     lineage: Dict with key as the stage name to record the infomation
       of the data-procedure stages.
-    reg_name: The name use to identify the exact derived DataBundle in
-      DataBundleFactory.
     """
     data: Any
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -272,6 +276,17 @@ class DataBundleFactory:
 
 
 # %%
+@DataBundleFactory.register()
+class PickableBundle(DataBundle):
+    def dumps_data(self) -> bytes:
+        return pickle.dumps(self.data)
+
+    @staticmethod
+    def loads_data(bytes_, metadata: dict = None) -> Any:
+        return pickle.loads(bytes_)
+
+
+# %%
 def pickle_dumps(data) -> bytes:
     return pickle.dumps(data)
 
@@ -282,22 +297,23 @@ def pickle_loads(bytes_, metadata: Dict = None):
 
 def concat_params(
     reg_name: str,
-    *args: Any,
-    **kwargs: Any,
+    args: Any,
+    kwargs: Any,
 ) -> str:
     """Concate registry name with arguments.
 
-    Only the int, float and str argument will be used to construct the name.
+    Only the int, float and str argument will be used to construct the name
+    that will be used to registed in DataBundleFactory.
 
     Params:
     -----------------------------
-    reg_name: Registry name in DataBundleFactory.
-    args:
-    kwargs:
+    reg_name: Part of the registry name.
+    args: Tuple of positional arguments.
+    kwargs: Dict of keywords arguments.
 
     Return:
     -----------------------------
-    Concated name
+    Concated name registed in DataBundleFactory
     """
     args_str = "_".join([
         str(ele) for ele in args
@@ -310,6 +326,44 @@ def concat_params(
     concated = "_".join([reg_name, args_str, kwargs_str])
 
     return concated
+    # try:
+    #     arg_str = json.dumps((args, kwargs), sort_keys=True, default=str)
+    # except (TypeError, ValueError):
+    #     arg_str = str((args, kwargs))
+    # return hashlib.md5(arg_str.encode("utf8")).hexdigest()[:16]
+
+
+def check_params(
+    args: List[Any],
+    kwargs: Dict[str, Any],
+    metadata: Dict[str, Any],
+) -> bool:
+    """Check if the arguments passed and loaded are the same.
+
+    Params:
+    -----------------------------
+    args: Positional arguments.
+    kwargs: Keywords arguments.
+    metadata: Metadata loaded from the bundle cache.
+    """
+    same_flag = True
+    if len(metadata["_func_params_args"]) != len(args):
+        same_flag = False
+        logger.warning("Positional arguments are different.")
+    if len(metadata["_func_params_kwargs"]) != len(kwargs):
+        same_flag = False
+        logger.warning("Keyword arguments are different.")
+    for v1, v2 in zip(metadata["_func_params_args"], args, strict=False):
+        if v1 != v2:
+            logger.error(f"Argument {v1} is different from {v2}.")
+            same_flag = False
+    for k, v in metadata["_func_params_kwargs"].items():
+        if v != kwargs.get(k):
+            logger.error(f"Argument {k}:{v} is different "
+                         f"from {k}:{kwargs.get(k)}.")
+            same_flag = False
+
+    return same_flag
 
 
 def bundle_cache(
@@ -319,6 +373,8 @@ def bundle_cache(
     loads_data: Callable = pickle_loads,
     *,
     dest: str = DATABUNDLE_DIR,
+    strict: bool = False,
+    rollback: bool = True,
 ):
     """Data bundle cache decorator.
 
@@ -343,6 +399,11 @@ def bundle_cache(
       be used.
     dumps_data: Callable to dump data into bytes.
     loads_data: Callable to load data from bytes.
+    dest: The root directory to save and load data bundle.
+    strict: If the params passed to the `func` must be exact the same as the
+      params loaded from the bundle.
+    rollback: If to roll back to call the `func` to fetch the remote or
+      expensive data when data cache exists but not valid.
     """
     def inner(func):
         @wraps(func)
@@ -352,55 +413,52 @@ def bundle_cache(
             # invalid when defined with `class` normally instead of `type`.
             reg_name_ = concat_params(
                 reg_name or func.__name__,
-                *args,
-                **kwargs,
+                args,
+                kwargs,
             ) + ".zip"
 
             # Regist new DataBundle type.
             if reg_name_ not in DataBundleFactory._registry:
-                DataBundleFactory.from_slfunc(reg_name_, dumps_data, loads_data)
+                DataBundleFactory.from_slfunc(
+                    reg_name_,
+                    dumps_data,
+                    loads_data
+                )
                 logger.info(f"Regist new DataBundle {reg_name_}.")
 
             # Try load data bundle from cache.
             fname_all = use_file(fname or reg_name_, None, 0, dest)
-            if not forced and fname_all.is_file():
+            if (not forced) and fname_all.is_file():
                 try:
-                    bundle = DataBundleFactory.load_instance(reg_name_, fname_all)
-                    for v1, v2 in zip(bundle.metadata["_func_params_args"],
-                                      args, strict=False):
-                        if v1 != v2:
-                            logger.error(f"Argument {v1} is different from {v2}.")
-                    for k, v in bundle.metadata["_func_params_kwargs"].items():
-                        if v != kwargs.get(k):
-                            logger.error(f"Argument {k}:{v} is different "
-                                         f"from {k}:{kwargs.get(k)}.")
+                    bundle = DataBundleFactory.load_instance(
+                        reg_name_,
+                        fname_all
+                    )
+                    is_same = check_params(args, kwargs, bundle.metadata)
+                    if (not is_same) and strict:
+                        raise ValueError("Arguments loaded are different "
+                                         "from the ones passed.")
                     return bundle
                 except Exception as e:
-                    logger.warning(f"Load cache from {fname_all} failed: {e}.")
+                    logger.warning(f"Recover bundle from cache {fname_all} "
+                                   f"failed: {e}.")
 
-            # Fetch remote or expensive data.
-            data = func(*args, **kwargs)
-            bundle = DataBundleFactory.create_instance(reg_name_, data)
-            # As the `args` will be Tuple by default.
-            bundle.add_metadata("_func_params_args", list(args))
-            bundle.add_metadata("_func_params_kwargs", kwargs)
+            # Roll back to call the `func`.
+            if forced or rollback or (not fname_all.is_file()):
+                # Fetch remote or expensive data.
+                data = func(*args, **kwargs)
+                bundle = DataBundleFactory.create_instance(reg_name_, data)
+                # bundle.trace("cache_stage", {"source": reg_name_})
+                # As the `args` will be Tuple by default.
+                bundle.add_metadata("_func_params_args", list(args))
+                bundle.add_metadata("_func_params_kwargs", kwargs)
 
-            # Save bundle.
-            fname_all = use_file(fname or reg_name_, "today", 1, dest)
-            bundle.save_bundle(fname_all)
-            logger.info(f"Save cache at {fname_all}.")
+                # Save bundle.
+                fname_all = use_file(fname or reg_name_, "today", 1, dest)
+                bundle.save_bundle(fname_all)
+                logger.info(f"Save cache at {fname_all}.")
 
-            return bundle
+                return bundle
+            return None
         return decorator
     return inner
-
-
-# %%
-@DataBundleFactory.register()
-class PickableBundle(DataBundle):
-    def dumps_data(self) -> bytes:
-        return pickle.dumps(self.data)
-
-    @staticmethod
-    def loads_data(bytes_, metadata: dict = None) -> Any:
-        return pickle.loads(bytes_)
