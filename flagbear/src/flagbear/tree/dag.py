@@ -3,7 +3,7 @@
 #   Name: dag.py
 #   Author: xyy15926
 #   Created: 2026-04-23 19:37:30
-#   Updated: 2026-04-27 19:10:35
+#   Updated: 2026-05-08 22:44:29
 #   Description:
 # ---------------------------------------------------------
 
@@ -104,7 +104,7 @@ class Node:
         self >> other
         return self
 
-    def set_upstream(self, *nodes: Self):
+    def set_upstream(self, *nodes: Self) -> Self:
         """Set upstream Nodes."""
         cls = self.__class__
         for node in nodes:
@@ -116,7 +116,7 @@ class Node:
             node.downstream.add(self)
         return self
 
-    def set_downstream(self, *nodes: Self):
+    def set_downstream(self, *nodes: Self) -> Self:
         """Set downstream nodes."""
         cls = self.__class__
         for node in nodes:
@@ -126,6 +126,22 @@ class Node:
                 )
             self.downstream.add(node)
             node.upstream.add(self)
+        return self
+
+    def remove_upstream(self, *nodes: Self) -> Self:
+        """Remove upstream nodes."""
+        for node in nodes:
+            if node in self.upstream:
+                self.upstream.remove(node)
+                node.downstream.remove(self)
+        return self
+
+    def remove_downstream(self, *nodes: Self) -> Self:
+        """Remove downstream nodes."""
+        for node in nodes:
+            if node in self.downstream:
+                self.downstream.remove(node)
+                node.upstream.remove(self)
         return self
 
 
@@ -285,103 +301,24 @@ class DirectedGraph:
 #                                   DAG
 # ------------------------------------------------------------------------
     def topological_sort(self) -> Optional[List[List[NID]]]:
-        """If graph is a directed acyclic graph.
-
-        Kahn algorithm:
-        1. Remove nodes with in-degree = 0 sequencelly.
-        2. Mark the nodes removed.
-        3. Nodes in cycle won't be removed. So the count of visited node must
-          be equal to the count of all nodes in a DAG.
-
-        Return:
-        --------------------------
-        List of List of Node ID in topological sort.
-        """
-        # Empty graph.
-        if self.node_count == 0:
-            return True
-
-        # Get in-degrees of each node.
-        in_degree = {nid: node.in_degree for nid, node in self._nodes.items()}
-
-        # Put node in queue with in-degree = 0.
-        cur_level = []
-        next_level = [nid for nid, deg in in_degree.items() if deg == 0]
-        topo_levels = []
-        node_count = 0
-
-        while not (len(cur_level) == 0 and len(next_level) == 0):
-            topo_levels.append(next_level)
-            node_count += len(next_level)
-            cur_level = next_level
-            next_level = []
-            for cur_nid in cur_level:
-                # Decrease in-degree of all neighbors acting as remove the current
-                # node with in-degree = 0.
-                for succ in self._nodes[cur_nid].downstream:
-                    in_degree[succ.id_] -= 1
-                    if in_degree[succ.id_] == 0:
-                        next_level.append(succ.id_)
-            cur_level = []
-
-        # Nodes in cycle won't be removed. So the count of visited node must
-        # be equal to the count of all nodes in a DAG.
-        # And None should be return for a cyclic graph.
-        return topo_levels if node_count == self.node_count else None
+        """Sort nodes in graph topologically."""
+        topo_nodes = topological_sort(self._nodes.values())
+        if topo_nodes is None:
+            return None
+        topo_nids = [[node.id_ for node in level] for level in topo_nodes]
+        return topo_nids
 
     def is_dag(self) -> bool:
         """If graph is a directed acyclic graph."""
         return self.topological_sort() is not None
 
-    def find_cycle(self) -> Optional[List[str]]:
-        """Find cycle in the graph.
-
-        Find one cycle in the graph:
-        1. Mark all nodes WHITE, uncertain.
-        2. Deep first traverse, and mark the node in path GREY.
-        3. If any succeeding node marked GREY during DFS, cycle found.
-        4. If all succeeding node has been travesed and no cycle found,
-          current node can't be in any cycle and mark it BLACK.
-        5. Any path meeting a BLACK node returns directly.
-        """
-        # WHITE: Node uncertain
-        # GRAY: Node in current DFS path
-        # BLACK: Node not in any cycle
-        WHITE, GRAY, BLACK = 0, 1, 2
-        color = {nid: WHITE for nid in self._nodes}
-
-        def dfs(node_id: str, path: List[str]) -> Optional[List[str]]:
-            # Trace the deep first search path.
-            path.append(node_id)
-            # Mark the node in path GRAY.
-            color[node_id] = GRAY
-
-            for succ in self._nodes[node_id].downstream:
-                # Cycle Found:
-                # If any successor of the current node is marked GREY,
-                # the path must be a cycle.
-                if color[succ.id_] == GRAY:
-                    cycle_start = path.index(succ.id_)
-                    # Construct cycle: [succ.id_, ..., succ.id_]
-                    cycle = path[cycle_start:] + [succ.id_, ]
-                    return cycle
-                elif color[succ.id_] == WHITE:
-                    result = dfs(succ.id_, path)
-                    if result:
-                        return result
-
-            # Pop current node out and mark it BLACK, not in any cycle.
-            path.pop()
-            color[node_id] = BLACK
+    def find_cycle(self) -> Optional[List[NID]]:
+        """Find cycle in the graph."""
+        cycle_nodes = find_cycle(self._nodes.values())
+        if cycle_nodes is None:
             return None
-
-        for nid in self._nodes:
-            if color[nid] == WHITE:
-                cycle = dfs(nid, [])
-                if cycle:
-                    return cycle
-
-        return None
+        cycle_nids = [node.id_ for node in cycle_nodes]
+        return cycle_nids
 
 # ------------------------------------------------------------------------
 #                                   Traverse
@@ -430,25 +367,185 @@ class DirectedGraph:
 #                                   Visualize
 # ------------------------------------------------------------------------
     def visualize(self) -> str:
-        """DAG visualization."""
-        lines = ["\n🕸️  DAG:\n", ]
-        levels = self.topological_sort()
-        for i, level in enumerate(levels):
-            prefix = "    " * i
-            for nid in level:
-                node = self._nodes[nid]
-                deps = [u.id_ for u in node.upstream]
-                dep_str = f" ← {', '.join(deps)}" if deps else "(Entrance)"
-                lines.append(f"{prefix}└─ [{node.id_}]{dep_str}")
-
-        return "\n".join(lines)
+        """DirectedGraph visualization."""
+        return visualize(self._nodes.values())
 
     def to_mermaid(self) -> str:
-        """Render graph to mermaid."""
-        lines = ["graph TD;"]
-        for node in self._nodes.values():
-            for down in node.downstream:
-                lines.append(f"    {node.id_}({node.id_}) --> "
-                             f"{down.id_}({down.id_});")
-        return "\n".join(lines)
+        """Render nodes and edges to mermaid."""
+        return to_mermaid(self._nodes.values())
 
+
+# %%----------------------------------------------------------------------
+#                                   Visualize
+# ------------------------------------------------------------------------
+def visualize(nodes: List[Node]) -> str:
+    """Nodes and edges visualization."""
+    lines = ["\n🕸️  DAG:\n", ]
+    levels = topological_sort(nodes)
+    if levels is None:
+        raise RuntimeError("Cyclic graph can't be visualize.")
+    for i, level in enumerate(levels):
+        prefix = "    " * i
+        for node in level:
+            deps = [u.id_ for u in node.upstream]
+            dep_str = f" ← {', '.join(deps)}" if deps else "(Entrance)"
+            lines.append(f"{prefix}└─ [{node.id_}]{dep_str}")
+
+    return "\n".join(lines)
+
+
+def to_mermaid(nodes: List[Node]) -> str:
+    """Render nodes and edges to mermaid."""
+    lines = ["graph TD;"]
+    for node in nodes:
+        for down in node.downstream:
+            lines.append(f"    {node.id_}({node.id_}) --> "
+                         f"{down.id_}({down.id_});")
+    return "\n".join(lines)
+
+
+# %%----------------------------------------------------------------------
+#                                   DAG
+# ------------------------------------------------------------------------
+def topological_sort(
+    nodes: List[Node] | Dict[Node, int],
+    # dest: Node | NID = None,
+) -> Optional[List[List[Node]]]:
+    """Sort a list of nodes topologically.
+
+    Kahn algorithm:
+    1. Remove nodes with in-degree = 0 sequencelly.
+    2. Mark the nodes removed.
+    3. Nodes in cycle won't be removed. So the count of visited node must
+      be equal to the count of all nodes in a DAG.
+
+    Params:
+    --------------------------
+    nodes: A list of nodes or a dict of nodes and theirs in-degrees.
+    dest: Node or node-id to stop sort early.
+      Namely, stop sort when the encountered the specified nodes.
+
+    Return:
+    --------------------------
+    List of List of Node ID in topological sort.
+    """
+    # Get in-degrees of each node.
+    if isinstance(nodes, dict):
+        in_degree = nodes
+    else:
+        in_degree = {node: node.in_degree for node in nodes}
+
+    # if dest is not None and isinstance(dest, Node):
+    #     dest = dest.id_
+
+    # Put node in queue with in-degree = 0.
+    cur_level = []
+    next_level = [node for node, deg in in_degree.items() if deg == 0]
+    topo_levels = []
+    node_count = 0
+
+    while not (len(cur_level) == 0 and len(next_level) == 0):
+        topo_levels.append(next_level)
+        node_count += len(next_level)
+        cur_level = next_level
+        next_level = []
+        for cur_node in cur_level:
+            # Decrease in-degree of all neighbors acting as remove the current
+            # node with in-degree = 0.
+            for succ in cur_node.downstream:
+                # `in_degree` may only contains only part of nodes, namely
+                # subgraph, in a graph.
+                if succ not in in_degree:
+                    continue
+                in_degree[succ] -= 1
+                if in_degree[succ] == 0:
+                    # Stop early when encountering destination node.
+                    # if dest is not None and succ.id_ == dest:
+                    #     topo_levels.append([succ, ])
+                    #     return topo_levels
+                    next_level.append(succ)
+        cur_level = []
+
+    # Nodes in cycle won't be removed. So the count of visited node must
+    # be equal to the count of all nodes in a DAG.
+    # And None should be return for a cyclic graph.
+    return topo_levels if node_count == len(nodes) else None
+
+
+def topological_sort_from_entry(
+    entry: Node | List[Node],
+) -> Optional[List[List[Node]]]:
+    """Sort nodes linking to entry node topologically."""
+
+    def bfs_backward(entry: Node) -> Dict[Node: int]:
+        """Borad first search to collect nodes linking to entry node."""
+        queue = deque(entry) if isinstance(entry, list) else deque([entry, ])
+        visited = {}
+
+        while queue:
+            cur_node = queue.popleft()
+            if cur_node in visited:
+                continue
+            visited[cur_node] = cur_node.in_degree
+            for pred in cur_node.upstream:
+                if pred not in visited:
+                    queue.append(pred)
+
+        return visited
+
+    in_degree = bfs_backward(entry)
+    return topological_sort(in_degree)
+
+
+# %%
+def find_cycle(
+    nodes: List[Node] | Dict[NID, Node],
+) -> Optional[List[str]]:
+    """Find cycle in the graph.
+
+    Find one cycle in the graph:
+    1. Mark all nodes WHITE, uncertain.
+    2. Deep first traverse, and mark the node in path GREY.
+    3. If any succeeding node marked GREY during DFS, cycle found.
+    4. If all succeeding node has been travesed and no cycle found,
+      current node can't be in any cycle and mark it BLACK.
+    5. Any path meeting a BLACK node returns directly.
+    """
+    # WHITE: Node uncertain
+    # GRAY: Node in current DFS path
+    # BLACK: Node not in any cycle
+    WHITE, GRAY, BLACK = 0, 1, 2
+    color = {node: WHITE for node in nodes}
+
+    def dfs(node: Node, path: List[Node]) -> Optional[List[Node]]:
+        # Trace the deep first search path.
+        path.append(node)
+        # Mark the node in path GRAY.
+        color[node] = GRAY
+
+        for succ in node.downstream:
+            # Cycle Found:
+            # If any successor of the current node is marked GREY,
+            # the path must be a cycle.
+            if color[succ] == GRAY:
+                cycle_start = path.index(succ)
+                # Construct cycle: [succ.id_, ..., succ.id_]
+                cycle = path[cycle_start:] + [succ, ]
+                return cycle
+            elif color[succ] == WHITE:
+                result = dfs(succ, path)
+                if result:
+                    return result
+
+        # Pop current node out and mark it BLACK, not in any cycle.
+        path.pop()
+        color[node] = BLACK
+        return None
+
+    for node in nodes:
+        if color[node] == WHITE:
+            cycle = dfs(node, [])
+            if cycle:
+                return cycle
+
+    return None

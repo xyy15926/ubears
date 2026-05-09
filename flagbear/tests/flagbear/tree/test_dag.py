@@ -3,7 +3,7 @@
 #   Name: test_dag.py
 #   Author: xyy15926
 #   Created: 2026-04-23 22:19:32
-#   Updated: 2026-04-27 10:57:47
+#   Updated: 2026-04-30 08:46:30
 #   Description:
 # ---------------------------------------------------------
 
@@ -19,7 +19,60 @@ if __name__ == "__main__":
     reload(dag)
 
 from itertools import chain
-from flagbear.tree.dag import Node, DirectedGraph
+from flagbear.tree.dag import(
+    Node, DirectedGraph,
+    topological_sort,
+    topological_sort_from_entry,
+    find_cycle,
+    visualize, to_mermaid
+)
+
+
+# %%
+def test_Node_topo_cycle():
+    node_a = Node("A")
+    node_b = Node("B")
+    node_c = Node("C")
+    node_d = Node("D")
+    node_e = Node("E")
+    node_f = Node("F")
+
+    node_a >> [node_b, node_c]
+    node_d << [node_b, node_c]
+    node_d >> node_e >> node_f
+    node_b << node_f
+
+    nodes = [node_a, node_b, node_c, node_d, node_e, node_f]
+    nodes_2 = [node_a, node_c, node_b, node_d, node_e, node_f]
+    nodes_nof = [node_a, node_c, node_b, node_d, node_e]
+    nodes_nof_2 = [node_a, node_b, node_c, node_d, node_e]
+
+    # Topo sort and find cycle on list of nodes.
+    topo_sort = topological_sort(nodes)
+    assert topo_sort is None
+    cycle = find_cycle(nodes)
+    assert set(cycle) == set([node_b, node_d, node_e, node_f])
+
+    # Topo from `node_e`.
+    topo_sort_e = topological_sort_from_entry(node_e)
+    assert topo_sort_e is None
+
+    # Remove edges.
+    node_f.remove_downstream(node_b)
+    topo_sort = list(chain(*topological_sort(nodes)))
+    assert topo_sort == nodes or topo_sort == nodes_2
+
+    # Topo only for specific node.
+    topo_sort_e = list(chain(*topological_sort_from_entry(node_e)))
+    assert topo_sort_e == nodes_nof or topo_sort_e == nodes_nof_2
+    topo_sort_b = list(chain(*topological_sort_from_entry(node_b)))
+    assert topo_sort_b == [node_a, node_b]
+    topo_sort_c = list(chain(*topological_sort_from_entry(node_c)))
+    assert topo_sort_c == [node_a, node_c]
+
+    # Visualize.
+    _vis = visualize(nodes)
+    _mermaid = to_mermaid(nodes)
 
 
 # %%
