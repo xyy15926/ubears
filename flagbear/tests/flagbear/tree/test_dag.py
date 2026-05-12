@@ -3,7 +3,7 @@
 #   Name: test_dag.py
 #   Author: xyy15926
 #   Created: 2026-04-23 22:19:32
-#   Updated: 2026-04-30 08:46:30
+#   Updated: 2026-05-12 22:36:24
 #   Description:
 # ---------------------------------------------------------
 
@@ -63,7 +63,7 @@ def test_Node_topo_cycle():
     assert topo_sort == nodes or topo_sort == nodes_2
 
     # Topo only for specific node.
-    topo_sort_e = list(chain(*topological_sort_from_entry(node_e)))
+    topo_sort_e = list(chain(*topological_sort_from_entry(node_e, node_b)))
     assert topo_sort_e == nodes_nof or topo_sort_e == nodes_nof_2
     topo_sort_b = list(chain(*topological_sort_from_entry(node_b)))
     assert topo_sort_b == [node_a, node_b]

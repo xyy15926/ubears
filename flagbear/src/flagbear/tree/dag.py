@@ -3,14 +3,13 @@
 #   Name: dag.py
 #   Author: xyy15926
 #   Created: 2026-04-23 19:37:30
-#   Updated: 2026-05-08 22:44:29
+#   Updated: 2026-05-12 22:41:53
 #   Description:
 # ---------------------------------------------------------
 
 # %%
 import logging
-from typing import Set, Dict, List, Optional, Iterator, Self, Any, Iterable
-from collections.abc import Hashable
+from typing import Optional, Self, Iterable
 from collections import deque
 
 logging.basicConfig(
@@ -36,8 +35,8 @@ class Node:
     """
     def __init__(self, node_id: NID):
         self.id_ = node_id
-        self.upstream: Set[Self] = set()
-        self.downstream: Set[Self] = set()
+        self.upstream: set[Self] = set()
+        self.downstream: set[Self] = set()
 
     def __repr__(self):
         return f"Node({self.id_})"
@@ -59,11 +58,11 @@ class Node:
         return len(self.downstream)
 
     @property
-    def predecessors(self) -> Set[Self]:
+    def predecessors(self) -> set[Self]:
         return set(self.upstream)
 
     @property
-    def successors(self) -> Set[Self]:
+    def successors(self) -> set[Self]:
         return set(self.downstream)
 
     def __rshift__(self, other: Self) -> Optional[Self]:
@@ -149,7 +148,7 @@ class Node:
 class DirectedGraph:
     """Graph"""
     def __init__(self):
-        self._nodes: Dict[NID, Node] = {}
+        self._nodes: dict[NID, Node] = {}
         self._edge_count: int = 0
 
     def __repr__(self):
@@ -193,11 +192,11 @@ class DirectedGraph:
             raise ValueError(f"Node {node_id} exists.")
         self._nodes[node_id] = node
 
-    def get_node(self, node_id: Hashable) -> Optional[Node]:
+    def get_node(self, node_id: NID) -> Optional[Node]:
         """Get node with node id."""
         return self._nodes.get(node_id)
 
-    def remove_node(self, node_id: Hashable) -> bool:
+    def remove_node(self, node_id: NID) -> bool:
         """Remove node and related edges.
 
         Return False if node is not in the graph.
@@ -211,7 +210,7 @@ class DirectedGraph:
             self.remove_edge(pred._id, node_id)
         # Remove all out-edges.
         for succ in list(node.downstream):
-            self.remove_edge(node_id, succ.id)
+            self.remove_edge(node_id, succ.id_)
 
         del self._nodes[node_id]
         return True
@@ -221,7 +220,7 @@ class DirectedGraph:
         return node_id in self._nodes
 
     @property
-    def nodes(self) -> Dict[NID, Node]:
+    def nodes(self) -> dict[NID, Node]:
         """Get all nodes."""
         return dict(self._nodes)
 
@@ -289,7 +288,7 @@ class DirectedGraph:
         """Edge count."""
         return self._edge_count
 
-    def get_edges(self) -> List[tuple]:
+    def get_edges(self) -> list[tuple]:
         """Get all edges represented with tuple."""
         edges = []
         for node in self._nodes.values():
@@ -300,9 +299,20 @@ class DirectedGraph:
 # ------------------------------------------------------------------------
 #                                   DAG
 # ------------------------------------------------------------------------
-    def topological_sort(self) -> Optional[List[List[NID]]]:
-        """Sort nodes in graph topologically."""
-        topo_nodes = topological_sort(self._nodes.values())
+    def topological_sort(
+        self,
+        *entry: NID,
+    ) -> Optional[list[list[NID]]]:
+        """Sort nodes in graph topologically.
+
+        Params:
+        ---------------------------
+        entry: Entry nodes as the destination of the topo-sort.
+        """
+        if len(entry) == 0:
+            topo_nodes = topological_sort(self._nodes.values())
+        else:
+            topo_nodes = topological_sort_from_entry(*entry)
         if topo_nodes is None:
             return None
         topo_nids = [[node.id_ for node in level] for level in topo_nodes]
@@ -312,7 +322,7 @@ class DirectedGraph:
         """If graph is a directed acyclic graph."""
         return self.topological_sort() is not None
 
-    def find_cycle(self) -> Optional[List[NID]]:
+    def find_cycle(self) -> Optional[list[NID]]:
         """Find cycle in the graph."""
         cycle_nodes = find_cycle(self._nodes.values())
         if cycle_nodes is None:
@@ -323,7 +333,7 @@ class DirectedGraph:
 # ------------------------------------------------------------------------
 #                                   Traverse
 # ------------------------------------------------------------------------
-    def bfs(self, start_id: NID) -> List[NID]:
+    def bfs(self, start_id: NID) -> list[NID]:
         """Borad first search."""
         if start_id not in self._nodes:
             return []
@@ -345,7 +355,7 @@ class DirectedGraph:
 
         return result
 
-    def dfs(self, start_id: NID) -> List[NID]:
+    def dfs(self, start_id: NID) -> list[NID]:
         """Deep first search."""
         if start_id not in self._nodes:
             return []
@@ -378,7 +388,7 @@ class DirectedGraph:
 # %%----------------------------------------------------------------------
 #                                   Visualize
 # ------------------------------------------------------------------------
-def visualize(nodes: List[Node]) -> str:
+def visualize(nodes: list[Node]) -> str:
     """Nodes and edges visualization."""
     lines = ["\n🕸️  DAG:\n", ]
     levels = topological_sort(nodes)
@@ -394,7 +404,7 @@ def visualize(nodes: List[Node]) -> str:
     return "\n".join(lines)
 
 
-def to_mermaid(nodes: List[Node]) -> str:
+def to_mermaid(nodes: list[Node]) -> str:
     """Render nodes and edges to mermaid."""
     lines = ["graph TD;"]
     for node in nodes:
@@ -408,9 +418,9 @@ def to_mermaid(nodes: List[Node]) -> str:
 #                                   DAG
 # ------------------------------------------------------------------------
 def topological_sort(
-    nodes: List[Node] | Dict[Node, int],
+    nodes: list[Node] | dict[Node, int],
     # dest: Node | NID = None,
-) -> Optional[List[List[Node]]]:
+) -> Optional[list[list[Node]]]:
     """Sort a list of nodes topologically.
 
     Kahn algorithm:
@@ -427,7 +437,7 @@ def topological_sort(
 
     Return:
     --------------------------
-    List of List of Node ID in topological sort.
+    List of list of Node ID in topological sort.
     """
     # Get in-degrees of each node.
     if isinstance(nodes, dict):
@@ -473,13 +483,13 @@ def topological_sort(
 
 
 def topological_sort_from_entry(
-    entry: Node | List[Node],
-) -> Optional[List[List[Node]]]:
+    *entry: Node,
+) -> Optional[list[list[Node]]]:
     """Sort nodes linking to entry node topologically."""
 
-    def bfs_backward(entry: Node) -> Dict[Node: int]:
+    def bfs_backward(entry: Node) -> dict[Node: int]:
         """Borad first search to collect nodes linking to entry node."""
-        queue = deque(entry) if isinstance(entry, list) else deque([entry, ])
+        queue = deque(entry)
         visited = {}
 
         while queue:
@@ -499,15 +509,15 @@ def topological_sort_from_entry(
 
 # %%
 def find_cycle(
-    nodes: List[Node] | Dict[NID, Node],
-) -> Optional[List[str]]:
+    nodes: list[Node] | dict[NID, Node],
+) -> Optional[list[str]]:
     """Find cycle in the graph.
 
     Find one cycle in the graph:
     1. Mark all nodes WHITE, uncertain.
     2. Deep first traverse, and mark the node in path GREY.
     3. If any succeeding node marked GREY during DFS, cycle found.
-    4. If all succeeding node has been travesed and no cycle found,
+    4. If all succeeding node has been traversed and no cycle found,
       current node can't be in any cycle and mark it BLACK.
     5. Any path meeting a BLACK node returns directly.
     """
@@ -517,7 +527,7 @@ def find_cycle(
     WHITE, GRAY, BLACK = 0, 1, 2
     color = {node: WHITE for node in nodes}
 
-    def dfs(node: Node, path: List[Node]) -> Optional[List[Node]]:
+    def dfs(node: Node, path: list[Node]) -> Optional[list[Node]]:
         # Trace the deep first search path.
         path.append(node)
         # Mark the node in path GRAY.
