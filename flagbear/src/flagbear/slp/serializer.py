@@ -3,13 +3,13 @@
 #   Name: serializer.py
 #   Author: xyy15926
 #   Created: 2026-04-22 15:21:57
-#   Updated: 2026-04-27 22:39:01
+#   Updated: 2026-05-13 22:48:11
 #   Description:
 # ---------------------------------------------------------
 
 # %%
 import logging
-from typing import Any, Callable, Dict, Optional, Tuple, List
+from typing import Any, Callable, Optional
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
@@ -23,9 +23,15 @@ import threading
 
 if __name__ == "__main__":
     from importlib import reload
-    from flagbear.slp import finer, storage
+    from flagbear.slp import finer, storage, ser_exception
     reload(finer)
     reload(storage)
+    reload(ser_exception)
+
+from flagbear.slp.ser_exception import(
+    str_exception,
+    destr_exception,
+)
 
 logging.basicConfig(
     format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
@@ -39,7 +45,7 @@ SerializerFn = Callable[[Any], bytes]
 DeserializerFn = Callable[[bytes], Any]
 CheckerFn = Callable[[Any], bool]
 
-_strategy_map: Dict[str, Tuple[CheckerFn, SerializerFn, DeserializerFn]] = {}
+_strategy_map: dict[str, tuple[CheckerFn, SerializerFn, DeserializerFn]] = {}
 _priority_order: list[str] = []
 _registration_lock = threading.Lock()
 
@@ -92,13 +98,36 @@ def deserializer(type_: str):
 
 
 # %%
-def serialize(obj: Any, type_: str = None) -> Tuple[bytes, str]:
-    """Select proper serializer to serialize."""
+def serialize(
+    obj: Any,
+    type_: Optional[str] = None,
+) -> tuple[bytes, str]:
+    """Select proper serializer to serialize.
+
+    Params:
+    ------------------------------
+    type_: Str of the data type indicaing how to serialize the object.
+      Additional messages after the data type with `:` as the seperator will
+      be passed to `serializer` function.
+
+    Return:
+    ------------------------------
+    bytes: Serialization result of the object.
+    type_: The data type without additional messages.
+    """
     if type_ is not None:
+        splited = type_.split(":")
+        if len(splited) == 1:
+            type_, addon = splited[0], None
+        elif len(splited) == 2:
+            type_, addon = splited
+        else:
+            type_, *addon = splited
         if type_ not in _strategy_map:
             raise RuntimeError("No serializer found.")
         checker_fn, ser_fn, deser_fn = _strategy_map.get(type_)
     else:
+        addon = None
         for _priority, type_ in _priority_order:
             checker_fn, ser_fn, deser_fn = _strategy_map[type_]
             if checker_fn and checker_fn(obj):
@@ -107,16 +136,37 @@ def serialize(obj: Any, type_: str = None) -> Tuple[bytes, str]:
             raise RuntimeError("No serializer found.")
     # Try to serialize.
     try:
-        bytes_ = ser_fn(obj)
+        bytes_ = ser_fn(obj, addon)
     except ValueError as e:
         logger.warning(f"Failed to serialize object by {type_}: {e}.")
     return bytes_, type_
 
 
-def deserialize(bytes_: bytes, type_: str) -> Any:
-    """Use deserializer specified by `type_` to deserialize."""
+def deserialize(
+    bytes_: bytes,
+    type_: str,
+) -> Any:
+    """Use deserializer specified by `type_` to deserialize.
+
+    Params:
+    ------------------------------
+    type_: Str of the data type indicaing how to serialize the object.
+      Additional messages after the data type with `:` as the seperator will
+      be passed to `serializer` function.
+
+    Return:
+    ------------------------------
+    Object restored from bytes.
+    """
+    splited = type_.split(":")
+    if len(splited) == 1:
+        type_, addon = splited[0], None
+    elif len(splited) == 2:
+        type_, addon = splited
+    else:
+        type_, *addon = splited
     _, _, deserializer_fn = _strategy_map[type_]
-    return deserializer_fn(bytes_)
+    return deserializer_fn(bytes_, addon)
 
 
 # %%
@@ -133,12 +183,18 @@ def is_json(obj: Any) -> bool:
 
 
 @serializer("json")
-def json_serialize(obj: Any) -> bytes:
+def json_serialize(
+    obj: Any,
+    addon: Optional[str | list[str]] = None,
+) -> bytes:
     return json.dumps(obj, separators=(",", ":"), ensure_ascii=False).encode("utf8")
 
 
 @deserializer("json")
-def json_deserialize(bytes_: bytes) -> Any:
+def json_deserialize(
+    bytes_: bytes,
+    addon: Optional[str | list[str]] = None,
+) -> Any:
     return json.loads(bytes_.decode("utf8"))
 
 
@@ -149,12 +205,18 @@ def is_anything(obj: Any) -> bool:
 
 
 @serializer("pickle")
-def pickle_serialize(obj: Any) -> bytes:
+def pickle_serialize(
+    obj: Any,
+    addon: Optional[str | list[str]] = None,
+) -> bytes:
     return pickle.dumps(obj, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 @deserializer("pickle")
-def pickle_deserialize(bytes_: bytes) -> Any:
+def pickle_deserialize(
+    bytes_: bytes,
+    addon: Optional[str | list[str]] = None,
+) -> Any:
     return pickle.loads(bytes_)
 
 
@@ -171,7 +233,10 @@ def is_numpy(obj: Any) -> bool:
 
 
 @serializer("numpy")
-def numpy_serialize(obj: np.ndarray) -> bytes:
+def numpy_serialize(
+    obj: np.ndarray,
+    addon: Optional[str | list[str]] = None,
+) -> bytes:
     import numpy as np
 
     buffer = io.BytesIO()
@@ -183,7 +248,10 @@ def numpy_serialize(obj: np.ndarray) -> bytes:
 
 
 @deserializer("numpy")
-def numpy_deserialize(bytes_: bytes) -> np.ndarray:
+def numpy_deserialize(
+    bytes_: bytes,
+    addon: Optional[str | list[str]] = None,
+) -> np.ndarray:
     import numpy as np
 
     if len(bytes_) > NUMPY_COMPRESSS_MIN:
@@ -192,7 +260,7 @@ def numpy_deserialize(bytes_: bytes) -> np.ndarray:
 
 
 # %%
-@checker("pddf:csv", priority = 1)
+@checker("pddf_csv", priority = 1)
 def is_pddf_csv(obj: Any) -> bool:
     try:
         import pandas as pd
@@ -205,15 +273,21 @@ def is_pddf_csv(obj: Any) -> bool:
     )
 
 
-@serializer("pddf:csv")
-def pddf_csv_serialize(obj: pd.DataFrame) -> bytes:
+@serializer("pddf_csv")
+def pddf_csv_serialize(
+    obj: pd.DataFrame,
+    addon: Optional[str | list[str]] = None,
+) -> bytes:
     buffer = io.StringIO()
     obj.to_csv(buffer, index=True, encoding="utf-8")
     return buffer.getvalue().encode("utf-8")
 
 
-@deserializer("pddf:csv")
-def pddf_csv_deserialize(bytes_: bytes) -> pd.DataFrame:
+@deserializer("pddf_csv")
+def pddf_csv_deserialize(
+    bytes_: bytes,
+    addon: Optional[str | list[str]] = None,
+) -> pd.DataFrame:
     import pandas as pd
 
     return pd.read_csv(
@@ -223,7 +297,7 @@ def pddf_csv_deserialize(bytes_: bytes) -> pd.DataFrame:
 
 
 # %%
-@checker("pddf:feather", priority = 85)
+@checker("pddf_feather", priority = 85)
 def is_pddf_feather(obj: Any) -> bool:
     try:
         import numpy as np
@@ -237,22 +311,28 @@ def is_pddf_feather(obj: Any) -> bool:
     )
 
 
-@serializer("pddf:feather")
-def pddf_feather_serialize(obj: pd.DataFrame) -> bytes:
+@serializer("pddf_feather")
+def pddf_feather_serialize(
+    obj: pd.DataFrame,
+    addon: Optional[str | list[str]] = None,
+) -> bytes:
     buffer = io.BytesIO()
     obj.to_feather(buffer, compression="zstd")
     return buffer.getvalue()
 
 
-@deserializer("pddf:feather")
-def pddf_feather_deserialize(bytes_: bytes) -> pd.DataFrame:
+@deserializer("pddf_feather")
+def pddf_feather_deserialize(
+    bytes_: bytes,
+    addon: Optional[str | list[str]] = None,
+) -> pd.DataFrame:
     import pandas as pd
 
     return pd.read_feather(io.BytesIO(bytes_))
 
 
 # %%
-@checker("pddf:parquet", priority = 80)
+@checker("pddf_parquet", priority = 80)
 def is_pddf_parquet(obj: Any) -> bool:
     try:
         import numpy as np
@@ -265,15 +345,45 @@ def is_pddf_parquet(obj: Any) -> bool:
     )
 
 
-@serializer("pddf:parquet")
-def pddf_parquet_serialize(obj: pd.DataFrame) -> bytes:
+@serializer("pddf_parquet")
+def pddf_parquet_serialize(
+    obj: pd.DataFrame,
+    addon: Optional[str | list[str]] = None,
+) -> bytes:
     buffer = io.BytesIO()
     obj.to_parquet(buffer, engine="pyarrow", compression="zstd", index=True)
     return buffer.getvalue()
 
 
-@deserializer("pddf:parquet")
-def pddf_parquet_deserialize(bytes_: bytes) -> pd.DataFrame:
+@deserializer("pddf_parquet")
+def pddf_parquet_deserialize(
+    bytes_: bytes,
+    addon: Optional[str | list[str]] = None,
+) -> pd.DataFrame:
     import pandas as pd
 
     return pd.read_parquet(io.BytesIO(bytes_))
+
+
+# %%
+@checker("exception", priority = 98)
+def is_exception(obj: Any):
+    if isinstance(obj, BaseException):
+        return True
+    return False
+
+
+@serializer("exception")
+def exception_serialize(
+    obj: BaseException,
+    addon: Optional[str | list[str]] = None,
+) -> bytes:
+    return str_exception(obj).encode("utf8")
+
+
+@deserializer("exception")
+def exception_deserialize(
+    bytes_: bytes,
+    addon: Optional[str | list[str]] = None,
+) -> BaseException:
+    return destr_exception(bytes_.decode("utf8"))

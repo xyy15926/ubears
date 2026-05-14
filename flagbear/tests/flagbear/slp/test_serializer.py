@@ -84,7 +84,7 @@ def test_serialize_pddf_csv_and_pickle():
         "d": [1, np.nan, 2],
     })
     bytes_, type_ = serialize(df)
-    assert type_ == "pddf:feather"
+    assert type_ == "pddf_feather"
     loaded = deserialize(bytes_, type_)
     pd.testing.assert_frame_equal(df, loaded)
 
@@ -95,16 +95,16 @@ def test_serialize_pddf_csv_and_pickle():
         "d": [1, np.nan, "d"],
     })
     bytes_, type_ = serialize(df2)
-    assert type_ == "pickle" or type_ == "pddf:feather"
+    assert type_ == "pickle" or type_ == "pddf_feather"
     loaded = deserialize(bytes_, type_)
     pd.testing.assert_frame_equal(df2, loaded)
 
     # CSV should be used with any column with `dtype=object`, namely consist of
     # mixed type.
     # Force to serialize the DataFrame with CSV.
-    bytes_, type_ = serialize(df2, "pddf:csv")
+    bytes_, type_ = serialize(df2, "pddf_csv")
     assert bytes_ == df2.to_csv(None).encode("utf8")
-    loaded = deserialize(bytes_, "pddf:csv")
+    loaded = deserialize(bytes_, "pddf_csv")
     # But the DataFrame can't be recovered soundly.
     with pytest.raises(AssertionError):
         pd.testing.assert_frame_equal(df2, loaded, check_dtype=False)

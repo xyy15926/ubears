@@ -99,12 +99,12 @@ class CacheMeta:
             "type_": self.type_,
             "inline": self.inline,
         }
-        return json.dumps(metadict).encode("utf8")
+        return json.dumps(metadict, ensure_ascii=False).encode("utf8")
 
     @classmethod
-    def from_json(cls, str_: bytes) -> Self:
+    def from_json(cls, bytes_: bytes) -> Self:
         """Load from json string."""
-        metadict = json.loads(str_.decode("utf8"))
+        metadict = json.loads(bytes_.decode("utf8"))
         for d in ["created_at", "expires_at", "last_accessed"]:
             if metadict[d] is not None:
                 metadict[d] = datetime.fromisoformat(metadict[d])
