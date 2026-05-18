@@ -3,7 +3,7 @@
 #   Name: test_executor.py
 #   Author: xyy15926
 #   Created: 2026-05-06 23:13:48
-#   Updated: 2026-05-10 22:23:16
+#   Updated: 2026-05-18 21:55:17
 #   Description:
 # ---------------------------------------------------------
 
@@ -14,22 +14,22 @@ import asyncio
 from datetime import timedelta
 import threading
 import os
+import concurrent
 
 if __name__ == "__main__":
-    import logging
-    logging.basicConfig(level=logging.INFO, force=True)
     from importlib import reload
-    from flagbear.sched import protocols, task, context, executor
+    from flagbear.slp import cache
+    reload(cache)
+    from flagbear.sched import protocols, task, executor
     reload(protocols)
-    reload(context)
     reload(task)
     reload(executor)
 
+from flagbear.slp.cache import MemoryCache
 from flagbear.sched.protocols import(
     RetryPolicy,
     ExecutionPolicy,
 )
-from flagbear.sched.context import LazyContext
 from flagbear.sched.task import(
     task,
     TaskOnce,
@@ -96,6 +96,27 @@ def test_LocalExecutor_run_coro_shutdown_execute_func_once():
     assert not engine._event_loop.is_running()
     assert engine._thread_pool is not None
     assert engine._process_pool is None
+
+
+# %%
+def test_LocalExecutor_shutdown():
+    engine = LocalExecutor()
+
+    def add(a, b, c, d):
+        time.sleep(0.1)
+        return a + b + c + d
+
+    coro = engine.execute_func_once(add, [1, 2, 3, 4], {})
+    future = engine.run_coro(coro)
+    engine.shutdown()
+
+    # `LocalExecutor.shutdown()` will cancel the `asyncio.Task`s and raises
+    # `asyncio.CancelledError` and then causes
+    # `concurrent.futures.CancelledError`
+    with pytest.raises(concurrent.futures.CancelledError):
+        _ret = future.result()
+    with pytest.raises(concurrent.futures.CancelledError):
+        _ret = future.exception()
 
 
 # %%
@@ -198,7 +219,7 @@ def test_LocalExecutor_execute_resolved():
 # %%
 def test_LocalExecutor_excecute_future():
     engine = LocalExecutor()
-    ctx = LazyContext()
+    cache = MemoryCache()
 
     # Succeed.
     @task
@@ -214,29 +235,24 @@ def test_LocalExecutor_excecute_future():
     mul_fut = TaskOnce(mul, (1, add_fut), {"c": 3, "d": add_fut})
 
     # Precedent tasks must be executed first.
-    mul_coro = engine.execute_with_context(mul_fut, ctx)
+    mul_coro = engine.execute_with_cache(mul_fut, cache)
     with pytest.raises(RuntimeError):
         mul_result = engine.run_coro(mul_coro).result()
 
     # Execute `add` first.
-    add_coro = engine.execute_with_context(add_fut, ctx)
+    add_coro = engine.execute_with_cache(add_fut, cache)
     add_result = engine.run_coro(add_coro).result()
-    ctx.set_result(add_fut, add_result)
 
     assert add_result.is_successful()
     assert add_result.value == 10
     assert add_result.end_time - add_result.start_time > timedelta(seconds = 0.1)
-
-    # `Context.get_result`
-    add_result_gotten = ctx.get_result(add_fut)
+    add_result_gotten = cache.get(add_fut.id_)
     assert add_result_gotten is add_result
 
     # Execute `mul` then.
     mul_fut = TaskOnce(mul, (1, add_fut), {"c": 3, "d": add_fut})
-    mul_coro = engine.execute_with_context(mul_fut, ctx)
+    mul_coro = engine.execute_with_cache(mul_fut, cache)
     mul_result = engine.run_coro(mul_coro).result()
-    ctx.set_result(mul_fut, mul_result)
-
     assert mul_result.is_successful()
     assert mul_result.value == 300
     assert mul_result.end_time - mul_result.start_time < timedelta(seconds = 0.1)
@@ -244,16 +260,15 @@ def test_LocalExecutor_excecute_future():
     # Skip for precedent error.
     @task
     def error_add(a, b, c, d):
-        raise RuntimeError
+        raise RuntimeError("Test Error")
         return a + b + c + d
 
     error_add_fut = TaskOnce(error_add, (1, 2, 3, 4), {})
-    error_add_coro = engine.execute_with_context(error_add_fut, ctx)
-    error_add_result = engine.run_coro(error_add_coro).result()
-    ctx.set_result(error_add_fut, error_add_result)
+    error_add_coro = engine.execute_with_cache(error_add_fut, cache)
+    _error_add_result = engine.run_coro(error_add_coro).result()
 
     error_mul_fut = TaskOnce(mul, (1, error_add_fut), {"c": 3, "d": add_fut})
-    error_mul_coro = engine.execute_with_context(error_mul_fut, ctx)
+    error_mul_coro = engine.execute_with_cache(error_mul_fut, cache)
     error_mul_result = engine.run_coro(error_mul_coro).result()
     assert not error_mul_result.is_failed() and not error_mul_result.is_successful()
     assert error_mul_result.value is None
@@ -262,9 +277,9 @@ def test_LocalExecutor_excecute_future():
 
 
 # %%
-def test_LocalExecutor_submit_run():
+def test_LocalExecutor_submit():
     engine = LocalExecutor()
-    ctx = LazyContext()
+    cache = MemoryCache()
 
     @task
     async def async_add(a, b, c, d):
@@ -281,16 +296,12 @@ def test_LocalExecutor_submit_run():
     async_add_fut = TaskOnce(async_add, (1, 2, 3, 4), {})
 
     # Submit tasks.
-    engine.submit(ctx, add_fut, add_fut2, async_add_fut)
+    futures = engine.submit(cache, add_fut, add_fut2, async_add_fut)
     time.sleep(0.1)
 
     # Gather results.
     start = time.time()
-    result, result2, result_async = engine.gather(
-        add_fut,
-        add_fut2,
-        async_add_fut,
-    )
+    result, result2, result_async = [fut.result() for fut in futures]
     end = time.time()
     # Task has been submited and run background.
     assert end - start < 0.1
@@ -300,24 +311,6 @@ def test_LocalExecutor_submit_run():
     assert result2.value == 10
     assert result_async.is_successful()
     assert result_async.value == 10
-
-    # Result can only be gathered once.
-    with pytest.raises(ValueError):
-        result, result2, result_async = engine.gather(
-            add_fut,
-            add_fut2,
-            async_add_fut,
-        )
-
-    # Process a list of tasks.
-    start = time.time()
-    r1, r2 = engine.run(ctx, add_fut, async_add_fut)
-    end = time.time()
-    assert end - start < 0.2
-    for rr in [r1, r2]:
-        assert rr.is_successful()
-        assert rr.value == 10
-        assert rr.is_successful()
 
     # Shut down engine.
     engine.shutdown()

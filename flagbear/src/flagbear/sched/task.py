@@ -3,7 +3,7 @@
 #   Name: task.py
 #   Author: xyy15926
 #   Created: 2026-05-06 15:15:38
-#   Updated: 2026-05-12 19:26:06
+#   Updated: 2026-05-18 18:15:53
 #   Description:
 # ---------------------------------------------------------
 
@@ -26,8 +26,10 @@ if __name__ == "__main__":
     reload(flow)
     reload(protocols)
 
-from flagbear.slp.cache import CachePolicy
+from flagbear.slp.cache import CachePolicy, Cache
 from flagbear.sched.protocols import(
+    TaskState,
+    TaskResult,
     RetryPolicy,
     ExecutionPolicy,
     Context,
@@ -44,17 +46,17 @@ logger.info("Logging Start.")
 
 
 # %%
-class Task:
-    """Task acting as the a node in a working flow.
-
-    Task is derived from Node in DirectedGraph and that:
-    1. The task's downstream depends on current task.
-    2. The task's upstream is depended by current task.
+class TaskProxy:
+    """Proxy of from a callable to a task in a working flow.
 
     Attrs:
     -------------------------------
     func: Callable to execute to reach a goal.
-    #TODO
+    name: Task name.
+    retry_policy: Retry policy.
+    cache_policy: Cache policy.
+    execution_policy: Execution policy.
+    is_async: If inner function is async.
     """
     def __init__(
         self,
@@ -79,7 +81,6 @@ class Task:
         self.cache_policy = cache_policy
         self.execution_policy = execution_policy
         self.is_async = inspect.iscoroutinefunction(func)
-        self.func_signature = inspect.signature(func)
         functools.update_wrapper(self, func)
 
     def __call__(self, *args, **kwargs):
@@ -111,10 +112,10 @@ def task(
     retry_policy: Optional[RetryPolicy] = None,
     cache_policy: Optional[CachePolicy] = None,
     execution_policy: Optional[ExecutionPolicy] = None,
-) -> Task:
+) -> TaskProxy:
     def decorator(ffunc):
         nonlocal name, retry_policy, cache_policy, execution_policy
-        return Task(ffunc, name, retry_policy, cache_policy, execution_policy)
+        return TaskProxy(ffunc, name, retry_policy, cache_policy, execution_policy)
     if func is None:
         return decorator
     return decorator(func)
@@ -124,7 +125,7 @@ def task(
 class TaskOnce:
     def __init__(
         self,
-        task: Task,
+        task: TaskProxy,
         args: List[Any],
         kwargs: Dict[str, Any],
     ):
@@ -134,7 +135,6 @@ class TaskOnce:
         self.cache_policy = task.cache_policy
         self.execution_policy = task.execution_policy
         self.is_async = task.is_async
-        self.func_signature = task.func_signature
         self.id_ = f"{task.name}_{uuid.uuid4()}"
         self.raw_args = args
         self.raw_kwargs = kwargs
@@ -158,7 +158,7 @@ class TaskOnce:
         execution_policy: Optional[ExecutionPolicy] = None,
     ) -> Self:
         """Create a TaskOnce with function and arguments directly."""
-        task = Task(func, name, retry_policy, cache_policy, execution_policy)
+        task = TaskProxy(func, name, retry_policy, cache_policy, execution_policy)
         task_once = cls(task, args, kwargs)
         return task_once
 
@@ -166,32 +166,36 @@ class TaskOnce:
     def _resolve_with_context(
         cls,
         unresolved: List | Dict,
-        ctx: Optional[Context] = None,
+        cache: Cache,
     ) -> Tuple[Dict, Dict, Dict]:
-        # TODO: get unpassed arugments with `ctx.get_artifact`
         tasks = (enumerate(unresolved)
                  if isinstance(unresolved, (tuple, list))
                  else unresolved.items())
         ready = {}
         failed = {}
         unready = []
-        for key, fut in tasks:
-            if not isinstance(fut, cls):
-                ready[key] = fut
+        for key, task in tasks:
+            if not isinstance(task, cls):
+                ready[key] = task
             else:
-                result = ctx.get_result(fut.id_)
+                if cache is not None:
+                    result = cache.get(task.id_)
+                else:
+                    result = None
+
+                # Check the state of the result of task.
                 if result is not None and result.is_successful():
                     ready[key] = result.value
                 elif result is not None and result.is_failed():
-                    failed[fut] = result
+                    failed[task] = result
                 else:
-                    unready.append(fut)
+                    unready.append(task)
 
         return ready, unready, failed
 
     def resolve_args(
         self,
-        ctx: Optional[Context] = None,
+        cache: Optional[Cache] = None,
     ):
         """Resolve the arguments of the task function from the context.
 
@@ -199,36 +203,45 @@ class TaskOnce:
         Task as part of the argument, namely an element in a list, tuple, dic
         or etc., won't be resolved.
         """
-        ctx = ctx or _current_context.get()
+        if cache is None:
+            ctx = _current_context.get()
+            if ctx is not None:
+                cache = ctx.result_cache
         raw_args = self.raw_args
         raw_kwargs = self.raw_kwargs
-        pready, punready, pfailed = self._resolve_with_context(raw_args, ctx)
-        kready, kunready, kfailed = self._resolve_with_context(raw_kwargs, ctx)
+        pready, punready, pfailed = self._resolve_with_context(raw_args, cache)
+        kready, kunready, kfailed = self._resolve_with_context(raw_kwargs, cache)
         unready = list(set(punready + kunready))
         pfailed.update(kfailed)
         return list(pready.values()), kready, unready, pfailed
 
     def resolve_dependencies(
         self,
-        ctx: Optional[Context] = None,
+        cache: Optional[Cache] = None,
     ) -> List[TaskOnce]:
         """Resolve the TaskOnce current TaskOnce depending on."""
-        ctx = ctx or _current_context.get()
-        pready, kready, unready, pfailed = self.resolve_args(ctx)
+        if cache is None:
+            ctx = _current_context.get()
+            if ctx is not None:
+                cache = ctx.result_cache
+        pready, kready, unready, pfailed = self.resolve_args(cache)
         return unready
 
-    def result(self) -> Any:
+    def result(
+        self,
+        ctx: Optional[Context] = None,
+    ) -> Any:
         """Fetch the result."""
-        ctx = _current_context.get()
+        ctx = ctx or _current_context.get()
         if ctx is None:
-            raise RuntimeError(f"Cannot fetch the result of task "
-                               f"{self.name} within no flow.")
+            raise RuntimeError(
+                f"Can't fetch the result of task {self.name} without a flow."
+            )
         result = ctx.get_result(self.id_)
-        if result is not None:
-            logger.warning(f"The result of the task {self.name} has been "
-                           f"fetched once.")
-        else:
-            result, = ctx.gather(self)
+        if result is None:
+            raise RuntimeError(
+                f"Can't fetch the result of task {self.name}."
+            )
 
         if result.is_successful():
             return result.value
@@ -237,4 +250,3 @@ class TaskOnce:
         raise RuntimeError(
             f"Task {self.name} can't be ready."
         ) from result.error
-

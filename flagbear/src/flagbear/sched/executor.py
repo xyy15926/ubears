@@ -3,13 +3,13 @@
 #   Name: executor.py
 #   Author: xyy15926
 #   Created: 2026-05-10 16:17:59
-#   Updated: 2026-05-12 20:13:22
+#   Updated: 2026-05-18 21:58:04
 #   Description:
 # ---------------------------------------------------------
 
 # %%
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Coroutine
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, Future
 import threading
@@ -17,22 +17,26 @@ import asyncio
 import inspect
 import contextvars
 import functools
-from IPython.core.debugger import set_trace
+# from IPython.core.debugger import set_trace
 
 if __name__ == "__main__":
     from importlib import reload
+    from flagbear.slp import cache
     from flagbear.sched import task, protocols
+    reload(cache)
     reload(task)
     reload(protocols)
 
+from flagbear.slp.cache import Cache
 from flagbear.sched.protocols import(
     _current_context,
     TaskState, 
     TaskResult,
-    TaskFuture,
+    Task,
     RetryPolicy,
     ExecutionPolicy,
     Context,
+    Task,
 )
 
 logging.basicConfig(
@@ -47,7 +51,6 @@ logger.info("Logging Start.")
 # %%
 class LocalExecutor:
     """Executor use asyncio.event_loop to schedule tasks.
-
 
     Attrs:
     ---------------------------------
@@ -73,7 +76,6 @@ class LocalExecutor:
         self._thread_pool = None
         self._process_pool = None
         self._event_loop = None
-        self.futures = {}
 
     @property
     def thread_executor(self):
@@ -100,9 +102,10 @@ class LocalExecutor:
 
             def loop_thread(loop):
                 asyncio.set_event_loop(loop)
-                empty_ctx = contextvars.Context()
+                # empty_ctx = contextvars.Context()
                 try:
-                    empty_ctx.run(loop.run_forever)
+                    # empty_ctx.run(loop.run_forever)
+                    loop.run_forever()
                 finally:
                     loop.close()
 
@@ -152,106 +155,107 @@ class LocalExecutor:
             self._process_pool.shutdown()
             logger.info("Shut down process pool.")
 
-    def run(
-        self,
-        ctx: Context,
-        *task_futures: TaskFuture,
-    ) -> list[TaskResult]:
-        """Submit task and wait until the task complete.
-
-        Params:
-        ----------------------------
-        ctx: Context to get and set the TaskResult.
-        task_future: TaskFutures.
-
-        Return:
-        ----------------------------
-        TaskResult or a list of TaskResult correspondant to the `task_future`
-        passed.
-        """
-        self.submit(ctx, *task_futures)
-        return self.gather(*task_futures)
-
     def submit(
         self,
-        ctx: Context,
-        *task_futures: TaskFuture,
-    ):
-        """Submit task to inner event loop.
+        task_results: Cache,
+        *tasks: Task | tuple[Task, callable],
+    ) -> Optional[list[Future]]:
+        """Submit tasks."""
+        # Wrap nofity as `asyncio.Task` callback.
+        def on_done(
+            fut: asyncio.Future,
+            task: Task,
+            notify: Optional[callable] = None,
+        ):
+            try:
+                _result = fut.result()
+            # Catch the `asyncio.CancelledError` which may be caused by
+            # `shutdown`.
+            except asyncio.CancelledError as e:
+                error = e
+                result = TaskResult(
+                    TaskState.CANCELLED,
+                    None,
+                    error,
+                    datetime.now(),
+                    None,
+                    0,
+                )
+                task_results.set(task.id_, result, task.cache_policy)
+            except Exception as e:
+                logger.exception(e)
+            finally:
+                if notify:
+                    notify()
 
-        Task submited will be scheduled and executed background.
+        # Wrap task into a function to create a `asyncio.Task` that will be
+        # passed to and executed in event-loop.
+        def task_wrapper(task, notify):
+            coro = self.execute_with_cache(task, task_results)
+            atask = asyncio.create_task(coro)
+            callback = functools.partial(on_done, task = task, notify = notify)
+            atask.add_done_callback(callback)
 
-        Params:
-        ----------------------------
-        ctx: Context to get and set the TaskResult.
-        task_future: TaskFutures.
-        """
-        # set_trace()
-        for tfut in task_futures:
-            coro = self.execute_with_context(tfut, ctx)
-            future = self.run_coro(coro)
-            self.futures[tfut.id_] = future
+        futures = []
+        for task in tasks:
+            # If task and nofity are passed together, nofity will be added
+            # to `asyncio.Task` to as callback directly instead of creating
+            # a `concurrent.futures.Future` and return.
+            if isinstance(task, tuple):
+                task, notify = task
+                self.event_loop.call_soon_threadsafe(
+                    task_wrapper,
+                    task,
+                    notify,
+                )
+            else:
+                coro = self.execute_with_cache(task, task_results)
+                future = self.run_coro(coro)
+                futures.append(future)
 
-    def gather(
-        self,
-        *task_futures: TaskFuture,
-    ) -> list[TaskResult]:
-        """Wait for the Future.
+        # Return `concurrent.futures.Future` to if necessary.
+        if len(futures) > 0:
+            return futures
 
-        Params:
-        ----------------------------
-        futures: Concurrent futures.
-
-        Return:
-        ----------------------------
-        list of TaskResult
-        """
-        results = []
-        for tfut in task_futures:
-            if tfut.id_ not in self.futures:
-                raise ValueError(f"Result of task {tfut.name} "
-                                 f"has been gather.")
-            future = self.futures.pop(tfut.id_)
-            results.append(future.result())
-        return results
-
-    # TODO: move the sync task wrapper out of the coroutine.
-    def run_coro(self, coro: "coroutine") -> Future:
+    def run_coro(self, coro: Coroutine) -> Future:
         """Run coroutine in inner event loop."""
         future = asyncio.run_coroutine_threadsafe(coro, self.event_loop)
         return future
 
-    async def execute_with_context(
+    async def execute_with_cache(
         self,
-        task_future: TaskFuture,
-        ctx: Context,
+        task: Task,
+        task_results: Cache,
     ) -> TaskResult:
-        """Execute the TaskFuture async.
+        """Execute the Task async.
 
         Context will be use to get resolve the dependencies and arguments
         of the task future.
-        1. TaskFutures depended on will be resolved and executed first.
+        1. Tasks depended on will be resolved and executed first.
         2. Arguments will be then resolved to get the actual value from the
-          TaskFutures passed as arguments.
-        2.1. If any TaskFutures in arguments is unready, RuntimeError will be
+          Tasks passed as arguments.
+        2.1. If any Tasks in arguments is unready, RuntimeError will be
           raised, since all dependencies should be executed.
-        2.2. If any TaskFutures in arguments failed, current TaskFuture will
+        2.2. If any Tasks in arguments failed, current Task will
           be skipped.
 
         Params:
         ----------------------------
-        task_future: TaskFuture.
+        task: Task.
         ctx: Context to get and set the TaskResult.
 
         Return:
         ----------------------------
         TaskReult
         """
-        task_name = task_future.name
+        task_name = task.name
+        # Clear `_current_context` so that nested `Tasks` won't get
+        # `_current_context` and will perform just as a normal function.
+        _current_context.set(None)
 
         # Resolve arguments.
         (resolved_args, resolved_kwargs,
-         unready_tasks, failed_tasks) = task_future.resolve_args(ctx)
+         unready_tasks, failed_tasks) = task.resolve_args(task_results)
         if len(failed_tasks) > 0:
             task_names = ",".join([f.name for f in failed_tasks.keys()])
             error = RuntimeError(
@@ -266,7 +270,7 @@ class LocalExecutor:
                 None,
                 0,
             )
-            # ctx.set_result(task_future, result)
+            # ctx.set_result(task, result)
             return result
 
         # All tasks should be ready or failed, since all dependent tasks
@@ -280,17 +284,18 @@ class LocalExecutor:
 
         logger.info(f"Wait for task {task_name} to start.")
         result = await self.execute_resolved(
-            task_future,
+            task,
             resolved_args,
             resolved_kwargs,
         )
+        task_results.set(task.id_, result, task.cache_policy)
         logger.info(f"Task {task_name} ends.")
 
         return result
 
     async def execute_resolved(
         self,
-        task_future: TaskFuture,
+        task: Task,
         resolved_args,
         resolved_kwargs,
     ) -> TaskResult:
@@ -300,7 +305,7 @@ class LocalExecutor:
 
         Params:
         --------------------------
-        task_future: TaskFuture.
+        task: Task.
         resolved_args: Positional arugments with actual value.
         resolved_kwargs: Keywords arugments with actual value.
 
@@ -308,12 +313,12 @@ class LocalExecutor:
         --------------------------
         TaskResult
         """
-        func = task_future.func
-        is_async = task_future.is_async
-        task_name = task_future.name
+        func = task.func
+        is_async = task.is_async
+        task_name = task.name
 
-        retry_policy = task_future.retry_policy or RetryPolicy()
-        execution_policy = task_future.execution_policy or ExecutionPolicy()
+        retry_policy = task.retry_policy or RetryPolicy()
+        execution_policy = task.execution_policy or ExecutionPolicy()
         timeout = execution_policy.timeout
 
         # Excecute task.
@@ -424,11 +429,6 @@ class LocalExecutor:
         use_process = execution_policy.use_process
         with_context = execution_policy.with_context
 
-        # Clear `_current_context` for the async task.
-        # As async task should never #TODO
-        if is_async or not with_context:
-            _current_context.set(None)
-
         # Await async task function.
         if is_async:
             if timeout is not None:
@@ -438,17 +438,11 @@ class LocalExecutor:
                 )
             else:
                 value = await func(*resolved_args, **resolved_kwargs)
-        # Run sync task function in threadpool or process pool, but
-        # scheduled by asyncio by `asyncio.wrap_future`.
-        # 1. `asyncio.to_thread`：contextvars.copy_context and then
-        #   `asyncio.get_running_loop().run_in_executor` the sync
-        #   function(task) within given executor or default executor.
-        # 2. `loop.run_in_executor` will `asyncio.wrap_future` the future
-        #   return by `executor.submit` the sync function(task).
         else:
-            loop = self.event_loop
             pool = (self.thread_executor if not use_process
                     else self.process_executor)
+            loop = asyncio.get_running_loop()
+            # Copy context.
             if with_context:
                 func = with_copied_context(func)
             future = pool.submit(func, *resolved_args, **resolved_kwargs)
@@ -472,10 +466,3 @@ def with_copied_context(func):
         return ctx.run(func, *args, **kwargs)
 
     return wrapper
-
-
-async def to_thread(func, /, *args, **kwargs):
-    loop = asyncio.get_running_loop()
-    ctx = contextvars.copy_context()
-    func_call = functools.partial(ctx.run, func, *args, **kwargs)
-    return await loop.run_in_executor(None, func_call)

@@ -3,7 +3,7 @@
 #   Name: test_flow.py
 #   Author: xyy15926
 #   Created: 2026-05-10 22:24:51
-#   Updated: 2026-05-12 22:32:25
+#   Updated: 2026-05-18 22:00:53
 #   Description:
 # ---------------------------------------------------------
 
@@ -24,6 +24,7 @@ if __name__ == "__main__":
 from flagbear.sched.protocols import _current_context
 from flagbear.sched.task import task
 from flagbear.sched.flow import Flow, flow
+
 
 # %%
 def test_Flow_nested_with():
@@ -51,8 +52,8 @@ def test_Flow_nested_with():
             assert sync_ctx is None
             assert async_add_ret == 10
             assert async_ctx is None
-            assert inner_ctx.executor is outer_ctx.executor
-            assert inner_ctx._executor is None
+            assert inner_ctx.scheduler is outer_ctx.scheduler
+            assert inner_ctx._scheduler is None
             assert inner_ctx.parent_context is outer_ctx
 
 

@@ -1,0 +1,306 @@
+#!/usr/bin/env python3
+# ---------------------------------------------------------
+#   Name: scheduler.py
+#   Author: xyy15926
+#   Created: 2026-05-14 15:10:46
+#   Updated: 2026-05-18 22:13:19
+#   Description:
+# ---------------------------------------------------------
+
+# %%
+from __future__ import annotations
+import logging
+from typing import Any, Optional
+import threading
+import functools
+from concurrent.futures import ThreadPoolExecutor
+from IPython.core.debugger import set_trace
+
+if __name__ == "__main__":
+    from importlib import reload
+    from flagbear.tree import dag
+    from flagbear.slp import finer, storage, serializer, cache
+    from flagbear.sched import protocols, executor
+    reload(dag)
+    reload(finer)
+    reload(storage)
+    reload(serializer)
+    reload(cache)
+    reload(protocols)
+    reload(executor)
+from flagbear.tree.dag import (
+    DirectedGraph,
+)
+from flagbear.slp.cache import Cache, MemoryCache
+from flagbear.sched.protocols import(
+    Task,
+    Future,
+    Executor,
+)
+from flagbear.sched.executor import LocalExecutor
+
+logging.basicConfig(
+    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
+    level=logging.INFO,
+    force=(__name__ == "__main__"),
+)
+logger = logging.getLogger()
+logger.info("Logging Start.")
+
+
+# %%
+class DAGScheduler:
+    """Task scheduler with DAG to resolve dependencies relations.
+
+    Attrs:
+    --------------------------
+    task_results: Cache to store the results of task.
+    task_dag: DAG to organize the tasks in execution or waiting to be
+      executed.
+    task_submited: Set to the store the tasks in execution.
+    executor: Executor to execute the tasks.
+    """
+    def __init__(
+        self,
+        task_results: Optional[Cache] = None,
+        executor: Optional[Executor] = None,
+    ):
+        self.task_results = task_results or MemoryCache()
+        self.task_dag = DirectedGraph()
+        self.task_submited = set()
+        self._task_lock = threading.Lock()
+        self.executor = executor or LocalExecutor()
+
+    def is_added(
+        self,
+        task: Task,
+    ) -> bool:
+        """If the task has been submitted before."""
+        tid = getattr(task, "id_", task)
+        if self.task_dag.has_node(tid) or self.task_results.exists(tid):
+            return False
+        return True
+
+    def shutdown(self, force = False):
+        """Shutdown."""
+        task_dag = self.task_dag
+        if len(task_dag.nodes) == 0:
+            self.executor.shutdown()
+        else:
+            task_idstr = ",".join(task_dag.nodes.keys())
+            logger.warning(f"Task {task_idstr} hasn't been done yet.")
+            if force:
+                self.executor.shutdown()
+            else:
+                tasks = [node.task for node in task_dag.nodes.values()]
+                self.wait(*tasks)
+
+    def add(
+        self,
+        *tasks: Task,
+    ):
+        """Add tasks."""
+        task_dag = self.task_dag
+        task_results = self.task_results
+        with self._task_lock:
+            # Add tasks to DAG first.
+            for task in tasks:
+                if not self.is_added(task):
+                    raise ValueError(
+                        f"Task {task.name} has been submited before."
+                    )
+                tid = getattr(task, "id_", task)
+                task_dag.add_node(tid)
+
+                # Bind task future to the node in the DAG.
+                task_node = task_dag.get_node(tid)
+                task_node.task = task
+                task_node.done = threading.Event()
+
+            # Then add the edges to the DAG, so to avoid the edges are added
+            # before the nodes. As the tasks in `tasks` may not be
+            # topological sorted.
+            for task in tasks:
+                tid = getattr(task, "id_", task)
+                deps = task.resolve_dependencies(task_results)
+                for dep in deps:
+                    did = dep.id_
+                    if did in self.task_dag:
+                        task_dag.add_edge(did, tid)
+                    elif not self.task_results.exists(did):
+                        raise ValueError(
+                            f"Task {dep.name} has not been submited before."
+                        )
+
+        self.submit_ready()
+
+    def submit_ready(self):
+        """Submit ready tasks.
+
+        Ready tasks are the leaf nodes in the DAG as they don't need to
+        wait for any other tasks.
+        """
+        # Check if the tasks forms a cycle, that no any other tasks could
+        # be submited to executor.
+        task_dag = self.task_dag
+        if len(task_dag.leaf_nodes) == 0 and task_dag.node_count > 0:
+            cycle = task_dag.find_cycle()
+            task_names = ",".join(cycle)
+            raise RuntimeError(f"Cycle {task_names} found in tasks.")
+
+        # Submit ready tasks, namely tasks with no upstream, to executor.
+        for tid in task_dag.leaf_nodes:
+            if tid in self.task_submited:
+                continue
+            task_node = task_dag.get_node(tid)
+            task = task_node.task
+            on_done = functools.partial(self.mark_done, tid)
+            self.executor.submit(self.task_results, (task, on_done))
+            # future, = self.executor.submit(self.task_results, task)
+            # future.add_done_callback(on_done)
+            with self._task_lock:
+                self.task_submited.add(tid)
+            logger.info(f"Task {task.name} has been submited.")
+
+    def mark_done(
+        self,
+        tid: str,
+        future: Optional[Future] = None,
+    ):
+        """Mark task done.
+
+        1. The should be used as the callback of the `future` in most cases
+          so that the task will mark itself done when it finished.
+        2. But it may also be called to mark some task done manually and the
+          `future` could be ignored.
+
+        Params:
+        -------------------------
+        task: Task to be marked as done.
+        future: Future of the task to fetch the result of the task.
+        """
+        # Try to fetch the result from the Future to raise the implicit
+        # exceptions.
+        if future is not None:
+            try:
+                _ret = future.result()
+            except Exception as e:
+                raise RuntimeError(
+                    f"Fail to gather the result of {tid}."
+                ) from e
+
+        task_dag = self.task_dag
+        assert tid in task_dag.leaf_nodes, (
+            f"Tasks depended by {tid} should be done."
+        )
+
+        # Remove the task from the dag and then submit the ready tasks.
+        task_node = task_dag.get_node(tid)
+        with self._task_lock:
+            task_node.done.set()
+            task_dag.remove_node(tid)
+        self.submit_ready()
+
+    def wait(
+        self,
+        *tasks: Task | str,
+    ):
+        """Wait for tasks to finish."""
+        task_dag = self.task_dag
+        task_results = self.task_results
+        for task in tasks:
+            tid = getattr(task, "id_", task)
+            task_name = getattr(task, "name", task)
+            if task_results.exists(tid):
+                continue
+            task_node = task_dag.get_node(tid)
+            if task_node is not None:
+                logger.info(f"Waiting for task {task_name} to be done.")
+                task_node.done.wait()
+                continue
+            raise RuntimeError(
+                f"Task {task_name} should be submitted before being waited."
+            )
+
+
+# %%
+class LazyScheduler:
+    def submit(
+        self,
+        *tasks: Task,
+    ):
+        """Submit task.
+
+        1. Untraced tasks will be added to DAG but won't be executed until
+          gathering results is required.
+        2. ValueError will be raised if a task has been submitted before.
+        """
+        with self._global_lock:
+            # Add tasks to DAG first.
+            for task in tasks:
+                key = getattr(task, "id_", task)
+                if (self.task_results.exists(key)
+                    or self.dag.has_node(key)):
+                    raise ValueError(
+                        f"Task {key} has been submited before."
+                    )
+                cur_node = Node(key)
+                cur_node.task = task
+                self.dag.add_node(cur_node)
+            # Then add the edges to the DAG, so to avoid the edges are added
+            # before the nodes. As the tasks in `task_features` may not be
+            # topological sorted.
+            for task in tasks:
+                key = getattr(task, "id_", task)
+                deps = task.resolve_dependencies(self)
+                for dep in deps:
+                    dep_key = dep.id_
+                    if dep_key in self.dag:
+                        self.dag.add_edge(dep_key, key)
+                    elif not self.task_results.exists(dep_key):
+                        raise ValueError(
+                            f"Task {dep_key} has not been submited before."
+                        )
+
+    def gather(
+        self,
+        *tasks: Task,
+    ) -> list[Any]:
+        """Gather the results of tasks."""
+        task_nodes = []
+        # Result of the tasks can't be gather twice.
+        for task in tasks:
+            node = self.dag.get_node(task.id_)
+            if node is None:
+                raise ValueError(
+                    f"Result of task {task.name} result has been "
+                    f"gathered beofore."
+                )
+            task_nodes.append(node)
+
+        # Sort tasks topologically first so to determine the execution order
+        # of tasks, which will also detect the unreasonable, cyclic tasks
+        # dependency relations.
+        # TODO: Level by level topo -> node by node topo.
+        node_levels = topological_sort_from_entry(*task_nodes)
+        if node_levels is None:
+            cycle = self.dag.find_cycle()
+            task_names = ",".join(cycle)
+            raise ValueError(f"Tasks {task_names} form a cycle.")
+
+        # Execute tasks.
+        # The last `results` in the `for` loop is the last level of the
+        # task-DAG.
+        for level in node_levels:
+            # set_trace()
+            tasks = [node.task for node in level]
+            self.executor.submit(self, *tasks)
+            results = self.executor.gather(*tasks)
+            for task, res in zip(level, results, strict=True):
+                self.set_result(task, res)
+                with self._global_lock:
+                    self.dag.remove_node(task.id_)
+        # TODO
+
+        results = [self.get_result(task) for task in tasks]
+        return results

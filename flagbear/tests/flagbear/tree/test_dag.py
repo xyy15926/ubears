@@ -3,7 +3,7 @@
 #   Name: test_dag.py
 #   Author: xyy15926
 #   Created: 2026-04-23 22:19:32
-#   Updated: 2026-05-12 22:36:24
+#   Updated: 2026-05-15 10:50:33
 #   Description:
 # ---------------------------------------------------------
 
@@ -79,9 +79,9 @@ def test_Node_topo_cycle():
 def test_directed_graph_and_node():
     g = DirectedGraph()
     for nid in list("ABCDE"):
-        g.add_node(Node(nid))
+        g.add_node(nid)
     with pytest.raises(ValueError):
-        g.add_node(Node("E"))
+        g.add_node("E")
     assert g.node_count == 5
     # Add some edges and no cylce.
     g.add_edge("A", "B")
@@ -92,6 +92,7 @@ def test_directed_graph_and_node():
     assert g.edge_count == 5
     # Can't add existing edge.
     assert not g.add_edge("D", "E")
+    assert g.leaf_nodes == set(["A"])
 
     # Node info.
     node_b = g.get_node("B")
@@ -115,7 +116,7 @@ def test_directed_graph_and_node():
     assert dfs_ret == list("ACDEB") or dfs_ret == list("ABDEC")
 
     # And a cycle.
-    g.add_node(Node("F"))
+    g.add_node("F")
     g.add_edge("E", "F")
     g.add_edge("F", "B")  # 形成环: B -> D -> E -> F -> B
 
@@ -131,6 +132,10 @@ def test_directed_graph_and_node():
     assert g.is_dag()
     topo_sort = list(chain(*g.topological_sort()))
     assert topo_sort == list("ACBDEF") or topo_sort == list("ABCDEF")
+
+    # Remove edge and check leaf nodes.
+    g.remove_edge("A", "B")
+    assert g.leaf_nodes == set(["A", "B"])
 
     # Visualization
     _vis = g.visualize()
@@ -153,7 +158,7 @@ def test_graph_from_nodes():
 
     # Construct graph from any node.
     for node in [node_a, node_b, node_c, node_d, node_e, node_f]:
-        g = DirectedGraph.from_root(node)
+        g = DirectedGraph.from_nodes(node)
         assert g.edge_count == 7
         # Can't add existing edge.
         assert not g.add_edge("D", "E")

@@ -3,7 +3,7 @@
 #   Name: dag.py
 #   Author: xyy15926
 #   Created: 2026-04-23 19:37:30
-#   Updated: 2026-05-12 22:41:53
+#   Updated: 2026-05-16 21:22:55
 #   Description:
 # ---------------------------------------------------------
 
@@ -146,65 +146,55 @@ class Node:
 
 # %%
 class DirectedGraph:
-    """Graph"""
-    def __init__(self):
-        self._nodes: dict[NID, Node] = {}
-        self._edge_count: int = 0
+    """Graph
 
-    def __repr__(self):
+    Attrs:
+    -----------------------------
+    nodes: Dict of node-id and node in graph.
+    edge_count: Count of edges in graph.
+    leaf_nodes: Nodes with no upstream nodes.
+    """
+    def __init__(self):
+        self.nodes: dict[NID, Node] = {}
+        self.edge_count: int = 0
+        self.leaf_nodes: set[NID] = set()
+
+    def __repr__(self) -> str:
         return f"Graph(nodes={self.node_count}, edges={self.edge_count})"
 
-    def __contains__(self, node_id: NID | Node):
-        if isinstance(node_id, Node):
-            node_id = node_id.id_
-        return node_id in self._nodes
-
-    @staticmethod
-    def from_root(root: Node):
-        """Borad first search to construct a graph from the root node."""
-        g = DirectedGraph()
-        queue = deque([root, ])
-
-        while queue:
-            cur_node = queue.popleft()
-            if cur_node in g:
-                continue
-            g._nodes[cur_node.id_] = cur_node
-
-            for succ in cur_node.downstream:
-                if succ not in g:
-                    queue.append(succ)
-                # Count only on downstream part of one edge.
-                g._edge_count += 1
-            for pred in cur_node.upstream:
-                if pred not in g:
-                    queue.append(pred)
-
-        return g
+    def __contains__(
+        self,
+        from_id: NID | Node,
+        to_id: Optional[NID] = None,
+    ) -> bool:
+        if to_id is None:
+            return self.has_node(from_id)
+        else:
+            return self.has_edge(from_id, to_id)
 
 # ------------------------------------------------------------------------
-#                                   Node
+#                                   Node NID
 # ------------------------------------------------------------------------
-    def add_node(self, node: Node):
+    def add_node(self, node_id: NID):
         """Add node."""
-        node_id = node.id_
-        if node_id in self._nodes:
+        if node_id in self.nodes:
             raise ValueError(f"Node {node_id} exists.")
-        self._nodes[node_id] = node
+        self.nodes[node_id] = Node(node_id)
+        self.leaf_nodes.add(node_id)
 
     def get_node(self, node_id: NID) -> Optional[Node]:
         """Get node with node id."""
-        return self._nodes.get(node_id)
+        return self.nodes.get(node_id)
 
     def remove_node(self, node_id: NID) -> bool:
         """Remove node and related edges.
 
         Return False if node is not in the graph.
         """
-        if node_id not in self._nodes:
+        if node_id not in self.nodes:
             return False
 
-        node = self._nodes[node_id]
+        node = self.nodes[node_id]
         # Remove all in-edges.
         for pred in list(node.upstream):
             self.remove_edge(pred._id, node_id)
@@ -212,22 +202,21 @@ class DirectedGraph:
         for succ in list(node.downstream):
             self.remove_edge(node_id, succ.id_)
 
-        del self._nodes[node_id]
+        del self.nodes[node_id]
+        if node_id in self.leaf_nodes:
+            self.leaf_nodes.remove(node_id)
         return True
 
-    def has_node(self, node_id: NID) -> bool:
+    def has_node(self, node_id: NID | Node) -> bool:
         """If node in graph."""
-        return node_id in self._nodes
-
-    @property
-    def nodes(self) -> dict[NID, Node]:
-        """Get all nodes."""
-        return dict(self._nodes)
+        if isinstance(node_id, Node):
+            node_id = node_id.id_
+        return node_id in self.nodes
 
     @property
     def node_count(self) -> int:
         """Node count."""
-        return len(self._nodes)
+        return len(self.nodes)
 
 # ------------------------------------------------------------------------
 #                                   Edge
@@ -237,15 +226,15 @@ class DirectedGraph:
 
         Return False if edge exists.
         """
-        if from_id not in self._nodes:
+        if from_id not in self.nodes:
             raise ValueError(f"Source node {from_id} doesn't exist.")
-        if to_id not in self._nodes:
+        if to_id not in self.nodes:
             raise ValueError(f"Target node {to_id} doesn't exist.")
         if from_id == to_id:
             raise ValueError("Self-cycle is not allowed.")
 
-        from_node = self._nodes[from_id]
-        to_node = self._nodes[to_id]
+        from_node = self.nodes[from_id]
+        to_node = self.nodes[to_id]
 
         # Return False if edge exists.
         if to_node in from_node.downstream:
@@ -253,7 +242,9 @@ class DirectedGraph:
 
         from_node.downstream.add(to_node)
         to_node.upstream.add(from_node)
-        self._edge_count += 1
+        self.edge_count += 1
+        if to_id in self.leaf_nodes:
+            self.leaf_nodes.remove(to_id)
         return True
 
     def remove_edge(self, from_id: NID, to_id: NID) -> bool:
@@ -262,11 +253,11 @@ class DirectedGraph:
         Return False if node or edge doesn't exist.
         """
         # Return False if node doesn't exist.
-        if from_id not in self._nodes or to_id not in self._nodes:
+        if from_id not in self.nodes or to_id not in self.nodes:
             return False
 
-        from_node = self._nodes[from_id]
-        to_node = self._nodes[to_id]
+        from_node = self.nodes[from_id]
+        to_node = self.nodes[to_id]
 
         # Return False if edge doesn't exist.
         if to_node not in from_node.downstream:
@@ -274,27 +265,58 @@ class DirectedGraph:
 
         from_node.downstream.remove(to_node)
         to_node.upstream.remove(from_node)
-        self._edge_count -= 1
+        self.edge_count -= 1
+        if len(to_node.upstream) == 0:
+            self.leaf_nodes.add(to_id)
         return True
 
     def has_edge(self, from_id: NID, to_id: NID) -> bool:
         """If edge exists in the graph."""
-        if from_id not in self._nodes or to_id not in self._nodes:
+        if from_id not in self.nodes or to_id not in self.nodes:
             return False
-        return self._nodes[to_id] in self._nodes[from_id].downstream
-
-    @property
-    def edge_count(self) -> int:
-        """Edge count."""
-        return self._edge_count
+        return self.nodes[to_id] in self.nodes[from_id].downstream
 
     def get_edges(self) -> list[tuple]:
         """Get all edges represented with tuple."""
         edges = []
-        for node in self._nodes.values():
+        for node in self.nodes.values():
             for succ in node.downstream:
                 edges.append((node.id, succ.id))
         return edges
+
+# ------------------------------------------------------------------------
+#                                   Existed Nodes
+# ------------------------------------------------------------------------
+    def extend_with_nodes(self, *nodes: Node):
+        """Extend graph with existing nodes.
+
+        Borad first search to add all related nodes to a graph.
+        """
+        queue = deque(nodes)
+
+        while queue:
+            cur_node = queue.popleft()
+            if cur_node in self:
+                continue
+            self.nodes[cur_node.id_] = cur_node
+            if len(cur_node.upstream) == 0:
+                self.leaf_nodes.add(cur_node.id_)
+
+            for succ in cur_node.downstream:
+                if succ not in self:
+                    queue.append(succ)
+                # Count only on downstream part of one edge.
+                self.edge_count += 1
+            for pred in cur_node.upstream:
+                if pred not in self:
+                    queue.append(pred)
+
+    @staticmethod
+    def from_nodes(*nodes: Node):
+        """Borad first search to construct a graph from the root node."""
+        g = DirectedGraph()
+        g.extend_with_nodes(*nodes)
+        return g
 
 # ------------------------------------------------------------------------
 #                                   DAG
@@ -310,12 +332,12 @@ class DirectedGraph:
         entry: Entry nodes as the destination of the topo-sort.
         """
         if len(entry) == 0:
-            topo_nodes = topological_sort(self._nodes.values())
+            toponodes = topological_sort(self.nodes.values())
         else:
-            topo_nodes = topological_sort_from_entry(*entry)
-        if topo_nodes is None:
+            toponodes = topological_sort_from_entry(*entry)
+        if toponodes is None:
             return None
-        topo_nids = [[node.id_ for node in level] for level in topo_nodes]
+        topo_nids = [[node.id_ for node in level] for level in toponodes]
         return topo_nids
 
     def is_dag(self) -> bool:
@@ -324,10 +346,10 @@ class DirectedGraph:
 
     def find_cycle(self) -> Optional[list[NID]]:
         """Find cycle in the graph."""
-        cycle_nodes = find_cycle(self._nodes.values())
-        if cycle_nodes is None:
+        cyclenodes = find_cycle(self.nodes.values())
+        if cyclenodes is None:
             return None
-        cycle_nids = [node.id_ for node in cycle_nodes]
+        cycle_nids = [node.id_ for node in cyclenodes]
         return cycle_nids
 
 # ------------------------------------------------------------------------
@@ -335,7 +357,7 @@ class DirectedGraph:
 # ------------------------------------------------------------------------
     def bfs(self, start_id: NID) -> list[NID]:
         """Borad first search."""
-        if start_id not in self._nodes:
+        if start_id not in self.nodes:
             return []
 
         visited = set()
@@ -349,7 +371,7 @@ class DirectedGraph:
             visited.add(current_id)
             result.append(current_id)
 
-            for succ in self._nodes[current_id].downstream:
+            for succ in self.nodes[current_id].downstream:
                 if succ.id_ not in visited:
                     queue.append(succ.id_)
 
@@ -357,7 +379,7 @@ class DirectedGraph:
 
     def dfs(self, start_id: NID) -> list[NID]:
         """Deep first search."""
-        if start_id not in self._nodes:
+        if start_id not in self.nodes:
             return []
 
         visited = set()
@@ -366,7 +388,7 @@ class DirectedGraph:
         def _dfs(node_id: NID):
             visited.add(node_id)
             result.append(node_id)
-            for succ in self._nodes[node_id].downstream:
+            for succ in self.nodes[node_id].downstream:
                 if succ.id_ not in visited:
                     _dfs(succ.id_)
 
@@ -378,11 +400,11 @@ class DirectedGraph:
 # ------------------------------------------------------------------------
     def visualize(self) -> str:
         """DirectedGraph visualization."""
-        return visualize(self._nodes.values())
+        return visualize(self.nodes.values())
 
     def to_mermaid(self) -> str:
         """Render nodes and edges to mermaid."""
-        return to_mermaid(self._nodes.values())
+        return to_mermaid(self.nodes.values())
 
 
 # %%----------------------------------------------------------------------

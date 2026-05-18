@@ -3,7 +3,7 @@
 #   Name: flow.py
 #   Author: xyy15926
 #   Created: 2026-05-06 16:02:03
-#   Updated: 2026-05-12 22:31:03
+#   Updated: 2026-05-18 22:00:06
 #   Description:
 # ---------------------------------------------------------
 
@@ -17,8 +17,8 @@ import functools
 if __name__ == "__main__":
     from importlib import reload
     from flagbear.slp import cache
-    from flagbear.sched import protocols, executor, context
     reload(cache)
+    from flagbear.sched import protocols, executor, context
     reload(protocols)
     reload(executor)
     reload(context)
@@ -29,8 +29,8 @@ from flagbear.sched.protocols import(
     _current_context,
 )
 from flagbear.slp.cache import Cache, CachePolicy
-from flagbear.sched.task import TaskOnce, Task
-from flagbear.sched.context import LazyContext
+from flagbear.sched.task import TaskOnce, TaskProxy
+from flagbear.sched.context import SimpleContext
 
 logging.basicConfig(
     format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
@@ -39,6 +39,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger()
 logger.info("Logging Start.")
+
 
 # %%
 class Flow:
@@ -98,7 +99,7 @@ class Flow:
         """
         parent_ctx = _current_context.get()
         if parent_ctx is None:
-            ctx = LazyContext(self.result_cache, self.executor, parent_ctx)
+            ctx = SimpleContext(self.result_cache, self.executor, parent_ctx)
             with ctx:
                 return self.func(*args, **kwargs)
         flow_once = self.submit(*args, **kwargs)
@@ -111,7 +112,7 @@ class Flow:
             raise RuntimeError(
                 "Can's sumbit Flow as sub-flow within no Flow."
             )
-        ctx = LazyContext(self.result_cache, self.executor, parent_ctx)
+        ctx = SimpleContext(self.result_cache, self.executor, parent_ctx)
         flow_once = self.as_task(args, kwargs, ctx)
         parent_ctx.submit(flow_once)
         return flow_once
@@ -120,7 +121,7 @@ class Flow:
         self,
         args: List[Any],
         kwargs: Dict[str, Any],
-        ctx: LazyContext,
+        ctx: SimpleContext,
     ) -> TaskOnce:
         """Wrap flow as a task."""
         func = self.func
@@ -132,7 +133,7 @@ class Flow:
             with ctx:
                 return func(*args, **kwargs)
 
-        wrapped_flow = Task(
+        wrapped_flow = TaskProxy(
             wrapper,
             self.name,
             self.retry_policy,
@@ -148,7 +149,7 @@ class Flow:
         assert self.func is None, (
             "Only empty Flow could be used as a task container."
         )
-        ctx = LazyContext(
+        ctx = SimpleContext(
             self.result_cache,
             self.executor,
             _current_context.get(),

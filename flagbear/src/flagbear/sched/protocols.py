@@ -3,14 +3,16 @@
 #   Name: protocols.py
 #   Author: xyy15926
 #   Created: 2026-05-06 15:36:50
-#   Updated: 2026-05-13 22:49:11
+#   Updated: 2026-05-18 22:08:42
 #   Description:
 # ---------------------------------------------------------
 
 # %%
 from __future__ import annotations
 import logging
-from typing import Any, Optional, Tuple, Type, Protocol, List, Self, Dict, TypeVar
+from typing import Any, Optional, Type, Protocol, Self, TYPE_CHECKING
+if TYPE_CHECKING:
+    from flagbear.slp.cache import Cache
 from dataclasses import dataclass, asdict
 from enum import Enum
 import contextvars
@@ -43,6 +45,7 @@ class TaskState(str, Enum):
     FAILED = "FAILED"
     SKIPPED = "SKIPPED"
     RETRYING = "RETRYING"
+    CANCELLED = "CANCELLED"
 
 
 @dataclass
@@ -148,7 +151,7 @@ class RetryPolicy:
     delay_seconds: float = 1.0
     backoff_factor: float = 2.0
     max_delay: float = 60.0
-    retry_on: Optional[Tuple[Type[Exception]]] = None
+    retry_on: Optional[tuple[Type[Exception]]] = None
 
     def should_retry(
         self,
@@ -179,80 +182,46 @@ class ExecutionPolicy:
 
 
 # %%
-class TaskFuture(Protocol):
-    id_: str
-    name: str
-    def resolve_args(
-        self,
-        ctx: Optional[Context],
-    ) -> Tuple[List[Self], Dict[str, Self], List[Self], Dict[Self, Exception]]:
-        ...
-    def resolve_dependencies(
-        self,
-        ctx: Optional[Context],
-    ) -> List[Self]:
-        ...
-    def result(
-        self,
-        ctx: Optional[Context],
-    ) -> Any:
-        ...
-
-
-# %%
-class Context(Protocol):
-    engine: Executor
-    def __enter__(self) -> Self:...
-    def __exit__(self, exc_type, exc_val, exc_tb):...
-    def shutdown(self): ...
-    def get_result(
-        self,
-        task_future: str | TaskFuture,
-    ) -> Optional[TaskResult]: ...
-    def set_result(
-        self,
-        task_future: str | TaskFuture,
-        result: TaskResult,
-    ): ...
-    def process(
-        self,
-        task_future: TaskFuture | List[TaskFuture],
-    ) -> Any | List[Any]: ...
-    def submit(
-        self,
-        task_future: TaskFuture | List[TaskFuture],
-    ): ...
-    def wait_for(
-        self,
-        task_future: TaskFuture | List[TaskFuture],
-    ) -> Any | List[Any]: ...
-    def get_artifact(self, key: str) -> Optional[Any]: ...
-    def set_artifact(self, key: str, value: Any): ...
-
-
 _current_context: contextvars.ContextVar[Optional[Context]] = contextvars.ContextVar(
     "_context",
     default = None,
 )
 
 
-# %%
-Future = TypeVar("Future")
+class Task(Protocol):
+    id_: str
+    name: str
+    def resolve_args(
+        self,
+        ctx: Optional[Context],
+    ) -> tuple[list[Self], dict[str, Self], list[Self], dict[Self, Exception]]: ...
+    def resolve_dependencies(self, ctx: Optional[Context]) -> list[Self]: ...
+    def result(self, ctx: Optional[Context]) -> Any: ...
+
+
+class Future(Protocol):
+    def result() -> Any: ...
+    def add_done_callback(callback: callable): ...
+
+
+class Context(Protocol):
+    scheduler: Scheduler
+    task_results: Cache
+    def __enter__(self) -> Self:...
+    def __exit__(self, exc_type, exc_val, exc_tb):...
+    def shutdown(self): ...
+    def get_result(self, task: str | Task) -> Optional[TaskResult]: ...
+    def set_result(self, task: str | Task, result: TaskResult): ...
+    def submit(self, task: Task | list[Task]): ...
+    def run(self, task: Task | list[Task]) -> Any | list[Any]: ...
 
 
 class Executor(Protocol):
-    def run(
-        self,
-        ctx: Context,
-        *task_future: TaskFuture,
-    ) -> List[TaskResult]: ...
-    def submit(
-        self,
-        ctx: Context,
-        *task_future: TaskFuture,
-    ) -> Future | List[Future]: ...
-    def gather(
-        self,
-        *future: Future,
-    ) -> List[TaskResult]: ...
+    def submit(self, task_results: Cache, *task: Task) -> Future | list[Future]: ...
+    def shutdown(self):...
+
+
+class Scheduler(Protocol):
+    def add(self, *tasks: Task) -> list[TaskResult]: ...
+    def wait(self, *tasks: Task) -> Future | list[Future]: ...
     def shutdown(self):...
