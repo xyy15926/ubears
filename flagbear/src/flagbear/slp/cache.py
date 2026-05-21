@@ -3,7 +3,7 @@
 #   Name: cache.py
 #   Author: xyy15926
 #   Created: 2026-05-01 14:42:56
-#   Updated: 2026-05-03 23:05:37
+#   Updated: 2026-05-20 15:58:10
 #   Description:
 # ---------------------------------------------------------
 
@@ -372,7 +372,9 @@ class PersistentCache:
             raise RuntimeError(f"Fail to get data bytes of key {key} from "
                                f"persistent storage.")
         data, meta = meta_deserialize(bytes_)
-        # Store data in metedata too.
+        # Store data in metedata(memory) too.
+        if meta.inline is None:
+            meta.inline = len(bytes_) <= self.max_mem_size
         if meta.inline:
             meta.value = data
 
@@ -393,6 +395,9 @@ class PersistentCache:
         meta.size = len(bytes_)
 
         # Store data in memory too.
+        # Note:
+        # `meta.inline` is set after `meta_serialize`, that the `meta.inline`
+        # in `bytes_` won't be effected.
         if meta.inline is None:
             meta.inline = len(bytes_) <= self.max_mem_size
         if meta.inline:

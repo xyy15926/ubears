@@ -3,7 +3,7 @@
 #   Name: test_cache.py
 #   Author: xyy15926
 #   Created: 2026-05-01 21:11:55
-#   Updated: 2026-05-03 22:00:54
+#   Updated: 2026-05-20 15:49:35
 #   Description:
 # ---------------------------------------------------------
 
@@ -140,7 +140,7 @@ def test_MemoryCache():
 
 
 # %%
-def test_PersistetnCache_value_in_memory(tmpfile_fixture):
+def test_PersistetnCache_value_inline(tmpfile_fixture):
     lstorage = LocalFileStorage(TMP_DIR)
 
     pcache = PersistentCache(lstorage, max_mem_size = 1024)
@@ -153,9 +153,18 @@ def test_PersistetnCache_value_in_memory(tmpfile_fixture):
     assert pcache.list_keys() == ["ok", ]
 
     # Check inner meta-storage and local file storage.
-    assert pcache.meta_storage["ok"].inline
+    assert pcache.meta_storage["ok"].inline is True
     assert pcache.meta_storage["ok"].value == 1
     assert lstorage._data_path("ok").is_file()
+
+    # Reinit persistent cachde from local storage.
+    pcache = PersistentCache(lstorage, max_mem_size = 1024)
+    assert pcache.meta_storage["ok"].key is None
+    assert pcache.meta_storage["ok"].inline is None
+    assert pcache.get("ok") == 1
+    assert pcache.meta_storage["ok"].key == "ok"
+    assert pcache.meta_storage["ok"].inline is True
+    assert pcache.meta_storage["ok"].value == 1
 
     # Inline cache could be got though persistent storage deleted.
     lstorage.delete("ok")
@@ -182,7 +191,7 @@ def test_PersistetnCache_value_in_memory(tmpfile_fixture):
 
 
 # %%
-def test_PersistetnCache_value_no_memory(tmpfile_fixture):
+def test_PersistetnCache_value_not_inline(tmpfile_fixture):
     lstorage = LocalFileStorage(TMP_DIR)
     large_val = np.random.rand(40, 40).astype(np.float64)
 
@@ -204,6 +213,7 @@ def test_PersistetnCache_value_no_memory(tmpfile_fixture):
     assert np.allclose(new_pcache.get("ok"), large_val)
     assert new_pcache._stats["hits"] == 1
     assert new_pcache.meta_storage["ok"].hits == 1
+    assert new_pcache.meta_storage["ok"].inline is False
 
     # Force to save value inline.
     meta = CacheMeta("inmem", inline = True)
