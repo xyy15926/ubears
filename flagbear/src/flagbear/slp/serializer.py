@@ -3,7 +3,7 @@
 #   Name: serializer.py
 #   Author: xyy15926
 #   Created: 2026-04-22 15:21:57
-#   Updated: 2026-05-13 22:48:11
+#   Updated: 2026-05-20 22:17:09
 #   Description:
 # ---------------------------------------------------------
 
@@ -184,7 +184,7 @@ def is_json(obj: Any) -> bool:
 
 @serializer("json")
 def json_serialize(
-    obj: Any,
+    obj: Optional[Any],
     addon: Optional[str | list[str]] = None,
 ) -> bytes:
     return json.dumps(obj, separators=(",", ":"), ensure_ascii=False).encode("utf8")
@@ -195,6 +195,9 @@ def json_deserialize(
     bytes_: bytes,
     addon: Optional[str | list[str]] = None,
 ) -> Any:
+    if len(bytes_) == 0:
+        return None
+
     return json.loads(bytes_.decode("utf8"))
 
 
@@ -206,7 +209,7 @@ def is_anything(obj: Any) -> bool:
 
 @serializer("pickle")
 def pickle_serialize(
-    obj: Any,
+    obj: Optional[Any],
     addon: Optional[str | list[str]] = None,
 ) -> bytes:
     return pickle.dumps(obj, protocol=pickle.HIGHEST_PROTOCOL)
@@ -217,6 +220,9 @@ def pickle_deserialize(
     bytes_: bytes,
     addon: Optional[str | list[str]] = None,
 ) -> Any:
+    if len(bytes_) == 0:
+        return None
+
     return pickle.loads(bytes_)
 
 
@@ -234,9 +240,12 @@ def is_numpy(obj: Any) -> bool:
 
 @serializer("numpy")
 def numpy_serialize(
-    obj: np.ndarray,
+    obj: Optional[np.ndarray],
     addon: Optional[str | list[str]] = None,
 ) -> bytes:
+    if obj is None:
+        return b""
+
     import numpy as np
 
     buffer = io.BytesIO()
@@ -252,6 +261,9 @@ def numpy_deserialize(
     bytes_: bytes,
     addon: Optional[str | list[str]] = None,
 ) -> np.ndarray:
+    if len(bytes_) == 0:
+        return None
+
     import numpy as np
 
     if len(bytes_) > NUMPY_COMPRESSS_MIN:
@@ -275,9 +287,12 @@ def is_pddf_csv(obj: Any) -> bool:
 
 @serializer("pddf_csv")
 def pddf_csv_serialize(
-    obj: pd.DataFrame,
+    obj: Optional[pd.DataFrame],
     addon: Optional[str | list[str]] = None,
 ) -> bytes:
+    if obj is None:
+        return b""
+
     buffer = io.StringIO()
     obj.to_csv(buffer, index=True, encoding="utf-8")
     return buffer.getvalue().encode("utf-8")
@@ -288,6 +303,9 @@ def pddf_csv_deserialize(
     bytes_: bytes,
     addon: Optional[str | list[str]] = None,
 ) -> pd.DataFrame:
+    if len(bytes_) == 0:
+        return None
+
     import pandas as pd
 
     return pd.read_csv(
@@ -313,9 +331,12 @@ def is_pddf_feather(obj: Any) -> bool:
 
 @serializer("pddf_feather")
 def pddf_feather_serialize(
-    obj: pd.DataFrame,
+    obj: Optional[pd.DataFrame],
     addon: Optional[str | list[str]] = None,
 ) -> bytes:
+    if obj is None:
+        return b""
+
     buffer = io.BytesIO()
     obj.to_feather(buffer, compression="zstd")
     return buffer.getvalue()
@@ -326,6 +347,9 @@ def pddf_feather_deserialize(
     bytes_: bytes,
     addon: Optional[str | list[str]] = None,
 ) -> pd.DataFrame:
+    if len(bytes_) == 0:
+        return None
+
     import pandas as pd
 
     return pd.read_feather(io.BytesIO(bytes_))
@@ -347,9 +371,12 @@ def is_pddf_parquet(obj: Any) -> bool:
 
 @serializer("pddf_parquet")
 def pddf_parquet_serialize(
-    obj: pd.DataFrame,
+    obj: Optional[pd.DataFrame],
     addon: Optional[str | list[str]] = None,
 ) -> bytes:
+    if obj is None:
+        return b""
+
     buffer = io.BytesIO()
     obj.to_parquet(buffer, engine="pyarrow", compression="zstd", index=True)
     return buffer.getvalue()
@@ -360,6 +387,9 @@ def pddf_parquet_deserialize(
     bytes_: bytes,
     addon: Optional[str | list[str]] = None,
 ) -> pd.DataFrame:
+    if len(bytes_) == 0:
+        return None
+
     import pandas as pd
 
     return pd.read_parquet(io.BytesIO(bytes_))
@@ -375,9 +405,12 @@ def is_exception(obj: Any):
 
 @serializer("exception")
 def exception_serialize(
-    obj: BaseException,
+    obj: Optional[BaseException],
     addon: Optional[str | list[str]] = None,
 ) -> bytes:
+    if obj is None:
+        return b""
+
     return str_exception(obj).encode("utf8")
 
 
@@ -386,4 +419,7 @@ def exception_deserialize(
     bytes_: bytes,
     addon: Optional[str | list[str]] = None,
 ) -> BaseException:
+    if len(bytes_) == 0:
+        return None
+
     return destr_exception(bytes_.decode("utf8"))

@@ -3,7 +3,7 @@
 #   Name: test_serializer.py
 #   Author: xyy15926
 #   Created: 2026-04-22 17:12:09
-#   Updated: 2026-04-27 22:39:15
+#   Updated: 2026-05-20 22:21:40
 #   Description:
 # ---------------------------------------------------------
 
@@ -24,6 +24,19 @@ if __name__ == "__main__":
 
 from flagbear.slp import serializer
 from flagbear.slp.serializer import serialize, deserialize
+
+
+# %%
+def test_serializer_None_zero_bytes():
+    for type_ in ["numpy", "pddf_csv", "pddf_feather", "pddf_parquet"]:
+        bytes_, type = serialize(None, type_)
+        assert bytes_ == b""
+        data = deserialize(b"", type_)
+        assert data is None
+
+    for type_ in ["json", "pickle"]:
+        data = deserialize(b"", type_)
+        assert data is None
 
 
 # %%
