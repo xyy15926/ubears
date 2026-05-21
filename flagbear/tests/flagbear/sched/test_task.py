@@ -3,7 +3,7 @@
 #   Name: test_task.py
 #   Author: xyy15926
 #   Created: 2026-05-06 22:33:12
-#   Updated: 2026-05-17 21:19:38
+#   Updated: 2026-05-21 09:56:02
 #   Description:
 # ---------------------------------------------------------
 
@@ -14,10 +14,11 @@ if __name__ == "__main__":
     from importlib import reload
     from flagbear.slp import cache
     reload(cache)
-    from flagbear.sched import task
+    from flagbear.sched import protocols, task
+    reload(protocols)
     reload(task)
 
-from flagbear.slp.cache import MemoryCache
+from flagbear.slp.cache import MemoryCache, CachePolicy, timedelta
 from flagbear.sched.task import(
     TaskProxy,
     task,
@@ -26,7 +27,7 @@ from flagbear.sched.task import(
 
 
 # %%
-def test_Task():
+def test_TaskProxy():
     def add(a, b, c):
         return a + b + c
 
@@ -42,10 +43,38 @@ def test_Task():
 
     assert add2(1, 2, 3) == add(1, 2, 3) == 6
     assert isinstance(add2, TaskProxy)
+    assert add2.name.endswith("add2")
+    assert add2.cache_policy is None
+    assert add2.checkpoint_policy is None
+    assert add2.retry_policy is None
+    assert add2.execution_policy is None
+
+    cache_policy = CachePolicy(None, timedelta(1), None)
+    add2.with_policy(name = "ak").with_policy(cache_policy = cache_policy)
+    assert add2.name == "ak"
+    assert add2.cache_policy == cache_policy
+    with pytest.raises(AttributeError):
+        assert add2.any_attr is None
+    add2.any_attr = "any_attr"
+
+    add2.reset_policy()
+    assert add2.name.endswith("add2")
+    assert add2.cache_policy is None
+    assert add2.any_attr == "any_attr"
 
 
 # %%
-def test_TaskOnce():
+def test_TaskOnce_from_func():
+    def add(a, b, c, d):
+        return a + b + c + d
+
+    add_fut = TaskOnce.from_func(add, (1, 2, 3, 4), {}, name = "add_new")
+    assert add_fut.name == "add_new"
+    assert add_fut.id_.startswith("add_new")
+
+
+# %%
+def test_TaskOnce_from_TaskProxy():
     @task
     def add(a, b, c, d):
         return a + b + c + d

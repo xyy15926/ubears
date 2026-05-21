@@ -3,7 +3,7 @@
 #   Name: test_executor.py
 #   Author: xyy15926
 #   Created: 2026-05-06 23:13:48
-#   Updated: 2026-05-18 21:55:17
+#   Updated: 2026-05-20 14:25:57
 #   Description:
 # ---------------------------------------------------------
 
@@ -15,6 +15,7 @@ from datetime import timedelta
 import threading
 import os
 import concurrent
+import shutil
 
 if __name__ == "__main__":
     from importlib import reload
@@ -25,8 +26,11 @@ if __name__ == "__main__":
     reload(task)
     reload(executor)
 
-from flagbear.slp.cache import MemoryCache
+from flagbear.slp.finer import get_tmp_path
+from flagbear.slp.storage import LocalFileStorage
+from flagbear.slp.cache import MemoryCache, PersistentCache
 from flagbear.sched.protocols import(
+    TaskState,
     RetryPolicy,
     ExecutionPolicy,
 )
@@ -35,6 +39,22 @@ from flagbear.sched.task import(
     TaskOnce,
 )
 from flagbear.sched.executor import LocalExecutor
+
+PYTEST_DIR = "tmp/pytest_tmpdir"
+TMP_DIR = get_tmp_path(PYTEST_DIR)
+
+
+# %%
+@pytest.fixture(scope="function", autouse=False)
+def tmpfile_fixture(request):
+    yield
+
+    # Remove the tmp file during the pytest.
+    # Clear only once with `scope=module`.
+    pytest_tmp = TMP_DIR
+    shutil.rmtree(pytest_tmp, ignore_errors=True)
+    if not any(get_tmp_path().iterdir()):
+        get_tmp_path().rmdir()
 
 
 # %%
@@ -270,10 +290,69 @@ def test_LocalExecutor_excecute_future():
     error_mul_fut = TaskOnce(mul, (1, error_add_fut), {"c": 3, "d": add_fut})
     error_mul_coro = engine.execute_with_cache(error_mul_fut, cache)
     error_mul_result = engine.run_coro(error_mul_coro).result()
-    assert not error_mul_result.is_failed() and not error_mul_result.is_successful()
+    assert error_mul_result.is_failed()
     assert error_mul_result.value is None
 
     engine.shutdown()
+
+# %%
+def test_LocalExecutor_excecute_future_with_persistent_cache(tmpfile_fixture):
+    lstorage = LocalFileStorage(TMP_DIR)
+    pcache = PersistentCache(lstorage, max_mem_size = 1024)
+    engine = LocalExecutor()
+
+    # Succeed.
+    @task
+    def add(a, b, c, d):
+        time.sleep(0.1)
+        return a + b + c + d
+
+    @task
+    def mul(a, b, c, d):
+        return a * b * c * d
+
+    # Execute `add` first.
+    add_fut = TaskOnce(add, (1, 2, 3, 4), {})
+    add_coro = engine.execute_with_cache(add_fut, pcache)
+    add_result = engine.run_coro(add_coro).result()
+    assert add_result.value == 10
+
+    # Execute `mul` then.
+    mul_fut = TaskOnce(mul, (1, add_fut), {"c": 3, "d": add_fut})
+    mul_coro = engine.execute_with_cache(mul_fut, pcache)
+    mul_result = engine.run_coro(mul_coro).result()
+    assert mul_result.value == 300
+
+    engine.shutdown()
+
+    # Restart engine and persistent cache.
+    lstorage = LocalFileStorage(TMP_DIR)
+    pcache = PersistentCache(lstorage, max_mem_size = 1024)
+    engine = LocalExecutor()
+
+    add_fut = TaskOnce(add, (1, 2, 3, 4), {})
+    mul_fut = TaskOnce(mul, (1, add_fut), {"c": 3, "d": add_fut})
+
+    # Precedent tasks must be executed first, though cached.
+    mul_coro = engine.execute_with_cache(mul_fut, pcache)
+    with pytest.raises(RuntimeError):
+        mul_result = engine.run_coro(mul_coro).result()
+
+    add_fut = TaskOnce(add, (1, 2, 3, 4), {})
+    add_coro = engine.execute_with_cache(add_fut, pcache)
+    start_time = time.time()
+    cached_add_result = engine.run_coro(add_coro).result()
+    end_time = time.time()
+    assert cached_add_result.state == TaskState.CACHED
+    assert cached_add_result.value == 10
+    # Cache will be used.
+    assert end_time - start_time < 0.1
+
+    mul_fut = TaskOnce(mul, (1, add_fut), {"c": 3, "d": add_fut})
+    mul_coro = engine.execute_with_cache(mul_fut, pcache)
+    cached_mul_result = engine.run_coro(mul_coro).result()
+    assert cached_mul_result.state == TaskState.CACHED
+    assert cached_mul_result.value == 300
 
 
 # %%

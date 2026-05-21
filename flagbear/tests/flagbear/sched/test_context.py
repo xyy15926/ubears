@@ -3,20 +3,23 @@
 #   Name: test_flow.py
 #   Author: xyy15926
 #   Created: 2026-05-07 10:03:37
-#   Updated: 2026-05-18 21:45:33
+#   Updated: 2026-05-20 18:29:28
 #   Description:
 # ---------------------------------------------------------
 
 # %%
 import pytest
 import time
-import threading
-import os
 import asyncio
-from IPython.core.debugger import set_trace
+import shutil
+# from IPython.core.debugger import set_trace
 
 if __name__ == "__main__":
     from importlib import reload
+    from flagbear.slp import finer, storage, cache
+    reload(finer)
+    reload(storage)
+    reload(cache)
     from flagbear.tree import dag
     reload(dag)
     from flagbear.sched import protocols, task, executor, scheduler, context
@@ -26,16 +29,32 @@ if __name__ == "__main__":
     reload(scheduler)
     reload(context)
 
+from flagbear.slp.finer import get_tmp_path
+from flagbear.slp.storage import LocalFileStorage
+from flagbear.slp.cache import MemoryCache, PersistentCache
 from flagbear.sched.protocols import _current_context
 from flagbear.sched.task import task, TaskOnce
-from flagbear.sched.executor import LocalExecutor 
-from flagbear.sched.scheduler import DAGScheduler
 from flagbear.sched.context import SimpleContext
-#TODO
+
+PYTEST_DIR = "tmp/pytest_tmpdir"
+TMP_DIR = get_tmp_path(PYTEST_DIR)
 
 
 # %%
-def test_SimpleContext_submit_gather_run():
+@pytest.fixture(scope="function", autouse=False)
+def tmpfile_fixture(request):
+    yield
+
+    # Remove the tmp file during the pytest.
+    # Clear only once with `scope=module`.
+    pytest_tmp = TMP_DIR
+    shutil.rmtree(pytest_tmp, ignore_errors=True)
+    if not any(get_tmp_path().iterdir()):
+        get_tmp_path().rmdir()
+
+
+# %%
+def test_SimpleContext_submit_run():
     @task
     def add(a, b, c, d):
         time.sleep(0.1)
@@ -69,7 +88,8 @@ def test_SimpleContext_submit_gather_run():
         end = time.time()
         assert add_ret.value == 10
         assert async_add_ret.value == 10
-        assert end - start < 0.2
+        # Cache will be used.
+        assert end - start < 0.1
 
 
 # %%
@@ -104,7 +124,7 @@ def test_SimpleContext_submit_unordered_twice():
         assert add_ret.value == 10
         assert async_add_ret.value == 31
         assert end - start < 0.3
-        assert len(ctx.task_results.list_keys()) == 4
+        assert len(ctx.task_results.list_keys()) == 6
 
         # TaskOnce can't be submited again.
         with pytest.raises(ValueError):
@@ -167,7 +187,10 @@ def test_SimpleContext_TaskOnce_call_and_submit_then_result():
         assert add_ret == 10
         assert async_add_ret == 10
         assert end - start < 0.2
+        assert sync_ctx is None
+        assert async_ctx is None
 
+    with SimpleContext() as ctx:
         # Simple task but do calculation immediately.
         start = time.time()
         add_ret, sync_ctx = add(1, 2, 3, 4)
@@ -202,6 +225,94 @@ def test_SimpleContext_TaskOnce_with_dag_topo():
         end = time.time()
         assert total == 58
         assert end - start < 0.4
+
+
+# %%
+def test_SimpleContext_TaskOnce_error():
+    @task
+    def add(a, b, c, d):
+        raise RuntimeError("RuntimeError")
+        return a + b + c + d
+
+    @task
+    async def async_add(a, b, c, d):
+        return a + b + c + d
+
+    mem_cache = MemoryCache()
+    with SimpleContext(mem_cache) as ctx:
+        add_task1 = add.submit(1, 2, 3, 4)
+        add_task2 = add.submit(1, 2, 3, 4)
+        async_add_task1 = async_add.submit(add_task1, 2, 3, 4)
+        async_add_task2 = async_add.submit(add_task1, 2, 3, 4)
+        with pytest.raises(RuntimeError):
+            _total = add(add_task1, add_task2, async_add_task1, async_add_task2)
+
+    for key in mem_cache.list_keys():
+        add_ret = mem_cache.get(key)
+        # As no Task is successful, no cache of function result is set.
+        assert add_ret.is_failed()
+        assert add_ret.value is None
+
+    # Reuse the cache.
+    with SimpleContext(mem_cache) as ctx:
+        add_task1 = add.submit(1, 2, 3, 4)
+        add_task2 = add.submit(1, 2, 3, 4)
+        async_add_task1 = async_add.submit(add_task1, 2, 3, 4)
+        async_add_task2 = async_add.submit(add_task1, 2, 3, 4)
+        with pytest.raises(RuntimeError):
+            _total = add(add_task1, add_task2, async_add_task1, async_add_task2)
+
+    for key in mem_cache.list_keys():
+        add_ret = mem_cache.get(key)
+        # As no Task is successful, no cache of function result is set.
+        assert add_ret.is_failed()
+        assert add_ret.value is None
+
+
+# %%
+def test_SimpleContext_TaskOnce_error_with_persistent_cache(tmpfile_fixture):
+    @task
+    def add(a, b, c, d):
+        raise RuntimeError("RuntimeError")
+        return a + b + c + d
+
+    @task
+    async def async_add(a, b, c, d):
+        return a + b + c + d
+
+    lstorage = LocalFileStorage(TMP_DIR)
+    pcache = PersistentCache(lstorage, max_mem_size = 1024)
+    with SimpleContext(pcache) as ctx:
+        add_task1 = add.submit(1, 2, 3, 4)
+        add_task2 = add.submit(1, 2, 3, 4)
+        async_add_task1 = async_add.submit(add_task1, 2, 3, 4)
+        async_add_task2 = async_add.submit(add_task1, 2, 3, 4)
+        with pytest.raises(RuntimeError):
+            _total = add(add_task1, add_task2, async_add_task1, async_add_task2)
+
+    for key in pcache.list_keys():
+        add_ret = pcache.get(key)
+        # As no Task is successful, no cache of function result is set.
+        assert add_ret.is_failed()
+        assert add_ret.value is None
+
+    # Reuse the cache.
+    lstorage = LocalFileStorage(TMP_DIR)
+    pcache = PersistentCache(lstorage, max_mem_size = 1024)
+    with SimpleContext(pcache) as ctx:
+        add_task1 = add.submit(1, 2, 3, 4)
+        add_task2 = add.submit(1, 2, 3, 4)
+        async_add_task1 = async_add.submit(add_task1, 2, 3, 4)
+        async_add_task2 = async_add.submit(add_task1, 2, 3, 4)
+        with pytest.raises(RuntimeError):
+            _total = add(add_task1, add_task2, async_add_task1, async_add_task2)
+
+    for key in pcache.list_keys():
+        add_ret = pcache.get(key)
+        # As no Task is successful, no cache of function result is set.
+        assert add_ret.is_failed()
+        assert add_ret.value is None
+        assert isinstance(add_ret.error, Exception)
 
 
 # %%
@@ -245,7 +356,7 @@ def test_SimpleContext_nested_sync_task():
 
     # The task nested in another task will be treated as a normal function.
     # So, only `mix_error` and `mix` will be set in `ctx.task_results`.
-    assert len(ctx.task_results.list_keys()) == 2
+    assert len(ctx.task_results.list_keys()) == 3
 
 
 # %%
@@ -289,7 +400,7 @@ def test_SimpleContext_nested_async_func_and_coro():
 
     # Nested task will be treated as normal function or async function.
     # So, only `mix_loop` and `mix_gather` will be set in `ctx.task_results`.
-    assert len(ctx.task_results.list_keys()) == 2
+    assert len(ctx.task_results.list_keys()) == 4
 
 
 # %%
@@ -323,7 +434,7 @@ def test_SimpleContext_nested_context_result_immediately():
             assert inner_ctx.task_results is outer_ctx.task_results
             assert inner_ctx._task_results is None
 
-    assert len(outer_ctx.task_results.list_keys()) == 4
+    assert len(outer_ctx.task_results.list_keys()) == 6
 
 
 # %%
@@ -383,6 +494,6 @@ def test_SimpleContext_nested_context_submit_and_force_shutdown():
     task_results = outer_ctx.task_results
     for key in task_results.list_keys():
         add_ret = task_results.get(key)
-        assert not add_ret.is_successful()
-        assert not add_ret.is_failed()
+        assert add_ret.is_failed()
         assert add_ret.value is None
+    #TODO

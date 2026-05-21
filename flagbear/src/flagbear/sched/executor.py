@@ -3,7 +3,7 @@
 #   Name: executor.py
 #   Author: xyy15926
 #   Created: 2026-05-10 16:17:59
-#   Updated: 2026-05-18 21:58:04
+#   Updated: 2026-05-20 22:25:27
 #   Description:
 # ---------------------------------------------------------
 
@@ -32,10 +32,8 @@ from flagbear.sched.protocols import(
     _current_context,
     TaskState, 
     TaskResult,
-    Task,
     RetryPolicy,
     ExecutionPolicy,
-    Context,
     Task,
 )
 
@@ -176,12 +174,14 @@ class LocalExecutor:
                 result = TaskResult(
                     TaskState.CANCELLED,
                     None,
+                    None,
                     error,
                     datetime.now(),
                     None,
                     0,
                 )
-                task_results.set(task.id_, result, task.cache_policy)
+                task_result_cache_policy = result.cache_policy()
+                task_results.set(task.id_, result, task_result_cache_policy)
             except Exception as e:
                 logger.exception(e)
             finally:
@@ -252,6 +252,7 @@ class LocalExecutor:
         # Clear `_current_context` so that nested `Tasks` won't get
         # `_current_context` and will perform just as a normal function.
         _current_context.set(None)
+        value_cache_policy = task.cache_policy
 
         # Resolve arguments.
         (resolved_args, resolved_kwargs,
@@ -265,12 +266,14 @@ class LocalExecutor:
             result = TaskResult(
                 TaskState.SKIPPED,
                 None,
+                None,
                 error,
                 datetime.now(),
                 None,
                 0,
             )
-            # ctx.set_result(task, result)
+            task_result_cache_policy = result.cache_policy(value_cache_policy)
+            task_results.set(task.id_, result, task_result_cache_policy)
             return result
 
         # All tasks should be ready or failed, since all dependent tasks
@@ -282,13 +285,33 @@ class LocalExecutor:
                 f"tasks: {task_names} can't be ready."
             )
 
+        cache_key = task.cache_key
+        func_result = task_results.get(cache_key)
+        if func_result is not None:
+            result = TaskResult(
+                TaskState.CACHED,
+                cache_key,
+                func_result,
+                None,
+                datetime.now(),
+                datetime.now(),
+                0,
+            )
+            task_result_cache_policy = result.cache_policy(value_cache_policy)
+            task_results.set(task.id_, result, task_result_cache_policy)
+            logger.info(f"Use cache for task {task_name}.")
+            return result
+
         logger.info(f"Wait for task {task_name} to start.")
         result = await self.execute_resolved(
             task,
             resolved_args,
             resolved_kwargs,
         )
-        task_results.set(task.id_, result, task.cache_policy)
+        if result.is_successful():
+            task_results.set(cache_key, result.value, value_cache_policy)
+        task_result_cache_policy = result.cache_policy(value_cache_policy)
+        task_results.set(task.id_, result, task_result_cache_policy)
         logger.info(f"Task {task_name} ends.")
 
         return result
@@ -386,6 +409,7 @@ class LocalExecutor:
         end_time = datetime.now()
         result = TaskResult(
             state,
+            task.cache_key,
             value,
             error,
             start_time,

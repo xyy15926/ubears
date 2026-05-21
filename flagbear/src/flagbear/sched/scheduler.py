@@ -3,29 +3,28 @@
 #   Name: scheduler.py
 #   Author: xyy15926
 #   Created: 2026-05-14 15:10:46
-#   Updated: 2026-05-18 22:13:19
+#   Updated: 2026-05-21 14:54:35
 #   Description:
 # ---------------------------------------------------------
 
 # %%
 from __future__ import annotations
 import logging
-from typing import Any, Optional
+from typing import Optional
 import threading
 import functools
-from concurrent.futures import ThreadPoolExecutor
-from IPython.core.debugger import set_trace
+# from IPython.core.debugger import set_trace
 
 if __name__ == "__main__":
     from importlib import reload
     from flagbear.tree import dag
-    from flagbear.slp import finer, storage, serializer, cache
-    from flagbear.sched import protocols, executor
     reload(dag)
+    from flagbear.slp import finer, storage, serializer, cache
     reload(finer)
     reload(storage)
     reload(serializer)
     reload(cache)
+    from flagbear.sched import protocols, executor
     reload(protocols)
     reload(executor)
 from flagbear.tree.dag import (
@@ -55,10 +54,13 @@ class DAGScheduler:
     Attrs:
     --------------------------
     task_results: Cache to store the results of task.
-    task_dag: DAG to organize the tasks in execution or waiting to be
-      executed.
-    task_submited: Set to the store the tasks in execution.
+    task_dag: DAG to organize the tasks waiting for results, namely in
+      execution or waiting to be executed.
+    task_submited: Set to the store the tasks that has been submitted to
+      executor.
     executor: Executor to execute the tasks.
+    ctx_dags: Dict of DAGs to records all tasks that has been added to current
+      scheduler from different contexts.
     """
     def __init__(
         self,
@@ -70,6 +72,7 @@ class DAGScheduler:
         self.task_submited = set()
         self._task_lock = threading.Lock()
         self.executor = executor or LocalExecutor()
+        self.ctx_dags: dict[str, DirectedGraph] = {}
 
     def is_added(
         self,
@@ -82,7 +85,12 @@ class DAGScheduler:
         return True
 
     def shutdown(self, force = False):
-        """Shutdown."""
+        """Shutdown.
+
+        Params:
+        -------------------------
+        force: If to shutdown executor without waiting for tasks.
+        """
         task_dag = self.task_dag
         if len(task_dag.nodes) == 0:
             self.executor.shutdown()
@@ -95,12 +103,18 @@ class DAGScheduler:
                 tasks = [node.task for node in task_dag.nodes.values()]
                 self.wait(*tasks)
 
+        # Log the DAG of tasks.
+        for ctx_name, dag in self.ctx_dags.items():
+            logger.info("\n" + ctx_name + dag.visualize())
+
     def add(
         self,
         *tasks: Task,
+        ctx_name: str = "",
     ):
         """Add tasks."""
         task_dag = self.task_dag
+        log_dag = self.ctx_dags.setdefault(ctx_name, DirectedGraph())
         task_results = self.task_results
         with self._task_lock:
             # Add tasks to DAG first.
@@ -111,6 +125,7 @@ class DAGScheduler:
                     )
                 tid = getattr(task, "id_", task)
                 task_dag.add_node(tid)
+                log_dag.add_node(tid)
 
                 # Bind task future to the node in the DAG.
                 task_node = task_dag.get_node(tid)
@@ -122,12 +137,13 @@ class DAGScheduler:
             # topological sorted.
             for task in tasks:
                 tid = getattr(task, "id_", task)
-                deps = task.resolve_dependencies(task_results)
+                deps = task.resolve_dependencies()
                 for dep in deps:
                     did = dep.id_
+                    log_dag.add_edge(did, tid)
                     if did in self.task_dag:
                         task_dag.add_edge(did, tid)
-                    elif not self.task_results.exists(did):
+                    elif not task_results.exists(did):
                         raise ValueError(
                             f"Task {dep.name} has not been submited before."
                         )
@@ -148,19 +164,23 @@ class DAGScheduler:
             task_names = ",".join(cycle)
             raise RuntimeError(f"Cycle {task_names} found in tasks.")
 
-        # Submit ready tasks, namely tasks with no upstream, to executor.
-        for tid in task_dag.leaf_nodes:
-            if tid in self.task_submited:
-                continue
-            task_node = task_dag.get_node(tid)
-            task = task_node.task
-            on_done = functools.partial(self.mark_done, tid)
-            self.executor.submit(self.task_results, (task, on_done))
-            # future, = self.executor.submit(self.task_results, task)
-            # future.add_done_callback(on_done)
-            with self._task_lock:
+        # Lock has to be locked outside of the `for` loop, as other threads
+        # of the executor will try to remove nodes within `mark_done`
+        # callback, which may lead to the `RuntimeError` because the
+        # `leaf_nodes` changed during the iteration.
+        with self._task_lock:
+            # Submit ready tasks, namely tasks with no upstream, to executor.
+            for tid in task_dag.leaf_nodes:
+                if tid in self.task_submited:
+                    continue
+                task_node = task_dag.get_node(tid)
+                task = task_node.task
+                on_done = functools.partial(self.mark_done, tid)
+                self.executor.submit(self.task_results, (task, on_done))
+                # future, = self.executor.submit(self.task_results, task)
+                # future.add_done_callback(on_done)
                 self.task_submited.add(tid)
-            logger.info(f"Task {task.name} has been submited.")
+                logger.info(f"Task {task.name} has been submited.")
 
     def mark_done(
         self,
@@ -221,86 +241,3 @@ class DAGScheduler:
             raise RuntimeError(
                 f"Task {task_name} should be submitted before being waited."
             )
-
-
-# %%
-class LazyScheduler:
-    def submit(
-        self,
-        *tasks: Task,
-    ):
-        """Submit task.
-
-        1. Untraced tasks will be added to DAG but won't be executed until
-          gathering results is required.
-        2. ValueError will be raised if a task has been submitted before.
-        """
-        with self._global_lock:
-            # Add tasks to DAG first.
-            for task in tasks:
-                key = getattr(task, "id_", task)
-                if (self.task_results.exists(key)
-                    or self.dag.has_node(key)):
-                    raise ValueError(
-                        f"Task {key} has been submited before."
-                    )
-                cur_node = Node(key)
-                cur_node.task = task
-                self.dag.add_node(cur_node)
-            # Then add the edges to the DAG, so to avoid the edges are added
-            # before the nodes. As the tasks in `task_features` may not be
-            # topological sorted.
-            for task in tasks:
-                key = getattr(task, "id_", task)
-                deps = task.resolve_dependencies(self)
-                for dep in deps:
-                    dep_key = dep.id_
-                    if dep_key in self.dag:
-                        self.dag.add_edge(dep_key, key)
-                    elif not self.task_results.exists(dep_key):
-                        raise ValueError(
-                            f"Task {dep_key} has not been submited before."
-                        )
-
-    def gather(
-        self,
-        *tasks: Task,
-    ) -> list[Any]:
-        """Gather the results of tasks."""
-        task_nodes = []
-        # Result of the tasks can't be gather twice.
-        for task in tasks:
-            node = self.dag.get_node(task.id_)
-            if node is None:
-                raise ValueError(
-                    f"Result of task {task.name} result has been "
-                    f"gathered beofore."
-                )
-            task_nodes.append(node)
-
-        # Sort tasks topologically first so to determine the execution order
-        # of tasks, which will also detect the unreasonable, cyclic tasks
-        # dependency relations.
-        # TODO: Level by level topo -> node by node topo.
-        node_levels = topological_sort_from_entry(*task_nodes)
-        if node_levels is None:
-            cycle = self.dag.find_cycle()
-            task_names = ",".join(cycle)
-            raise ValueError(f"Tasks {task_names} form a cycle.")
-
-        # Execute tasks.
-        # The last `results` in the `for` loop is the last level of the
-        # task-DAG.
-        for level in node_levels:
-            # set_trace()
-            tasks = [node.task for node in level]
-            self.executor.submit(self, *tasks)
-            results = self.executor.gather(*tasks)
-            for task, res in zip(level, results, strict=True):
-                self.set_result(task, res)
-                with self._global_lock:
-                    self.dag.remove_node(task.id_)
-        # TODO
-
-        results = [self.get_result(task) for task in tasks]
-        return results

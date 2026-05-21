@@ -3,33 +3,38 @@
 #   Name: flow.py
 #   Author: xyy15926
 #   Created: 2026-05-06 16:02:03
-#   Updated: 2026-05-18 22:00:06
+#   Updated: 2026-05-21 14:47:10
 #   Description:
 # ---------------------------------------------------------
 
 # %%
 from __future__ import annotations
 import logging
-from typing import List, Callable, Any, Optional, Dict
+from typing import Callable, Any, Optional
 import functools
 # from IPython.core.debugger import set_trace
 
 if __name__ == "__main__":
     from importlib import reload
-    from flagbear.slp import cache
+    from flagbear.slp import cache, checkpoint
     reload(cache)
-    from flagbear.sched import protocols, executor, context
+    reload(checkpoint)
+    from flagbear.sched import protocols, executor, scheduler, context
     reload(protocols)
     reload(executor)
+    reload(scheduler)
     reload(context)
 from flagbear.sched.protocols import(
     Context,
     RetryPolicy,
     ExecutionPolicy,
     _current_context,
+    Scheduler,
+    TaskProxyBase,
 )
 from flagbear.slp.cache import Cache, CachePolicy
-from flagbear.sched.task import TaskOnce, TaskProxy
+from flagbear.slp.checkpoint import CheckpointPolicy
+from flagbear.sched.task import TaskOnce
 from flagbear.sched.context import SimpleContext
 
 logging.basicConfig(
@@ -42,28 +47,36 @@ logger.info("Logging Start.")
 
 
 # %%
-class Flow:
+class Flow(TaskProxyBase):
     """Working flow of tasks.
 
     Attrs:
     -----------------------------
     name: Flow name.
     func: The function body of the flow.
-    retry_policy: Retry policy of the flow as a task.
     cache_policy: Cache policy of result.
+    retry_policy: Retry policy of the flow as a task.
     execution_policy: Execution policy of the flow as a task.
-    result_cache: Cache to store the result of inner tasks.
-    executor: Executor to execute the task.
+    task_results: Cache to store the result of inner tasks.
+    scheduler: scheduler to execute the task.
+    tmp_name: Temperary name of the task that will be used to construct
+      the `Task.id_` and `Task.cache_key`.
+      Temperary name should be reset once a Task has been constructed.
+    tmp_cache_policy: Temperary cache policy.
+    tmp_checkpoint_policy: Temperary checkpoint policy
+    tmp_retry_policy: Temperary retry policy.
+    tmp_execution_policy: Temperary execution policy.
     """
     def __init__(
         self,
         name: Optional[str] = None,
         func: Optional[Callable] = None,
-        retry_policy: Optional[RetryPolicy] = None,
         cache_policy: Optional[CachePolicy] = None,
+        checkpoint_policy: Optional[CheckpointPolicy] = None,
+        retry_policy: Optional[RetryPolicy] = None,
         execution_policy: Optional[ExecutionPolicy] = None,
-        result_cache: Optional[Cache] = None,
-        executor: Optional[Cache] = None,
+        task_results: Optional[Cache] = None,
+        scheduler: Optional[Cache] = None,
     ):
         """Init the flow.
 
@@ -71,24 +84,32 @@ class Flow:
         -----------------------------
         name: Flow name.
         func: The function body of the flow.
+        cache_policy: Cache policy of the value of TaskResult.
+        checkpoint_policy: Checkpoint policy of the value of TaskResult.
         retry_policy: Retry policy of the flow as a task.
-        cache_policy: Cache policy of result.
         execution_policy: Execution policy of the flow as a task.
-        result_cache: Cache to store the result of inner tasks.
-        executor: Executor to execute the task.
+        task_results: Cache to store the result of inner tasks.
+        scheduler: scheduler to execute the task.
         """
         if func is None and name is None:
             raise ValueError("One of flow name or function must be provided.")
-        self.func = func
-        self.name = name or f"Flow.{func.__module__}.{func.__qualname__}"
-        self.retry_policy = retry_policy
-        self.cache_policy = cache_policy
-        self.execution_policy = execution_policy
-        self.result_cache = result_cache
-        self.executor = executor
+        super().__init__(
+            func,
+            name or f"Flow.{func.__module__}.{func.__qualname__}",
+            cache_policy,
+            checkpoint_policy,
+            retry_policy,
+            execution_policy,
+        )
+        self.task_results = task_results
+        self.scheduler = scheduler
         functools.update_wrapper(self, func)
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        """Call the flow directly."""
+        return self.run(*args, **kwargs)
+
+    def run(self, *args: Any, **kwargs: Any) -> Any:
         """Call the flow directly.
 
         A context will be constructed execute the flow.
@@ -99,7 +120,12 @@ class Flow:
         """
         parent_ctx = _current_context.get()
         if parent_ctx is None:
-            ctx = SimpleContext(self.result_cache, self.executor, parent_ctx)
+            ctx = SimpleContext(
+                self.task_results,
+                self.scheduler,
+                parent_ctx,
+                name = self.name,
+            )
             with ctx:
                 return self.func(*args, **kwargs)
         flow_once = self.submit(*args, **kwargs)
@@ -112,15 +138,22 @@ class Flow:
             raise RuntimeError(
                 "Can's sumbit Flow as sub-flow within no Flow."
             )
-        ctx = SimpleContext(self.result_cache, self.executor, parent_ctx)
+        ctx = SimpleContext(
+            self.task_results,
+            self.scheduler,
+            parent_ctx,
+            name = self.name,
+        )
         flow_once = self.as_task(args, kwargs, ctx)
+        # Reset policy after `TaskOnce` has been constructed.
+        self.reset_policy()
         parent_ctx.submit(flow_once)
         return flow_once
 
     def as_task(
         self,
-        args: List[Any],
-        kwargs: Dict[str, Any],
+        args: list[Any],
+        kwargs: dict[str, Any],
         ctx: SimpleContext,
     ) -> TaskOnce:
         """Wrap flow as a task."""
@@ -133,14 +166,17 @@ class Flow:
             with ctx:
                 return func(*args, **kwargs)
 
-        wrapped_flow = TaskProxy(
+        flow_once = TaskOnce.from_func(
             wrapper,
-            self.name,
-            self.retry_policy,
-            self.cache_policy,
-            self.execution_policy,
+            args,
+            kwargs,
+            name = self.name,
+            cache_policy = self.cache_policy,
+            checkpoint_policy = self.checkpoint_policy,
+            retry_policy = self.retry_policy,
+            execution_policy = self.execution_policy,
         )
-        flow_once = TaskOnce(wrapped_flow, args, kwargs)
+        flow_once.id_ = ctx.id_
 
         return flow_once
 
@@ -150,9 +186,10 @@ class Flow:
             "Only empty Flow could be used as a task container."
         )
         ctx = SimpleContext(
-            self.result_cache,
-            self.executor,
+            self.task_results,
+            self.scheduler,
             _current_context.get(),
+            name = self.name,
         )
         self._ctx = ctx
         return ctx.__enter__()
@@ -167,11 +204,12 @@ def flow(
     func: Callable = None,
     *,
     name: Optional[str] = None,
-    retry_policy: Optional[RetryPolicy] = None,
     cache_policy: Optional[CachePolicy] = None,
+    checkpoint_policy: Optional[CheckpointPolicy] = None,
+    retry_policy: Optional[RetryPolicy] = None,
     execution_policy: Optional[ExecutionPolicy] = None,
-    result_cache: Optional[Cache] = None,
-    executor: Optional[Cache] = None,
+    task_results: Optional[Cache] = None,
+    scheduler: Optional[Scheduler] = None,
 ) -> Flow:
     """Decorator to wrap a function as a Flow.
 
@@ -179,11 +217,12 @@ def flow(
     ---------------------------
     func: The function body of the flow.
     name: Flow name.
+    cache_policy: Cache policy of the value of TaskResult.
+    checkpoint_policy: Checkpoint policy of the value of TaskResult.
     retry_policy: Retry policy of the flow as a task.
-    cache_policy: Cache policy of result.
     execution_policy: Execution policy of the flow as a task.
-    result_cache: Cache to store the result of inner tasks.
-    executor: Executor to execute the task.
+    task_results: Cache to store the result of inner tasks.
+    scheduler: scheduler to execute the task.
 
     Return:
     ---------------------------
@@ -191,15 +230,16 @@ def flow(
     """
     def decorator(ffunc):
         # nonlocal name, retry_policy, cache_policy, execution_policy
-        # nonlocal result_cache, executor
+        # nonlocal task_results, scheduler
         return Flow(
             name,
             ffunc,
-            retry_policy,
             cache_policy,
+            checkpoint_policy,
+            retry_policy,
             execution_policy,
-            result_cache,
-            executor,
+            task_results,
+            scheduler,
         )
     if func is None:
         return decorator

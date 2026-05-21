@@ -3,7 +3,7 @@
 #   Name: test_protocols.py
 #   Author: xyy15926
 #   Created: 2026-05-13 15:18:23
-#   Updated: 2026-05-13 22:44:11
+#   Updated: 2026-05-20 21:53:49
 #   Description:
 # ---------------------------------------------------------
 
@@ -27,7 +27,7 @@ from flagbear.sched.protocols import(
 
 
 # %%
-def test_TaskResult_to_json_serialize():
+def test_TaskResult_to_json():
     def raise_chain():
         raise RuntimeError("Runtime error") from ValueError("Value error")
 
@@ -83,7 +83,7 @@ def test_TaskResult_to_json_serialize():
 
 
 # %%
-def test_TaskResult_to_json_serialize_with_numpy():
+def test_TaskResult_to_json_with_serialize_value_with_numpy():
     def raise_chain():
         raise RuntimeError("Runtime error") from ValueError("Value error")
 

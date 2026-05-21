@@ -3,37 +3,35 @@
 #   Name: task.py
 #   Author: xyy15926
 #   Created: 2026-05-06 15:15:38
-#   Updated: 2026-05-18 18:15:53
+#   Updated: 2026-05-21 14:37:43
 #   Description:
 # ---------------------------------------------------------
 
 # %%
 from __future__ import annotations
 import logging
-from typing import Dict, List, Callable, Any, Optional, Self, Tuple
-import functools
+from typing import Callable, Any, Optional, Self
 import uuid
-import asyncio
-import inspect
 # from IPython.core.debugger import set_trace
 
 if __name__ == "__main__":
     from importlib import reload
-    from flagbear.slp import cache
-    from flagbear.sched import task, flow, protocols
+    from flagbear.slp import cache, checkpoint
     reload(cache)
+    reload(checkpoint)
+    from flagbear.sched import task, flow, protocols
     reload(task)
     reload(flow)
     reload(protocols)
 
 from flagbear.slp.cache import CachePolicy, Cache
+from flagbear.slp.checkpoint import CheckpointPolicy
 from flagbear.sched.protocols import(
-    TaskState,
-    TaskResult,
     RetryPolicy,
     ExecutionPolicy,
     Context,
     _current_context,
+    TaskProxyBase,
 )
 
 logging.basicConfig(
@@ -46,44 +44,31 @@ logger.info("Logging Start.")
 
 
 # %%
-class TaskProxy:
+class TaskProxy(TaskProxyBase):
     """Proxy of from a callable to a task in a working flow.
 
     Attrs:
     -------------------------------
     func: Callable to execute to reach a goal.
-    name: Task name.
-    retry_policy: Retry policy.
-    cache_policy: Cache policy.
-    execution_policy: Execution policy.
+    _default_policies: Default policies.
+      name: Name of the task that will be used to construct the `Task.id_`
+        and `Task.cache_key`.
+      cache_policy: Cache policy.
+      checkpoint_policy: Checkpoint policy
+      retry_policy: Retry policy.
+      execution_policy: Execution policy.
+    _current_policies: Policies updated by `with_policy` should should be
+      reset to be the same as `_default_policies` once a Task has been
+      inited.
+      Policies in `_current_context` could be accessed just like normal
+      attributes.
     is_async: If inner function is async.
     """
-    def __init__(
-        self,
-        func: Callable,
-        name: Optional[str] = None,
-        retry_policy: Optional[RetryPolicy] = None,
-        cache_policy: Optional[CachePolicy] = None,
-        execution_policy: Optional[ExecutionPolicy] = None,
-    ):
-        """Init task.
+    def __call__(self, *args, **kwargs) -> Any:
+        """Call `self.func`."""
+        return self.run(*args, **kwargs)
 
-        Params:
-        -------------------------------
-        func: Callable to execute to reach a goal.
-        name: Name of the task that should be unique among a Flow, namely
-          the `Node.id_`.
-        #TODO
-        """
-        self.func = func
-        self.name = name or f"{func.__module__}.{func.__qualname__}"
-        self.retry_policy = retry_policy
-        self.cache_policy = cache_policy
-        self.execution_policy = execution_policy
-        self.is_async = inspect.iscoroutinefunction(func)
-        functools.update_wrapper(self, func)
-
-    def __call__(self, *args, **kwargs):
+    def run(self, *args, **kwargs) -> Any:
         """Call `self.func`."""
         ctx = _current_context.get()
         if ctx is None:
@@ -97,6 +82,9 @@ class TaskProxy:
         if ctx is None:
             raise RuntimeError("Cannot sumbit task within no Flow.")
         task_once = TaskOnce(self, args, kwargs)
+
+        # Reset setting such as `self.tmp_name`.
+        self.reset_policy()
         ctx.submit(task_once)
         return task_once
 
@@ -109,13 +97,21 @@ def task(
     func: Callable = None,
     *,
     name: Optional[str] = None,
-    retry_policy: Optional[RetryPolicy] = None,
     cache_policy: Optional[CachePolicy] = None,
+    checkpoint_policy: Optional[CheckpointPolicy] = None,
+    retry_policy: Optional[RetryPolicy] = None,
     execution_policy: Optional[ExecutionPolicy] = None,
 ) -> TaskProxy:
     def decorator(ffunc):
-        nonlocal name, retry_policy, cache_policy, execution_policy
-        return TaskProxy(ffunc, name, retry_policy, cache_policy, execution_policy)
+        nonlocal name, cache_policy, checkpoint_policy
+        nonlocal retry_policy, execution_policy
+        return TaskProxy(
+            ffunc, name,
+            cache_policy,
+            checkpoint_policy,
+            retry_policy,
+            execution_policy,
+        )
     if func is None:
         return decorator
     return decorator(func)
@@ -123,19 +119,44 @@ def task(
 
 # %%
 class TaskOnce:
+    """Task that should be executed only once.
+
+    Attrs:
+    --------------------------
+    name: Task name.
+    func: Callable to execute to reach a goal.
+    name: Task name.
+    cache_policy: Cache policy.
+    checkpoint_policy: Checkpoint policy
+    retry_policy: Retry policy.
+    execution_policy: Execution policy.
+    is_async: If inner function is async.
+    cache_key: Unique key generated with `checkpoint_policy` for cache.
+      Cache key can only be determined after all raw arguments has been
+      resolved.
+      So an another `id_` is used to identify the `TaskOnce`.
+      Also `cache_key` and `id_` could serperate the `TaskResult` with
+      the result of the inner function.
+    id_: Unique identity of the `TaskOnce`.
+    raw_args: Raw arguments that may contain other `TaskOnce`s to be resolved.
+    raw_kwargs: Raw arguments that may contain other `TaskOnce`s to be
+      resolved.
+    """
     def __init__(
         self,
         task: TaskProxy,
-        args: List[Any],
-        kwargs: Dict[str, Any],
+        args: list[Any],
+        kwargs: dict[str, Any],
     ):
-        self.name = task.name
         self.func = task.func
-        self.retry_policy = task.retry_policy
+        self.name = task.name
         self.cache_policy = task.cache_policy
+        self.checkpoint_policy = task.checkpoint_policy
+        self.retry_policy = task.retry_policy
         self.execution_policy = task.execution_policy
         self.is_async = task.is_async
-        self.id_ = f"{task.name}_{uuid.uuid4()}"
+        self._cache_key = None
+        self.id_ = f"{self.name}_{uuid.uuid4()}"
         self.raw_args = args
         self.raw_kwargs = kwargs
 
@@ -145,29 +166,48 @@ class TaskOnce:
     def __eq__(self, rhs: Self):
         return self.id_ == rhs.id_
 
+    @property
+    def cache_key(self):
+        """Check if cache key has been set before get."""
+        if self._cache_key is None:
+            self.resolve_args()
+        if self._cache_key is None:
+            raise RuntimeError(
+                f"Cache key of task {self.name} hasn't been set."
+            )
+        return self._cache_key
+
     @classmethod
     def from_func(
         cls,
         func: Callable,
-        args: List[Any],
-        kwargs: Dict[str, Any],
+        args: list[Any],
+        kwargs: dict[str, Any],
         *,
         name: Optional[str] = None,
-        retry_policy: Optional[RetryPolicy] = None,
         cache_policy: Optional[CachePolicy] = None,
+        checkpoint_policy: Optional[CheckpointPolicy] = None,
+        retry_policy: Optional[RetryPolicy] = None,
         execution_policy: Optional[ExecutionPolicy] = None,
     ) -> Self:
         """Create a TaskOnce with function and arguments directly."""
-        task = TaskProxy(func, name, retry_policy, cache_policy, execution_policy)
+        task = TaskProxy(
+            func,
+            name, 
+            cache_policy,
+            checkpoint_policy,
+            retry_policy,
+            execution_policy,
+        )
         task_once = cls(task, args, kwargs)
         return task_once
 
     @classmethod
     def _resolve_with_context(
         cls,
-        unresolved: List | Dict,
+        unresolved: list | dict,
         cache: Cache,
-    ) -> Tuple[Dict, Dict, Dict]:
+    ) -> tuple[dict, dict, dict]:
         tasks = (enumerate(unresolved)
                  if isinstance(unresolved, (tuple, list))
                  else unresolved.items())
@@ -185,7 +225,7 @@ class TaskOnce:
 
                 # Check the state of the result of task.
                 if result is not None and result.is_successful():
-                    ready[key] = result.value
+                    ready[key] = cache.get(task.cache_key)
                 elif result is not None and result.is_failed():
                     failed[task] = result
                 else:
@@ -213,18 +253,32 @@ class TaskOnce:
         kready, kunready, kfailed = self._resolve_with_context(raw_kwargs, cache)
         unready = list(set(punready + kunready))
         pfailed.update(kfailed)
-        return list(pready.values()), kready, unready, pfailed
+        pready = list(pready.values())
+
+        # Set `cache_key` if all raw arguments has been resolved.
+        if len(unready) == 0 and len(pfailed) == 0 and self._cache_key is None:
+            checkpoint_policy = self.checkpoint_policy or CheckpointPolicy()
+            self._cache_key = checkpoint_policy.gen_key(
+                self.name, pready, kready
+            )
+
+        return pready, kready, unready, pfailed
 
     def resolve_dependencies(
         self,
         cache: Optional[Cache] = None,
-    ) -> List[TaskOnce]:
-        """Resolve the TaskOnce current TaskOnce depending on."""
-        if cache is None:
-            ctx = _current_context.get()
-            if ctx is not None:
-                cache = ctx.result_cache
-        pready, kready, unready, pfailed = self.resolve_args(cache)
+    ) -> list[TaskOnce]:
+        """Resolve the TaskOnce current TaskOnce depending on.
+
+        Sometimes, it's meant to get all dependencies without cache taken
+        into consideration may be needed, so don't use
+        `_current_context.get().task_results` here.
+        """
+        raw_args = self.raw_args
+        raw_kwargs = self.raw_kwargs
+        pready, punready, pfailed = self._resolve_with_context(raw_args, cache)
+        kready, kunready, kfailed = self._resolve_with_context(raw_kwargs, cache)
+        unready = list(set(punready + kunready))
         return unready
 
     def result(
@@ -237,7 +291,7 @@ class TaskOnce:
             raise RuntimeError(
                 f"Can't fetch the result of task {self.name} without a flow."
             )
-        result = ctx.get_result(self.id_)
+        result = ctx.get_result(self)
         if result is None:
             raise RuntimeError(
                 f"Can't fetch the result of task {self.name}."
