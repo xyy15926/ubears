@@ -3,7 +3,7 @@
 #   Name: test_flow.py
 #   Author: xyy15926
 #   Created: 2026-05-10 22:24:51
-#   Updated: 2026-05-21 14:21:34
+#   Updated: 2026-05-22 22:14:10
 #   Description:
 # ---------------------------------------------------------
 
@@ -64,7 +64,7 @@ def test_Flow_nested_with():
 
 
 # %%
-def test_flow():
+def test_flow_nested():
     @task
     def add(a, b, c, d):
         time.sleep(0.1)
@@ -95,6 +95,49 @@ def test_flow():
     # `outer` will be skipped becasue `once` failed.
     with pytest.raises(RuntimeError):
         _result = outer(1, "a")
+
+
+# %%
+def test_flow_nested_flow_return_TaskOnce():
+    @task
+    def add(a, b, c, d):
+        time.sleep(0.1)
+        return a + b + c + d
+
+    @task
+    async def async_add(a, b, c, d):
+        await asyncio.sleep(0.1)
+        return a + b + c + d
+
+    @flow
+    def inner(a, b):
+        once = add.with_policy(name = "inner_add").submit(1, 1, a, b)
+        async_once = async_add.with_policy(
+            name = "inner_async",
+        ).submit(once, 1, 1, 1)
+        # `TaskOnce` is return here, which should not be done.
+        return async_once
+
+    # Cache will miss for `once` and `once2` for different name.
+    @flow
+    def outer_immediate(a, b):
+        once = add.with_policy(name = "ka").run(1, 1, a, b)
+        once2 = add.with_policy(name = "ya").run(1, 1, a, b)
+        flow_once = inner.with_policy(name = "inner1").run(1, 1)
+        # But `Task`s in `inner` will share the same cache.
+        flow_once2 = inner.with_policy(name = "inner2").run(1, 1)
+        return async_add.with_policy(
+            name = "total"
+        ).run(once, flow_once, once2, flow_once2)
+
+    start = time.time()
+    result = outer_immediate(1, 2)
+    end = time.time()
+    assert result == 24
+    assert end - start < 0.6
+    assert end - start > 0.5
+
+
 
 
 # %%
@@ -165,7 +208,7 @@ def test_flow_inner_task_with_policy_name_cache_policy():
 
 
 # %%
-def test_flow_inner_flow_with_policy_name_cache_policy():
+def test_flow_inner_flow_with_policy_name_with_zero_cache_policy():
     @task
     def add(a, b, c, d):
         time.sleep(0.1)
@@ -179,23 +222,7 @@ def test_flow_inner_flow_with_policy_name_cache_policy():
     @flow
     def inner(a, b):
         once = add.submit(1, 1, a, b)
-        return async_add(once, 1, 1, 1)
-
-    # Cache will miss for `once` and `once2` for different name.
-    @flow
-    def outer_immediate(a, b):
-        once = add.with_policy(name = "ka").run(1, 1, a, b)
-        once2 = add.with_policy(name = "ya").run(1, 1, a, b)
-        flow_once = inner.run(1, 1)
-        flow_once2 = inner.run(1, 1)
-        return async_add(once, flow_once, once2, flow_once2)
-
-    start = time.time()
-    result = outer_immediate(1, 2)
-    end = time.time()
-    assert result == 24
-    assert end - start < 0.6
-    assert end - start > 0.5
+        return async_add.submit(once, 1, 1, 1)
 
     # But `cache_policy(ttl = 0)` will lead cache to expire.
     cache_policy = CachePolicy(ttl = timedelta(0))

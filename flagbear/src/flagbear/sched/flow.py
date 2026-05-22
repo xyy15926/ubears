@@ -3,7 +3,7 @@
 #   Name: flow.py
 #   Author: xyy15926
 #   Created: 2026-05-06 16:02:03
-#   Updated: 2026-05-21 14:47:10
+#   Updated: 2026-05-22 22:16:55
 #   Description:
 # ---------------------------------------------------------
 
@@ -164,7 +164,12 @@ class Flow(TaskProxyBase):
             nonlocal ctx, func
             # Flow should be run under newly-inited context.
             with ctx:
-                return func(*args, **kwargs)
+                ret = func(*args, **kwargs)
+                # Just in case.
+                if isinstance(ret, TaskOnce):
+                    logger.warning("No TaskOnce should be returned by a function.")
+                    return ret.result()
+                return ret
 
         flow_once = TaskOnce.from_func(
             wrapper,
