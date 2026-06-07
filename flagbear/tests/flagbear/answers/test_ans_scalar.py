@@ -3,7 +3,7 @@
 #   Name: test_ans_scalar.py
 #   Author: xyy15926
 #   Created: 2024-01-12 14:42:57
-#   Updated: 2024-07-12 21:54:32
+#   Updated: 2026-06-07 20:10:06
 #   Description:
 # ---------------------------------------------------------
 
@@ -17,7 +17,8 @@ if __name__ == "__main__":
 
 from flagbear.answers.ans_scalar import (
     qpower, euclid_gcd, euclid_lcm,
-    russian_mul, poly_eval
+    russian_mul, poly_eval,
+    floyd_steinberg,
 )
 
 
@@ -43,3 +44,17 @@ def test_poly_eval():
 
 def russian_mul():
     assert russian_mul(24324, 243234) == 24324 * 243234
+
+
+# %%
+def test_floyd_steinberg():
+    import numpy as np
+
+    pixels = np.random.randint(0, 256, (100, 100))
+    pixels = floyd_steinberg(pixels)
+    assert (pixels == 255).sum() + (pixels == 0).sum() == 1e4
+
+    pixels = np.random.randint(0, 256, (100, 100))
+    arr = pixels.tolist()
+    pixels = np.asarray(floyd_steinberg(arr))
+    assert (pixels == 255).sum() + (pixels == 0).sum() == 1e4
