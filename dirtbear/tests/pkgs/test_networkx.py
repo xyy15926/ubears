@@ -3,35 +3,20 @@
 #   Name: networkx.py
 #   Author: xyy15926
 #   Created: 2024-07-29 10:08:59
-#   Updated: 2024-11-09 17:44:59
+#   Updated: 2026-07-01 19:43:39
 #   Description:
 # ---------------------------------------------------------
 
 # %%
-import logging
-from typing import List, Tuple
-
-import os
+import pytest
 import networkx as nx
-from pyvis.network import Network
-import matplotlib.pyplot as plt
-from IPython.display import display, HTML
-from flagbear.slp.finer import get_tmp_path
-
-logging.basicConfig(
-    # format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    format="%(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"),
-)
-logger = logging.getLogger()
-logger.info("Logging Start.")
+# from pyvis.network import Network
 
 
 # %%
 # ref: <https://www.osgeo.cn/networkx/tutorial.htm>
 # ref: <https://pyvis.readthedocs.io/en/latest/tutorial.html>
-def graph_manipulation():
+def test_graph_manipulation():
     # Manipulate Undirected Graph.
     G = nx.Graph([("s", "e", {"etype": "init"}), ])
     G.add_node(1, etype="node")
@@ -84,37 +69,3 @@ def graph_manipulation():
     # in-degrees and out-degrees.
     assert DiG.degree[5] == len(list(DiG.neighbors(5))) * 2
     assert DiG.degree[5] == len(list(DiG.successors(5))) * 2
-
-
-def draw_graph():
-    G = nx.petersen_graph()
-
-    options = {
-        'node_color': 'black',
-        'node_size': 100,
-        'width': 3,
-    }
-    plt.subplot(131)
-    # Default spring layout
-    nx.draw(G, with_labels=True, **options)
-    plt.subplot(132)
-    # Shell layout
-    nx.draw_shell(G, nlist=[range(5, 10), range(5)], with_labels=True)
-    ax3 = plt.subplot(133)
-    # Spectral layout
-    nx.draw_spectral(G, ax=ax3, with_labels=True)
-    plt.savefig(get_tmp_path() / "networkx_draw.png")
-    plt.close()
-
-    net = Network()
-    net.from_nx(G)
-    curdir = os.path.abspath(os.path.curdir)
-    fname = get_tmp_path() / "pyvis_network_show.html"
-    rfname = fname.relative_to(curdir)
-    # `Network.show` only support relative path, and a `lib` folder will be 
-    # created at the root folder.
-    net.show(str(rfname))
-    # `display` may not be supported in some front-end.
-    # display(HTML(fname))
-
-

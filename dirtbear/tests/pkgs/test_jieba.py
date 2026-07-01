@@ -1,29 +1,43 @@
 #!/usr/bin/env python3
 # ---------------------------------------------------------
-#   Name: jieba.py
+#   Name: test_jieba.py
 #   Author: xyy15926
 #   Created: 2024-07-24 19:05:15
-#   Updated: 2025-02-14 10:04:52
+#   Updated: 2026-07-01 11:16:50
 #   Description:
 # ---------------------------------------------------------
 
 # %%
+import pytest
 import logging
-from typing import List, Tuple
 
 import pandas as pd
 import jieba
 from jieba import posseg as pseg
-from suitbear.finer import get_assets_path
+from importlib.resources import files
+import shutil
+from flagbear.slp.finer import get_tmp_path
 
-logging.basicConfig(
-    # format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    format="%(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"),
-)
-logger = logging.getLogger()
-logger.info("Logging Start.")
+datan = files("dirtbear.data")
+GOVERN_REGION_LV4 = datan / "govern_region/govern_region_level4.csv"
+
+PYTEST_DIR = "tmp/pytest_tmpdir"
+TMP_DIR = get_tmp_path(PYTEST_DIR)
+
+
+# %%
+@pytest.fixture(scope="module", autouse=False)
+def tmpfile_fixture(request):
+    pytest_tmp = TMP_DIR
+    pytest_tmp.mkdir(parents=True, exist_ok=True)
+
+    yield
+
+    # Remove the tmp file during the pytest.
+    # Clear only once with `scope=module`.
+    shutil.rmtree(pytest_tmp, ignore_errors=True)
+    if not any(get_tmp_path().iterdir()):
+        get_tmp_path().rmdir()
 
 
 # %%
@@ -89,15 +103,17 @@ logger.info("Logging Start.")
 #     - zg
 def jieba_toker():
     # Generate customed user dict from government regions infos.
-    reg_df = pd.read_csv(get_assets_path() / "govern_region_level4.csv")
+    reg_df = pd.read_csv(GOVERN_REGION_LV4)
     reg_df["pos"] = "ns"
     reg_names = reg_df[["name", "deep", "pos"]].drop_duplicates("name").copy()
     reg_names["deep"] = 1000 // (reg_names["deep"] + 1) ** 2
     reg_exts = reg_df[["ext_name", "deep", "pos"]].drop_duplicates("ext_name").copy()
     reg_exts["deep"] = 1500 // (reg_exts["deep"] + 1) ** 2
-    reg_exts.set_axis(["name", "deep", "pos"], axis=1, inplace=True)
+    reg_exts.columns = ["name", "deep", "pos"]
+
+    # Save cuustomed user dict into local file.
     reg_names = (pd.concat([reg_names, reg_exts])
-                 .to_csv(get_assets_path() / "govern_region_names.txt",
+                 .to_csv(TMP_DIR / "govern_region_names.txt",
                          sep=" ",
                          columns=None,
                          header=None))
@@ -105,20 +121,20 @@ def jieba_toker():
     # Init new customed Tokenizer.
     # `jiebe.dt` is the default Tokenizer, which is delegated by `jiebe`.
     toker = jieba.Tokenizer()
-    # Load user dict.
-    toker.add_word("熊风扬", tag="nr")
+    # Load user dict from local file.
+    toker.add_word("咔咔咔", tag="nr")
     toker.add_word("aki7", tag="nz")
-    toker.load_userdict(open(get_assets_path() / "govern_region_names.txt",
+    toker.load_userdict(open(TMP_DIR / "govern_region_names.txt",
                              encoding="utf8"))
 
     return toker
 
 
 # %%
-def jieba_cut():
+def test_jieba_cut(tmpfile_fixture):
     toker = jieba_toker()
     # Return generator.
-    sent = "中国北京市深圳市开平区熊风扬"
+    sent = "中国北京市深圳市开平区咔咔咔"
 
     # Precise mode.
     tok_gen = toker.cut(sent)
@@ -140,10 +156,10 @@ def jieba_cut():
 
 
 # %%
-def jieba_pos_cut():
+def test_jieba_pos_cut(tmpfile_fixture):
     toker = jieba_toker()
     ptoker = pseg.POSTokenizer(toker)
-    sent = "中国北京市深圳市开平区熊风扬"
+    sent = "中国北京市深圳市开平区咔咔咔"
 
     pairs = ptoker.lcut(sent)
     words = toker.lcut(sent)
