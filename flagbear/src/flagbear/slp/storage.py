@@ -9,27 +9,19 @@
 
 # %%
 import logging
-from typing import(
-    Dict, Tuple, Protocol, Optional,
-)
+from typing import Protocol
 from pathlib import Path
 import os
 import tempfile
 import threading
 
-logging.basicConfig(
-    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"),
-)
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
 
 # %%
 class StorageBackend(Protocol):
     """Storage backend protocol."""
-    def get(self, key: str) -> Optional[bytes]: ...
+    def get(self, key: str) -> bytes | None: ...
     def set(self, key: str, data: bytes) -> None: ...
     def exists(self, key: str) -> bool: ...
     def delete(self, key: str) -> None: ...
@@ -49,7 +41,7 @@ class LocalFileStorage:
     ):
         self.base_dir = Path(base_dir)
         self.base_dir.mkdir(parents=True, exist_ok=True)
-        self._locks: Dict[str, threading.Lock] = {}
+        self._locks: dict[str, threading.Lock] = {}
         self._global_lock = threading.Lock()
     
     def _get_lock(self, key: str) -> threading.Lock:
@@ -68,7 +60,7 @@ class LocalFileStorage:
         """Get data path."""
         return self.base_dir / f"{key}.bin"
     
-    def get(self, key: str) -> Optional[Tuple[Dict, bytes]]:
+    def get(self, key: str) -> bytes | None:
         """Read data bytes and data."""
         data_path = self._data_path(key)
         if not data_path.exists():
@@ -89,7 +81,7 @@ class LocalFileStorage:
             os.fsync(tmp_data.fileno())
             tmp_data.close()
 
-            # Replace the temperary file's name atomically by OS so that
+            # Replace the temporary file's name atomically by OS so that
             # errors in writing to the tempfile won't ruin the original
             # cache.
             data_path = self._data_path(key)
@@ -101,7 +93,7 @@ class LocalFileStorage:
         return self._data_path(key).exists()
 
     def delete(self, key: str) -> None:
-        """Deleta data."""
+        """Delete data."""
         data_path = self._data_path(key)
         if data_path.exists():
             data_path.unlink()

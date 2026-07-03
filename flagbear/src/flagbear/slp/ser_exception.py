@@ -9,7 +9,7 @@
 
 # %%
 from __future__ import annotations
-from typing import Type, Optional, Any
+from typing import Any, Type
 import traceback
 from dataclasses import dataclass, asdict
 import json
@@ -20,8 +20,8 @@ class ExceptionRecord:
     exc_module: str
     message: str
     traceback_lines: list[str]
-    cause_type: Optional[str] = None
-    context_type: Optional[str] = None
+    cause_type: str | None = None
+    context_type: str | None = None
 
 
 # %%

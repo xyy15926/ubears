@@ -9,7 +9,7 @@
 
 # %%
 import logging
-from typing import Any, Optional, Coroutine
+from typing import Any, Coroutine
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, Future
 import threading
@@ -37,13 +37,7 @@ from flagbear.sched.protocols import(
     Task,
 )
 
-logging.basicConfig(
-    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"),
-)
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
 
 # %%
@@ -157,13 +151,13 @@ class LocalExecutor:
         self,
         task_results: Cache,
         *tasks: Task | tuple[Task, callable],
-    ) -> Optional[list[Future]]:
+    ) -> list[Future] | None:
         """Submit tasks."""
         # Wrap nofity as `asyncio.Task` callback.
         def on_done(
             fut: asyncio.Future,
             task: Task,
-            notify: Optional[callable] = None,
+            notify: callable | None = None,
         ):
             try:
                 _result = fut.result()
@@ -329,8 +323,8 @@ class LocalExecutor:
         Params:
         --------------------------
         task: Task.
-        resolved_args: Positional arugments with actual value.
-        resolved_kwargs: Keywords arugments with actual value.
+        resolved_args: Positional arguments with actual value.
+        resolved_kwargs: Keywords arguments with actual value.
 
         Return:
         --------------------------
@@ -423,8 +417,8 @@ class LocalExecutor:
         func,
         resolved_args: list[Any],
         resolved_kwargs: dict[str, Any],
-        execution_policy: Optional[ExecutionPolicy] = None,
-        is_async: Optional[bool] = None,
+        execution_policy: ExecutionPolicy | None = None,
+        is_async: bool | None = None,
     ) -> Any:
         """Execute function.
 
@@ -436,8 +430,8 @@ class LocalExecutor:
         Params:
         --------------------------
         func: Callable.
-        resolved_args: Positional arugments with actual value.
-        resolved_kwargs: Keywords arugments with actual value.
+        resolved_args: Positional arguments with actual value.
+        resolved_kwargs: Keywords arguments with actual value.
         execution_policy: Execution policty.
         is_async: If function is a async function.
 

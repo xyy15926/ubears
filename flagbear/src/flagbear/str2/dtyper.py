@@ -9,25 +9,17 @@
 
 # %%
 from __future__ import annotations
-from typing import Any, TypeVar
-from collections.abc import Iterable, Callable, Mapping
+from typing import Any
 
 import logging
-import json
-from collections import deque
 
-from functools import lru_cache, partial
+from functools import lru_cache
 from flagbear.llp.lex import Lexer
 from flagbear.const.patterns import REGEXS
 from flagbear.const.tokens import LEX_ENDFLAG
 
 # %%
-logging.basicConfig(
-    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"))
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
 
 # %%

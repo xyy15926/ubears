@@ -27,7 +27,7 @@ def count_one(x: int) -> int:
 def count_one_iter1(x: int) -> int:
     """Count `1` in 32-bits unsigned.
 
-    Only travese `1` in unsigned bits by:
+    Only traverse `1` in unsigned bits by:
     1. `x &= x - 1`: unset the rightmost 1 in bits.
     """
     one_cnt = 0

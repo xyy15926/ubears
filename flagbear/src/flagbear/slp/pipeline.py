@@ -9,7 +9,7 @@
 
 # %%
 import logging
-from typing import Dict, List, Tuple, Callable, Any, Self, Type
+from typing import Callable, Any, Self
 from collections import Counter
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -21,16 +21,10 @@ if __name__ == "__main__":
     from flagbear.slp import finer, databundle
     reload(finer)
     reload(databundle)
-from flagbear.slp.finer import use_dir, get_tmp_path
+from flagbear.slp.finer import use_dir
 from flagbear.slp.databundle import DataBundle, DataBundleFactory
 
-logging.basicConfig(
-    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"),
-)
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
 
 # %%
@@ -46,7 +40,7 @@ class Pipe(ABC):
     config: Process config.
     exec_count: Execution counts.
     """
-    def __init__(self, name: str = None, config: Dict = None):
+    def __init__(self, name: str = None, config: dict = None):
         """Init Pipe."""
         self.config = config or {}
         self.exec_count = 0
@@ -85,12 +79,12 @@ class PipeFactory:
     --------------------------
     _registry: Registry of derived pipes.
     """
-    _registry: Dict[str, Type[Pipe]] = {}
+    _registry: dict[str, type[Pipe]] = {}
 
     @classmethod
     def register(cls, reg_name: str = None):
         """Register derived pipes."""
-        def decorator(pipe_class: Type[Pipe]) -> Type[Pipe]:
+        def decorator(pipe_class: type[Pipe]) -> type[Pipe]:
             if not issubclass(pipe_class, Pipe):
                 raise TypeError(f"{pipe_class.__name__} is not derived from "
                                 f"Pipe.")
@@ -101,7 +95,7 @@ class PipeFactory:
         return decorator
 
     @classmethod
-    def from_func(cls, name: str, func: Callable) -> Type[Pipe]:
+    def from_func(cls, name: str, func: Callable) -> type[Pipe]:
         """Create a pipe class with process functions."""
         def process_method(self, bundle: DataBundle) -> Any:
             return func(bundle)
@@ -119,7 +113,7 @@ class PipeFactory:
         return new_class
 
     @classmethod
-    def create_instance(cls, reg_name: str, *args, **kwargs) -> Type[Pipe]:
+    def create_instance(cls, reg_name: str, *args, **kwargs) -> type[Pipe]:
         """Create a pipe instantance with register name."""
         if reg_name not in cls._registry:
             raise KeyError(f"{reg_name} not Found.")
@@ -159,7 +153,7 @@ class Pipeline:
             `checkpoint_dir` with data_order_mark will be made and used.
         """
         self.name = name
-        self.stages: Dict[str, Type(Pipe)] = {}
+        self.stages: dict[str, type[Pipe]] = {}
         self.stage_counter = Counter()
         self.checkpoint_dir = use_dir(checkpoint_dir or name, "today", 1, "tmp")
 

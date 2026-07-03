@@ -10,7 +10,7 @@
 # %%
 from __future__ import annotations
 import logging
-from typing import Callable, Any, Optional, Self
+from typing import Callable, Any, Self
 import uuid
 # from IPython.core.debugger import set_trace
 
@@ -34,13 +34,7 @@ from flagbear.sched.protocols import(
     TaskProxyBase,
 )
 
-logging.basicConfig(
-    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"),
-)
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
 
 # %%
@@ -96,11 +90,11 @@ class TaskProxy(TaskProxyBase):
 def task(
     func: Callable = None,
     *,
-    name: Optional[str] = None,
-    cache_policy: Optional[CachePolicy] = None,
-    checkpoint_policy: Optional[CheckpointPolicy] = None,
-    retry_policy: Optional[RetryPolicy] = None,
-    execution_policy: Optional[ExecutionPolicy] = None,
+    name: str | None = None,
+    cache_policy: CachePolicy | None = None,
+    checkpoint_policy: CheckpointPolicy | None = None,
+    retry_policy: RetryPolicy | None = None,
+    execution_policy: ExecutionPolicy | None = None,
 ) -> TaskProxy:
     def decorator(ffunc):
         nonlocal name, cache_policy, checkpoint_policy
@@ -184,11 +178,11 @@ class TaskOnce:
         args: list[Any],
         kwargs: dict[str, Any],
         *,
-        name: Optional[str] = None,
-        cache_policy: Optional[CachePolicy] = None,
-        checkpoint_policy: Optional[CheckpointPolicy] = None,
-        retry_policy: Optional[RetryPolicy] = None,
-        execution_policy: Optional[ExecutionPolicy] = None,
+        name: str | None = None,
+        cache_policy: CachePolicy | None = None,
+        checkpoint_policy: CheckpointPolicy | None = None,
+        retry_policy: RetryPolicy | None = None,
+        execution_policy: ExecutionPolicy | None = None,
     ) -> Self:
         """Create a TaskOnce with function and arguments directly."""
         task = TaskProxy(
@@ -235,7 +229,7 @@ class TaskOnce:
 
     def resolve_args(
         self,
-        cache: Optional[Cache] = None,
+        cache: Cache | None = None,
     ):
         """Resolve the arguments of the task function from the context.
 
@@ -266,7 +260,7 @@ class TaskOnce:
 
     def resolve_dependencies(
         self,
-        cache: Optional[Cache] = None,
+        cache: Cache | None = None,
     ) -> list[TaskOnce]:
         """Resolve the TaskOnce current TaskOnce depending on.
 
@@ -283,7 +277,7 @@ class TaskOnce:
 
     def result(
         self,
-        ctx: Optional[Context] = None,
+        ctx: Context | None = None,
     ) -> Any:
         """Fetch the result."""
         ctx = ctx or _current_context.get()

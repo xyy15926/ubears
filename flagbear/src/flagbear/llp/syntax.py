@@ -11,11 +11,7 @@
 
 # %%
 from __future__ import annotations
-from typing import TypeVar, Any
-try:
-    from typing import NamedTuple, Self
-except ImportError:
-    from typing_extensions import NamedTuple, Self
+from typing import TypeVar, Any, NamedTuple, Self
 from collections.abc import Iterator, Callable, Hashable
 
 # from IPython.core.debugger import set_trace
@@ -32,13 +28,7 @@ from flagbear.const.tokens import LEX_ENDFLAG
 from flagbear.const.prods import SYN_STARTSYM, SYN_ARITH_PRODS
 
 # %%
-logging.basicConfig(
-    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"),
-)
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
 # Token should have following 2 attributes at least:
 # `type`: The symbol in syntaxer's productions.
@@ -178,7 +168,7 @@ class LRItem:
         lr_list.append(self)
 
         # Register the following LRItems.
-        for i in range(len(self.rp)):
+        for _i in range(len(self.rp)):
             self = self.clone_next()
             lr_list.append(self)
 
@@ -275,7 +265,7 @@ class LRItem:
         Prefered LRItem.
         """
         prec1, assoc1 = lhs.production.prec, lhs.production.assoc
-        prec2, assoc2 = rhs.production.prec, rhs.production.assoc
+        prec2, assoc2 = rhs.production.prec, rhs.production.assoc  # noqa: F841
         if prec1 > prec2:
             return lhs
         elif prec2 > prec1:
@@ -663,7 +653,7 @@ class Syntaxer:
             # This records the acceptable terminals and responsible most
             # prefered LRItem, specifying how to shift or reduce, when the
             # terminal is the next symbol
-            # In fact, as the FOLLOW are calcuated for each LRItem seperately,
+            # In fact, as the FOLLOW are calculated for each LRItem separately,
             # this `goto` are LR(1) GOTO in some way, which will be merged for
             # within each LRState.
             # {term: [LRItems of current LRState with `term` as one of their FOLLOW]}

@@ -9,16 +9,10 @@
 
 # %%
 import logging
-from typing import Optional, Self, Iterable
+from typing import Self, Iterable
 from collections import deque
 
-logging.basicConfig(
-    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"),
-)
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
 NID = str | int
 
@@ -65,7 +59,7 @@ class Node:
     def successors(self) -> set[Self]:
         return set(self.downstream)
 
-    def __rshift__(self, other: Self) -> Optional[Self]:
+    def __rshift__(self, other: Self) -> Self | None:
         """Add other node as one of the downstream."""
         cls = self.__class__
         if isinstance(other, cls):
@@ -76,7 +70,7 @@ class Node:
             self.set_downstream(*other)
             return None
 
-    def __lshift__(self, other: Self) -> Optional[Self]:
+    def __lshift__(self, other: Self) -> Self | None:
         """Add other node as one of the upstream."""
         cls = self.__class__
         if isinstance(other, cls):
@@ -165,7 +159,7 @@ class DirectedGraph:
     def __contains__(
         self,
         from_id: NID | Node,
-        to_id: Optional[NID] = None,
+        to_id: NID | None = None,
     ) -> bool:
         if to_id is None:
             return self.has_node(from_id)
@@ -182,7 +176,7 @@ class DirectedGraph:
         self.nodes[node_id] = Node(node_id)
         self.leaf_nodes.add(node_id)
 
-    def get_node(self, node_id: NID) -> Optional[Node]:
+    def get_node(self, node_id: NID) -> Node | None:
         """Get node with node id."""
         return self.nodes.get(node_id)
 
@@ -324,7 +318,7 @@ class DirectedGraph:
     def topological_sort(
         self,
         *entry: NID,
-    ) -> Optional[list[list[NID]]]:
+    ) -> list[list[NID]] | None:
         """Sort nodes in graph topologically.
 
         Params:
@@ -344,7 +338,7 @@ class DirectedGraph:
         """If graph is a directed acyclic graph."""
         return self.topological_sort() is not None
 
-    def find_cycle(self) -> Optional[list[NID]]:
+    def find_cycle(self) -> list[NID] | None:
         """Find cycle in the graph."""
         cyclenodes = find_cycle(self.nodes.values())
         if cyclenodes is None:
@@ -442,7 +436,7 @@ def to_mermaid(nodes: list[Node]) -> str:
 def topological_sort(
     nodes: list[Node] | dict[Node, int],
     # dest: Node | NID = None,
-) -> Optional[list[list[Node]]]:
+) -> list[list[Node]] | None:
     """Sort a list of nodes topologically.
 
     Kahn algorithm:
@@ -506,7 +500,7 @@ def topological_sort(
 
 def topological_sort_from_entry(
     *entry: Node,
-) -> Optional[list[list[Node]]]:
+) -> list[list[Node]] | None:
     """Sort nodes linking to entry node topologically."""
 
     def bfs_backward(entry: Node) -> dict[Node: int]:
@@ -532,7 +526,7 @@ def topological_sort_from_entry(
 # %%
 def find_cycle(
     nodes: list[Node] | dict[NID, Node],
-) -> Optional[list[str]]:
+) -> list[str] | None:
     """Find cycle in the graph.
 
     Find one cycle in the graph:
@@ -549,7 +543,7 @@ def find_cycle(
     WHITE, GRAY, BLACK = 0, 1, 2
     color = {node: WHITE for node in nodes}
 
-    def dfs(node: Node, path: list[Node]) -> Optional[list[Node]]:
+    def dfs(node: Node, path: list[Node]) -> list[Node] | None:
         # Trace the deep first search path.
         path.append(node)
         # Mark the node in path GRAY.

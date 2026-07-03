@@ -9,7 +9,7 @@
 
 # %%
 import logging
-from typing import Dict, List, Tuple, Callable, Any, Optional, Protocol, Self
+from typing import Callable, Any, Protocol, Self, TypeAlias
 import json
 import threading
 from datetime import datetime, timedelta
@@ -25,21 +25,15 @@ if __name__ == "__main__":
 from flagbear.slp.storage import StorageBackend, LocalFileStorage
 from flagbear.slp.serializer import serialize, deserialize
 
-logging.basicConfig(
-    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"),
-)
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
-CacheMetaDict = Optional["CacheMeta" | Dict]
+CacheMetaDict: TypeAlias = "CacheMeta | dict | None"
 
 
 # %%
 @dataclass
 class CachePolicy:
-    """Cache policy to detemine the behavior the cache.
+    """Cache policy to determine the behavior the cache.
 
     Attrs:
     -------------------------
@@ -49,9 +43,9 @@ class CachePolicy:
     inline: If to store cache in memory.
       Only Valid for persistent cache only.
     """
-    ttl: Optional[timedelta] = None
-    type_: Optional[str] = None
-    inline: Optional[bool] = None
+    ttl: timedelta | None = None
+    type_: str | None = None
+    inline: bool | None = None
 
 
 @dataclass
@@ -74,15 +68,15 @@ class CacheMeta:
     value: The exact value of the cache.
       Only set when `inline == True`
     """
-    key: Optional[str] = None
+    key: str | None = None
     created_at: datetime = field(default_factory = datetime.now)
-    expires_at: Optional[datetime] = None
-    last_accessed: Optional[datetime] = None
+    expires_at: datetime | None = None
+    last_accessed: datetime | None = None
     hits: int = 0
     size: int = 0
-    type_: Optional[str] = None
-    inline: Optional[bool] = None
-    value: Optional[Any] = None
+    type_: str | None = None
+    inline: bool | None = None
+    value: Any | None = None
 
     def to_json(self) -> bytes:
         """Dump into json string."""
@@ -114,7 +108,7 @@ class CacheMeta:
     def from_meta(
         cls,
         meta: CacheMetaDict,
-        key: Optional[str] = None,
+        key: str | None = None,
     ) -> Self:
         """Create CacheMeta from dict, None, CacheMeta, CachePolicy passed."""
         if meta is None:
@@ -150,7 +144,7 @@ class Cache(Protocol):
 def meta_serialize(
     data: Any,
     meta: CacheMetaDict = None,
-) -> Tuple[bytes, CacheMeta]:
+) -> tuple[bytes, CacheMeta]:
     """Serialize data into bytes with metadata."""
     meta = CacheMeta.from_meta(meta)
 
@@ -166,7 +160,7 @@ def meta_serialize(
     return bytes_, meta
 
 
-def meta_deserialize(bytes_: bytes) -> Tuple[Any, CacheMeta]:
+def meta_deserialize(bytes_: bytes) -> tuple[Any, CacheMeta]:
     """Deserialize bytes into data and metadata."""
     # Get metadata from data bytes.
     meta_size = int.from_bytes(bytes_[:4], "big")
@@ -196,9 +190,9 @@ class MemoryCache:
     def __init__(
         self,
         # TODO: CachePolicy???
-        ttl: Optional[timedelta] = None,
-        on_hit: Optional[Callable[[str], None]] = None,
-        on_miss: Optional[Callable[[str], None]] = None,
+        ttl: timedelta | None = None,
+        on_hit: Callable[[str], None] | None = None,
+        on_miss: Callable[[str], None] | None = None,
     ):
         """Init memory cache.
 
@@ -247,7 +241,7 @@ class MemoryCache:
         self,
         key: str,
         data: Any,
-        meta: Optional[Dict | CacheMeta] = None,
+        meta: dict | CacheMeta | None = None,
     ):
         """Set cache with key, data and metadata."""
         # Prepare metadata.
@@ -267,7 +261,7 @@ class MemoryCache:
         with self._lock:
             self.storage.pop(key, None)
 
-    def list_keys(self, prefix: str = "") -> List[str]:
+    def list_keys(self, prefix: str = "") -> list[str]:
         """Delete keys starting with prefix."""
         return [key for key in self.storage.keys()
                 if key.startswith(prefix)]
@@ -277,7 +271,7 @@ class MemoryCache:
 class PersistentCache:
     """Persistent cache with some storage backend.
 
-    A dict will be used to store metadata in memory to for accelaration.
+    A dict will be used to store metadata in memory to for acceleration.
 
     Attrs:
     --------------------------
@@ -289,14 +283,14 @@ class PersistentCache:
     _stats: Global stats of all the cache.
     _lock: Lock for updating the cache for multi-thread situation.
     max_mem_size: The maximum length of bytes of the serialization result of
-      the data to store inline, in memeory, with metedata by default.
+      the data to store inline, in memory, with metadata by default.
     """
     def __init__(
         self,
-        storage: Optional[StorageBackend] = None,
-        ttl: Optional[timedelta] = None,
-        on_hit: Optional[Callable[[str], None]] = None,
-        on_miss: Optional[Callable[[str], None]] = None,
+        storage: StorageBackend | None = None,
+        ttl: timedelta | None = None,
+        on_hit: Callable[[str], None] | None = None,
+        on_miss: Callable[[str], None] | None = None,
         max_mem_size: int = 64 * 1024,
     ):
         """Init persistent cache.
@@ -308,7 +302,7 @@ class PersistentCache:
         on_hit: Hook function to call when cache hits.
         on_miss: Hook function to call when cache misses.
         max_mem_size: The maximum length of bytes of the serialization result of
-          the data to store inline, in memeory, with metedata by default.
+          the data to store inline, in memory, with metadata by default.
         """
         self.storage = storage or LocalFileStorage("./cache")
         self.meta_storage = dict()
@@ -365,14 +359,14 @@ class PersistentCache:
 
         return data
 
-    def _from_storage(self, key: str) -> Tuple[Any, Dict]:
+    def _from_storage(self, key: str) -> tuple[Any, dict]:
         """Recover metadata from persistent storage."""
         bytes_ = self.storage.get(key)
         if bytes_ is None:
             raise RuntimeError(f"Fail to get data bytes of key {key} from "
                                f"persistent storage.")
         data, meta = meta_deserialize(bytes_)
-        # Store data in metedata(memory) too.
+        # Store data in metadata(memory) too.
         if meta.inline is None:
             meta.inline = len(bytes_) <= self.max_mem_size
         if meta.inline:
@@ -384,7 +378,7 @@ class PersistentCache:
         self,
         key: str,
         data: Any,
-        meta: Optional[Dict | CacheMeta] = None,
+        meta: dict | CacheMeta | None = None,
     ):
         """Set cache with key, data and metadata."""
         # Prepare metadata.
@@ -417,7 +411,7 @@ class PersistentCache:
             self.meta_storage.pop(key, None)
         self.storage.delete(key)
 
-    def list_keys(self, prefix: str = "") -> List[str]:
+    def list_keys(self, prefix: str = "") -> list[str]:
         """Delete keys starting with prefix."""
         return list(self.meta_storage.keys())
 

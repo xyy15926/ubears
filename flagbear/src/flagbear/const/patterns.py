@@ -13,14 +13,14 @@ REGEXS = {
     #   to exclude integer in float, datetime, interval and frozenset.
     "int"           : r"\d+",                               # Integer without sign
     "sint"          : r"[+-]?\d+",                          # Integer with sign
-    "mint"          : r"[+-]?"                              # Comma seperated integer
+    "mint"          : r"[+-]?"                              # Comma separated integer
                       r"(?:\d+|\d{1,3}(?:,\d{3})*)",
     "float"         : r"\d*\.\d+",                          # Float without sign
     "sfloat"        : r"[+-]?\d*\.\d+",                     # Float with sign
     "mfloat"        : r"[+-]?"                              # Comma sepertaed float
                       r"(?:\d*|\d{1,3}(?:,\d{3})*)"         # Interger part
                       r"\.\d+",                             # Decimal part
-    # 1. It's hard to handle 0229 in leap year, so all 0229 will be recogonized
+    # 1. It's hard to handle 0229 in leap year, so all 0229 will be recognized
     #   to be valid.
     # 2. Only `-`, `/` is valid seperator between year, month and day.
     "date"          : r"[0-9]{4}[-/]"                       # yyyy
@@ -64,6 +64,6 @@ REGEXS = {
     # 1. No speced allowed after `{` or before `}`.
     # 2. Only `1-9A-Za-z._` are allowed to construct element in set.
     "set"           : r"\{"
-                      r"(?:[\w\.]+, *)*[\w\.]+"             # Comma seperated elements
+                      r"(?:[\w\.]+, *)*[\w\.]+"             # Comma separated elements
                       r"\}",
 }

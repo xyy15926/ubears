@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # ---------------------------------------------------------
-#   Name: scalar.py
+#   Name: ans_scalar.py
 #   Author: xyy15926
 #   Created: 2024-01-12 14:21:00
 #   Updated: 2026-06-07 20:16:35
@@ -9,23 +9,15 @@
 
 # %%
 from __future__ import annotations
-from typing import TypeVar, Any
-try:
-    from typing import NamedTuple, Self
-except ImportError:
-    from typing_extensions import NamedTuple, Self
-from collections.abc import Iterator, Callable
+from typing import TypeVar, TYPE_CHECKING
+if TYPE_CHECKING:
+    import numpy as np
 import logging
 
-NUM = TypeVar("number")
+Num = TypeVar("Number")
 
 # %%
-logging.basicConfig(
-    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"))
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
 
 # %%
@@ -50,7 +42,7 @@ def euclid_lcm(x: int, y: int) -> int:
 
 
 # %%
-def poly_eval(p: list[NUM], x: NUM) -> NUM:
+def poly_eval(p: list[Num], x: Num) -> Num:
     """Polynomial evaluation.
 
       p0 + p1 * x + ... + p4 * x^4 + p5 * x^5

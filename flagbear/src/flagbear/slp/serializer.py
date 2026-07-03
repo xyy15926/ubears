@@ -3,13 +3,13 @@
 #   Name: serializer.py
 #   Author: xyy15926
 #   Created: 2026-04-22 15:21:57
-#   Updated: 2026-05-20 22:17:09
+#   Updated: 2026-07-03 11:28:22
 #   Description:
 # ---------------------------------------------------------
 
 # %%
 import logging
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
@@ -33,13 +33,7 @@ from flagbear.slp.ser_exception import(
     destr_exception,
 )
 
-logging.basicConfig(
-    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"),
-)
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
 SerializerFn = Callable[[Any], bytes]
 DeserializerFn = Callable[[bytes], Any]
@@ -100,7 +94,7 @@ def deserializer(type_: str):
 # %%
 def serialize(
     obj: Any,
-    type_: Optional[str] = None,
+    type_: str | None = None,
 ) -> tuple[bytes, str]:
     """Select proper serializer to serialize.
 
@@ -184,8 +178,8 @@ def is_json(obj: Any) -> bool:
 
 @serializer("json")
 def json_serialize(
-    obj: Optional[Any],
-    addon: Optional[str | list[str]] = None,
+    obj: Any | None,
+    addon: str | list[str] | None = None,
 ) -> bytes:
     return json.dumps(obj, separators=(",", ":"), ensure_ascii=False).encode("utf8")
 
@@ -193,7 +187,7 @@ def json_serialize(
 @deserializer("json")
 def json_deserialize(
     bytes_: bytes,
-    addon: Optional[str | list[str]] = None,
+    addon: str | list[str] | None = None,
 ) -> Any:
     if len(bytes_) == 0:
         return None
@@ -209,8 +203,8 @@ def is_anything(obj: Any) -> bool:
 
 @serializer("pickle")
 def pickle_serialize(
-    obj: Optional[Any],
-    addon: Optional[str | list[str]] = None,
+    obj: Any | None,
+    addon: str | list[str] | None = None,
 ) -> bytes:
     return pickle.dumps(obj, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -218,7 +212,7 @@ def pickle_serialize(
 @deserializer("pickle")
 def pickle_deserialize(
     bytes_: bytes,
-    addon: Optional[str | list[str]] = None,
+    addon: str | list[str] | None = None,
 ) -> Any:
     if len(bytes_) == 0:
         return None
@@ -240,8 +234,8 @@ def is_numpy(obj: Any) -> bool:
 
 @serializer("numpy")
 def numpy_serialize(
-    obj: Optional[np.ndarray],
-    addon: Optional[str | list[str]] = None,
+    obj: np.ndarray | None,
+    addon: str | list[str] | None = None,
 ) -> bytes:
     if obj is None:
         return b""
@@ -259,7 +253,7 @@ def numpy_serialize(
 @deserializer("numpy")
 def numpy_deserialize(
     bytes_: bytes,
-    addon: Optional[str | list[str]] = None,
+    addon: str | list[str] | None = None,
 ) -> np.ndarray:
     if len(bytes_) == 0:
         return None
@@ -287,8 +281,8 @@ def is_pddf_csv(obj: Any) -> bool:
 
 @serializer("pddf_csv")
 def pddf_csv_serialize(
-    obj: Optional[pd.DataFrame],
-    addon: Optional[str | list[str]] = None,
+    obj: pd.DataFrame | None,
+    addon: str | list[str] | None = None,
 ) -> bytes:
     if obj is None:
         return b""
@@ -301,7 +295,7 @@ def pddf_csv_serialize(
 @deserializer("pddf_csv")
 def pddf_csv_deserialize(
     bytes_: bytes,
-    addon: Optional[str | list[str]] = None,
+    addon: str | list[str] | None = None,
 ) -> pd.DataFrame:
     if len(bytes_) == 0:
         return None
@@ -320,7 +314,7 @@ def is_pddf_feather(obj: Any) -> bool:
     try:
         import numpy as np
         import pandas as pd
-        import pyarrow
+        import pyarrow          # noqa: F401
     except ImportError:
         return False
     return (isinstance(obj, pd.DataFrame)
@@ -331,8 +325,8 @@ def is_pddf_feather(obj: Any) -> bool:
 
 @serializer("pddf_feather")
 def pddf_feather_serialize(
-    obj: Optional[pd.DataFrame],
-    addon: Optional[str | list[str]] = None,
+    obj: pd.DataFrame | None,
+    addon: str | list[str] | None = None,
 ) -> bytes:
     if obj is None:
         return b""
@@ -345,7 +339,7 @@ def pddf_feather_serialize(
 @deserializer("pddf_feather")
 def pddf_feather_deserialize(
     bytes_: bytes,
-    addon: Optional[str | list[str]] = None,
+    addon: str | list[str] | None = None,
 ) -> pd.DataFrame:
     if len(bytes_) == 0:
         return None
@@ -361,7 +355,7 @@ def is_pddf_parquet(obj: Any) -> bool:
     try:
         import numpy as np
         import pandas as pd
-        import pyarrow
+        import pyarrow          # noqa: F401
     except ImportError:
         return False
     return (isinstance(obj, pd.DataFrame)
@@ -371,8 +365,8 @@ def is_pddf_parquet(obj: Any) -> bool:
 
 @serializer("pddf_parquet")
 def pddf_parquet_serialize(
-    obj: Optional[pd.DataFrame],
-    addon: Optional[str | list[str]] = None,
+    obj: pd.DataFrame | None,
+    addon: str | list[str] | None = None,
 ) -> bytes:
     if obj is None:
         return b""
@@ -385,7 +379,7 @@ def pddf_parquet_serialize(
 @deserializer("pddf_parquet")
 def pddf_parquet_deserialize(
     bytes_: bytes,
-    addon: Optional[str | list[str]] = None,
+    addon: str | list[str] | None = None,
 ) -> pd.DataFrame:
     if len(bytes_) == 0:
         return None
@@ -405,8 +399,8 @@ def is_exception(obj: Any):
 
 @serializer("exception")
 def exception_serialize(
-    obj: Optional[BaseException],
-    addon: Optional[str | list[str]] = None,
+    obj: BaseException | None,
+    addon: str | list[str] | None = None,
 ) -> bytes:
     if obj is None:
         return b""
@@ -417,7 +411,7 @@ def exception_serialize(
 @deserializer("exception")
 def exception_deserialize(
     bytes_: bytes,
-    addon: Optional[str | list[str]] = None,
+    addon: str | list[str] | None = None,
 ) -> BaseException:
     if len(bytes_) == 0:
         return None

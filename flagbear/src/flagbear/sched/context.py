@@ -10,7 +10,7 @@
 # %%
 from __future__ import annotations
 import logging
-from typing import Optional, Self
+from typing import Self
 import uuid
 # from IPython.core.debugger import set_trace
 
@@ -39,13 +39,7 @@ from flagbear.sched.protocols import(
 from flagbear.sched.executor import LocalExecutor
 from flagbear.sched.scheduler import DAGScheduler
 
-logging.basicConfig(
-    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"),
-)
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
 
 # %%
@@ -65,9 +59,9 @@ class SimpleContext:
     """
     def __init__(
         self,
-        task_results: Optional[Cache] = None,
-        scheduler: Optional[Scheduler] = None,
-        parent_context: Optional[Context] = None,
+        task_results: Cache | None = None,
+        scheduler: Scheduler | None = None,
+        parent_context: Context | None = None,
         *,
         name: str = "Root",
     ):
@@ -116,7 +110,7 @@ class SimpleContext:
     def get_result(
         self,
         task: Task | str,
-    ) -> Optional[TaskResult]:
+    ) -> TaskResult | None:
         """Get result of specified task."""
         self.scheduler.wait(task)
         tid = getattr(task, "id_", task)

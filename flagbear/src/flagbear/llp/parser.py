@@ -9,24 +9,18 @@
 
 # %%
 from __future__ import annotations
-from typing import TypeVar, Any
-try:
-    from typing import Self
-except ImportError:
-    from typing_extensions import Self
-from collections import ChainMap
+from typing import TypeVar, Any, Self
 from collections.abc import Callable, Mapping
 # from IPython.core.debugger import set_trace
 
 import builtins
 import logging
-from collections import namedtuple
 import copy
 from functools import lru_cache
 
 from flagbear.tree.tree import GeTNode
 from flagbear.llp.lex import Token, Lexer
-from flagbear.llp.syntax import Production, LRItem, LRState, Syntaxer
+from flagbear.llp.syntax import Production, Syntaxer
 from flagbear.const.tokens import (
     LEX_TOKEN_SPECS,
     LEX_SKIPS,
@@ -40,13 +34,7 @@ from flagbear.const.prods import (
 # from flagbear.const import callables as PY_BUITINS_
 
 # %%
-logging.basicConfig(
-    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"),
-)
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
 Reduction = TypeVar("Reduction")
 
@@ -115,7 +103,7 @@ class EnvParser:
         skips: Set[TOKEN_TYPE].
           Special tokens to be skiped.
         productions: List[Production | tuple]
-          List of productions or compatiable tuple.
+          List of productions or compatible tuple.
         start_sym: Str.
           Start symbol of the productions for syntaxer.
         end_flag: Str.
@@ -126,7 +114,7 @@ class EnvParser:
         self.env = {}
         # Replace the production of `expr := ID` so to update the reduce to
         # bind environment.
-        for idx, prod in enumerate(productions):
+        for idx, prod in enumerate(productions):  # noqa: B007
             if prod[1] == ("ID",):
                 break
         productions = copy.copy(productions)
@@ -177,7 +165,7 @@ class EnvParser:
             ret = getattr(builtins, id_, None)
         return ret
 
-    @lru_cache(500)
+    @lru_cache(500)  # noqa: B019
     def compile(self, words: str) -> list[GeTNode]:
         """Compile input words into post-ordered AST nodes list.
 
@@ -203,8 +191,8 @@ class EnvParser:
     def exec(self, nodes: list[GeTNode]) -> Any:
         """Execute the list of tree nodes in post-ordered.
 
-        1. Append value of token node to temperary stack directly.
-        2. Reduce part of the values in temperary stack for production node.
+        1. Append value of token node to temporary stack directly.
+        2. Reduce part of the values in temporary stack for production node.
           The number of values to pop out is the length of the right part of
           the production, namely the number of children of the node.
 

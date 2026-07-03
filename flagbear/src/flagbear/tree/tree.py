@@ -9,23 +9,13 @@
 
 # %%
 from __future__ import annotations
-from typing import TypeVar, Any
-try:
-    from typing import NamedTuple, Self
-except ImportError:
-    from typing_extensions import NamedTuple, Self
-from collections.abc import Iterator, Callable
+from typing import TypeVar, Any, Self
+from collections.abc import Callable
 
 import logging
 
 # %%
-logging.basicConfig(
-    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"),
-)
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
 TreeVal = TypeVar("TreeVal")
 

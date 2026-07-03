@@ -9,29 +9,16 @@
 
 # %%
 from __future__ import annotations
-from typing import TypeVar, Any, List, TYPE_CHECKING
-try:
-    from typing import NamedTuple, Self
-except ImportError:
-    from typing_extensions import NamedTuple, Self
-from collections.abc import Iterator, Callable, Mapping, Hashable
+from typing import TYPE_CHECKING, Self
+from collections.abc import Hashable
 if TYPE_CHECKING:
     import pandas as pd
 # from IPython.core.debugger import set_trace
 
-import copy
 import logging
-from collections import deque
-from flagbear.const.tokens import LEX_ENDFLAG
 
 # %%
-logging.basicConfig(
-    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"),
-)
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
 
 # %%

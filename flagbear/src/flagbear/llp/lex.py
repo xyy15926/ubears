@@ -9,12 +9,7 @@
 
 # %%
 from __future__ import annotations
-from typing import Any
-try:
-    from typing import NamedTuple, Self
-except ImportError:
-    from typing_extensions import NamedTuple, Self
-from collections.abc import Iterator, Callable
+from typing import Any, NamedTuple
 from collections.abc import Generator, Mapping
 
 import re
@@ -32,13 +27,7 @@ from flagbear.const.tokens import (
 # from IPython.core.debugger import set_trace
 
 # %%
-logging.basicConfig(
-    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"),
-)
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
 
 # %%
@@ -191,7 +180,7 @@ class Lexer:
 
         yield Token(self.end_flag, "", -1, -1)
 
-    @lru_cache(1000)
+    @lru_cache(1000)  # noqa: B019
     def compile(self, words: str) -> list[Token]:
         """Transfrom infix notion into postfix notion.
 
@@ -200,7 +189,7 @@ class Lexer:
           pushed into temporary stack.
         2. Postfix notion, A.K.A. Reversed Polished Notion, is used for
           machine to comprehend expression easily, which could be used as a
-          restricted expression hanlder without syntaxer.
+          restricted expression handler without syntaxer.
 
         Params:
         ---------------------
@@ -269,13 +258,13 @@ class Lexer:
 
         Only reductions represented by operators defined in `self.token_precs`
         are supported.
-        1. Append value of oprand node to temperary stack directly.
-        2. Reduce part of the values in temperary stack for operator, with
+        1. Append value of operand node to temporary stack directly.
+        2. Reduce part of the values in temporary stack for operator, with
           the number of values for reduction popped out.
 
         Params:
         --------------------
-        toks: Tokens of oprands or operators in reversed polished order.
+        toks: Tokens of operands or operators in reversed polished order.
 
         Return:
         --------------------
@@ -285,7 +274,7 @@ class Lexer:
         env = self.env
 
         val_st = []             # Stack storing values temporarily.
-        for tok_type, tok_val, *ele in toks:
+        for tok_type, tok_val, *_ele in toks:
             if tok_type in token_precs:
                 priority, arg_n, call = token_precs[tok_type]
                 cur_opts = val_st[-arg_n:]
@@ -298,7 +287,7 @@ class Lexer:
                         tok_val = env[tok_val]
                     except KeyError:
                         raise KeyError(f"Unrecognized variable {tok_val}"
-                                       f"in bound envrionment.")
+                                       f"in bound environment.") from None
                 val_st.append(tok_val)
 
         return val_st[-1]

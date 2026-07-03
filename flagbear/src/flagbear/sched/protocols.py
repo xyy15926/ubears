@@ -10,7 +10,7 @@
 # %%
 from __future__ import annotations
 import logging
-from typing import Any, Optional, Type, Protocol, Self, TYPE_CHECKING
+from typing import Any, Type, Protocol, Self, TYPE_CHECKING
 if TYPE_CHECKING:
     from flagbear.slp.cache import Cache
 from collections.abc import Callable
@@ -35,13 +35,7 @@ from flagbear.slp.serializer import(
 from flagbear.slp.cache import CachePolicy
 from flagbear.slp.checkpoint import CheckpointPolicy
 
-logging.basicConfig(
-    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"),
-)
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
 
 # %%
@@ -59,13 +53,13 @@ class TaskState(str, Enum):
 @dataclass
 class TaskResult:
     state: TaskState = TaskState.PENDING
-    cache_key: Optional[str] = None
-    value: Optional[Any] = None
-    error: Optional[Exception] = None
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
+    cache_key: str | None = None
+    value: Any | None = None
+    error: Exception | None = None
+    start_time: datetime | None = None
+    end_time: datetime | None = None
     attempt: int = 1
-    _error_recs: Optional[ExceptionRecord] = field(
+    _error_recs: ExceptionRecord | None = field(
         default = None, repr = False
     )
 
@@ -134,7 +128,7 @@ class TaskResult:
 
     def cache_policy(
         self,
-        value_cache_policy: Optional[CachePolicy] = None,
+        value_cache_policy: CachePolicy | None = None,
     ) -> CachePolicy:
         """Construct cache policy for `TaskResult` from cache policy for
         `TaskResult.value`."""
@@ -166,7 +160,7 @@ def is_task_result(obj: Any):
 @serializer("TaskResult")
 def task_result_serialize(
     data: TaskResult,
-    addon: Optional[str | list[str]] = None,
+    addon: str | list[str] | None = None,
 ) -> bytes:
     """Serialize TaskResult into bytes."""
     meta_bytes = data.to_json()
@@ -181,7 +175,7 @@ def task_result_serialize(
 @deserializer("TaskResult")
 def task_result_deserialize(
     bytes_: bytes,
-    addon: Optional[str | list[str]] = None,
+    addon: str | list[str] | None = None,
 ) -> TaskResult:
     """Deserialize bytes into TaskResult."""
     meta_size = int.from_bytes(bytes_[:4], "big")
@@ -204,11 +198,11 @@ class RetryPolicy:
     delay_seconds: float = 1.0
     backoff_factor: float = 2.0
     max_delay: float = 60.0
-    retry_on: Optional[tuple[Type[Exception]]] = None
+    retry_on: tuple[Type[Exception]] | None = None
 
     def should_retry(
         self,
-        error: Optional[Exception],
+        error: Exception | None,
         attempt: int,
     ) -> bool:
         if self.retry_on is not None and not isinstance(self.retry_on, tuple):
@@ -229,7 +223,7 @@ class RetryPolicy:
 # %%
 @dataclass
 class ExecutionPolicy:
-    timeout: Optional[float] = None
+    timeout: float | None = None
     use_process: bool = False
     with_context: bool = False
 
@@ -258,11 +252,11 @@ class TaskProxyBase:
     def __init__(
         self,
         func: Callable,
-        name: Optional[str] = None,
-        cache_policy: Optional[CachePolicy] = None,
-        checkpoint_policy: Optional[CheckpointPolicy] = None,
-        retry_policy: Optional[RetryPolicy] = None,
-        execution_policy: Optional[ExecutionPolicy] = None,
+        name: str | None = None,
+        cache_policy: CachePolicy | None = None,
+        checkpoint_policy: CheckpointPolicy | None = None,
+        retry_policy: RetryPolicy | None = None,
+        execution_policy: ExecutionPolicy | None = None,
     ):
         """Init task.
 
@@ -306,15 +300,15 @@ class TaskProxyBase:
     def with_policy(
         self,
         *,
-        name: Optional[str] = None,
-        cache_policy: Optional[CachePolicy] = None,
-        checkpoint_policy: Optional[CheckpointPolicy] = None,
-        retry_policy: Optional[RetryPolicy] = None,
-        execution_policy: Optional[ExecutionPolicy] = None,
+        name: str | None = None,
+        cache_policy: CachePolicy | None = None,
+        checkpoint_policy: CheckpointPolicy | None = None,
+        retry_policy: RetryPolicy | None = None,
+        execution_policy: ExecutionPolicy | None = None,
     ):
-        """Set the temperary policies for constructing a Task.
+        """Set the temporary policies for constructing a Task.
 
-        Temperary name should be reset once a Task has been constructed.
+        Temporary name should be reset once a Task has been constructed.
         """
         if name is not None:
             self.name = name
@@ -348,14 +342,14 @@ class Task(Protocol):
     name: str
     def resolve_args(
         self,
-        ctx: Optional[Context],
+        ctx: Context | None,
     ) -> tuple[list[Self], dict[str, Self], list[Self], dict[Self, Exception]]: ...
-    def resolve_dependencies(self, ctx: Optional[Context]) -> list[Self]: ...
-    def result(self, ctx: Optional[Context]) -> Any: ...
+    def resolve_dependencies(self, ctx: Context | None) -> list[Self]: ...
+    def result(self, ctx: Context | None) -> Any: ...
 
 
 # %%
-_current_context: contextvars.ContextVar[Optional[Context]] = contextvars.ContextVar(
+_current_context: contextvars.ContextVar[Context | None] = contextvars.ContextVar(
     "_context",
     default = None,
 )
@@ -372,7 +366,7 @@ class Context(Protocol):
     def __enter__(self) -> Self:...
     def __exit__(self, exc_type, exc_val, exc_tb):...
     def shutdown(self): ...
-    def get_result(self, task: str | Task) -> Optional[TaskResult]: ...
+    def get_result(self, task: str | Task) -> TaskResult | None: ...
     def set_result(self, task: str | Task, result: TaskResult): ...
     def submit(self, task: Task | list[Task]): ...
     def run(self, task: Task | list[Task]) -> Any | list[Any]: ...

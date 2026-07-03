@@ -10,7 +10,6 @@
 # %%
 from __future__ import annotations
 import logging
-from typing import Optional
 import threading
 import functools
 # from IPython.core.debugger import set_trace
@@ -38,13 +37,7 @@ from flagbear.sched.protocols import(
 )
 from flagbear.sched.executor import LocalExecutor
 
-logging.basicConfig(
-    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"),
-)
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
 
 # %%
@@ -64,8 +57,8 @@ class DAGScheduler:
     """
     def __init__(
         self,
-        task_results: Optional[Cache] = None,
-        executor: Optional[Executor] = None,
+        task_results: Cache | None = None,
+        executor: Executor | None = None,
     ):
         self.task_results = task_results or MemoryCache()
         self.task_dag = DirectedGraph()
@@ -185,7 +178,7 @@ class DAGScheduler:
     def mark_done(
         self,
         tid: str,
-        future: Optional[Future] = None,
+        future: Future | None = None,
     ):
         """Mark task done.
 

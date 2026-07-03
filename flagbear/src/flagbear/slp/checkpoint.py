@@ -9,7 +9,7 @@
 
 # %%
 import logging
-from typing import Dict, List, Callable, Any, Optional
+from typing import Callable, Any
 import json
 import hashlib
 from functools import wraps
@@ -27,22 +27,16 @@ from flagbear.slp.storage import LocalFileStorage
 from flagbear.slp.finer import get_tmp_path, date_order_mark
 from flagbear.slp.cache import Cache, PersistentCache, CacheMeta, CachePolicy
 
-logging.basicConfig(
-    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"),
-)
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
 DEFAULT_EXPIRE = datetime(2099, 12, 12).isoformat()
 
 
 # %%
 def json_args(
-    args: List[Any],
-    kwargs: List[str, Any],
-    skip_args: List = None,
+    args: list[Any],
+    kwargs: dict[str, Any],
+    skip_args: list = None,
 ) -> str:
     """Dumps arguments into JSON string.
 
@@ -88,20 +82,20 @@ class CheckpointPolicy:
         only when function really processed, namely no cache exists or `force`
         flag is passed, and older version checkpoint won't be deleted.
     keyskip_args: Arguments to skip when generating the key.
-    keyonly_args: Argumetns for generating key only, which will be dropped
-      befored passed to the function.
-    arg_func: Function to generate unique key with arugments.
+    keyonly_args: Arguments for generating key only, which will be dropped
+      before passed to the function.
+    arg_func: Function to generate unique key with arguments.
     """
-    mode: Optional[str] = "cache"
-    keyskip_args: Optional[List[int, str]] = None
-    keyonly_args: Optional[List[str]] = None
+    mode: str | None = "cache"
+    keyskip_args: list[int | str] | None = None
+    keyonly_args: list[str] | None = None
     arg_func: Callable = json_args
 
     def gen_key(
         self,
         func: Callable | str,
-        args: List[Any],
-        kwargs: Dict[str, Any],
+        args: list[Any],
+        kwargs: dict[str, Any],
     ):
         key = (f"{func.__module__}.{func.__qualname__}"
                if callable(func)
@@ -126,9 +120,9 @@ class CheckpointManager:
     """
     def __init__(
         self,
-        checkpoint_policy: Optional[CheckpointPolicy] = None,
-        ttl: Optional[timedelta] = None,
-        cache: Optional[Cache] = None,
+        checkpoint_policy: CheckpointPolicy | None = None,
+        ttl: timedelta | None = None,
+        cache: Cache | None = None,
     ):
         self.checkpoint_policy = checkpoint_policy or CheckpointPolicy("cache")
         if cache is not None:
@@ -139,18 +133,18 @@ class CheckpointManager:
 
     def checkpoint(
         self,
-        func: Optional[Callable] = None,
+        func: Callable | None = None,
         *,
-        name: Optional[str] = None,
-        checkpoint_policy: Optional[CheckpointPolicy] = None,
-        cache_policy: Optional[CachePolicy] = None,
+        name: str | None = None,
+        checkpoint_policy: CheckpointPolicy | None = None,
+        cache_policy: CachePolicy | None = None,
     ) -> Callable:
         """Checkpoint decorator to cache functions' result.
 
         Params:
         -------------------------------
         func: Function to be decorated.
-        checkpoint_policy: Checkpoint policy to detemine how to generate
+        checkpoint_policy: Checkpoint policy to determine how to generate
           checkpoint.
         cache_policy: Cache policy to determine the behavior of inner cache.
         """
@@ -189,7 +183,7 @@ class CheckpointManager:
         func: Callable | str,
         args: Any,
         kwargs: Any,
-        checkpoint_policy: Optional[CheckpointPolicy] = None,
+        checkpoint_policy: CheckpointPolicy | None = None,
     ) -> Any:
         """Get inner cache.
 
@@ -198,7 +192,7 @@ class CheckpointManager:
         func: Callable.
         args: List of positional arguments.
         kwargs: Dict of keywords arguments.
-        checkpoint_policy: Checkpoint policy to detemine how to generate
+        checkpoint_policy: Checkpoint policy to determine how to generate
           checkpoint.
         cache_policy: Cache policy to determine the behavior of inner cache.
 
@@ -222,10 +216,10 @@ class CheckpointManager:
     def set(
         self,
         func: Callable | str,
-        args: List[Any],
-        kwargs: Dict[str, Any],
-        checkpoint_policy: Optional[CheckpointPolicy] = None,
-        cache_policy: Optional[CachePolicy] = None,
+        args: list[Any],
+        kwargs: dict[str, Any],
+        checkpoint_policy: CheckpointPolicy | None = None,
+        cache_policy: CachePolicy | None = None,
     ) -> Any:
         """Process the function and set inner cache.
 
@@ -234,7 +228,7 @@ class CheckpointManager:
         func: Callable.
         args: List of positional arguments.
         kwargs: Dict of keywords arguments.
-        checkpoint_policy: Checkpoint policy to detemine how to generate
+        checkpoint_policy: Checkpoint policy to determine how to generate
           checkpoint.
         cache_policy: Cache policy to determine the behavior of inner cache.
 

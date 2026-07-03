@@ -9,7 +9,7 @@
 
 # %%
 import logging
-from typing import Dict, List, Tuple, Callable, Any, Self, Type
+from typing import Callable, Any
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -17,7 +17,6 @@ import pickle
 import json
 import inspect
 import zipfile
-import hashlib
 from functools import wraps
 
 if __name__ == "__main__":
@@ -26,13 +25,7 @@ if __name__ == "__main__":
     reload(finer)
 from flagbear.slp.finer import use_file
 
-logging.basicConfig(
-    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"),
-)
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
 DATABUNDLE_DIR = "databundle"
 
@@ -55,15 +48,15 @@ class DataBundle(ABC):
       of the data-procedure stages.
     """
     data: Any
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    lineage: Dict[str, Dict] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
+    lineage: dict[str, dict] = field(default_factory=dict)
 
     def add_metadata(self, key: str, value: Any):
         """Add metatdata."""
         self.metadata[key] = value
         return self
 
-    def trace(self, key: str, info: Dict):
+    def trace(self, key: str, info: dict):
         """Update lineage."""
         self.lineage.setdefault(key, {}).update(info)
 
@@ -143,12 +136,12 @@ class DataBundleFactory:
     ------------------------
     _registry: Registry of derived DataBundle.
     """
-    _registry: Dict[str, Type[DataBundle]] = {}
+    _registry: dict[str, type[DataBundle]] = {}
 
     @classmethod
     def register(cls, reg_name: str = None):
         """Register class derived from DataBundle."""
-        def decorator(bundle_class: Type[DataBundle]) -> Type[DataBundle]:
+        def decorator(bundle_class: type[DataBundle]) -> type[DataBundle]:
             if not issubclass(bundle_class, DataBundle):
                 raise TypeError(f"{bundle_class.__name__} is not derived from "
                                 f"DataBundle.")
@@ -164,7 +157,7 @@ class DataBundleFactory:
         name: str,
         dumps_data: Callable,
         loads_data: Callable,
-    ) -> Type[DataBundle]:
+    ) -> type[DataBundle]:
         """Create dynanmic DataBundle class with dump and load function.
 
         Params:
@@ -193,7 +186,7 @@ class DataBundleFactory:
         dumps_data_method: Callable,
         loads_data_method: Callable,
         **methods: Callable,
-    ) -> Type[DataBundle]:
+    ) -> type[DataBundle]:
         """Create dynamic DataBundle class with a list of callables.
 
         Params:
@@ -291,7 +284,7 @@ def pickle_dumps(data) -> bytes:
     return pickle.dumps(data)
 
 
-def pickle_loads(bytes_, metadata: Dict = None):
+def pickle_loads(bytes_, metadata: dict = None):
     return pickle.loads(bytes_)
 
 
@@ -334,9 +327,9 @@ def concat_params(
 
 
 def check_params(
-    args: List[Any],
-    kwargs: Dict[str, Any],
-    metadata: Dict[str, Any],
+    args: list[Any],
+    kwargs: dict[str, Any],
+    metadata: dict[str, Any],
 ) -> bool:
     """Check if the arguments passed and loaded are the same.
 

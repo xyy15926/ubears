@@ -10,12 +10,12 @@
 # %%
 from __future__ import annotations
 from sys import maxsize as MAXINT
-from typing import TypeVar, Any
-from collections.abc import Mapping, Sequence, Callable
+from typing import TypeVar
+from collections.abc import Callable
 # from IPython.core.debugger import set_trace
 
-Node = TypeVar("node")
-Container = TypeVar("container")
+Node = TypeVar("Node")
+Container = TypeVar("Container")
 
 
 # %%

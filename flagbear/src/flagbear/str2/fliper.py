@@ -9,8 +9,7 @@
 
 # %%
 from __future__ import annotations
-from typing import Any, TypeVar
-from collections.abc import Iterable, Callable, Mapping
+from typing import Any
 
 import logging
 import json
@@ -20,12 +19,7 @@ from flagbear.llp.parser import EnvParser
 from flagbear.str2.dtyper import stype_spec, str_caster
 
 # %%
-logging.basicConfig(
-    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"))
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
 
 # %%

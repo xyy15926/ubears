@@ -10,7 +10,7 @@
 # %%
 from __future__ import annotations
 import logging
-from typing import Callable, Any, Optional
+from typing import Callable, Any
 import functools
 # from IPython.core.debugger import set_trace
 
@@ -37,13 +37,7 @@ from flagbear.slp.checkpoint import CheckpointPolicy
 from flagbear.sched.task import TaskOnce
 from flagbear.sched.context import SimpleContext
 
-logging.basicConfig(
-    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"),
-)
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
 
 # %%
@@ -69,14 +63,14 @@ class Flow(TaskProxyBase):
     """
     def __init__(
         self,
-        name: Optional[str] = None,
-        func: Optional[Callable] = None,
-        cache_policy: Optional[CachePolicy] = None,
-        checkpoint_policy: Optional[CheckpointPolicy] = None,
-        retry_policy: Optional[RetryPolicy] = None,
-        execution_policy: Optional[ExecutionPolicy] = None,
-        task_results: Optional[Cache] = None,
-        scheduler: Optional[Cache] = None,
+        name: str | None = None,
+        func: Callable | None = None,
+        cache_policy: CachePolicy | None = None,
+        checkpoint_policy: CheckpointPolicy | None = None,
+        retry_policy: RetryPolicy | None = None,
+        execution_policy: ExecutionPolicy | None = None,
+        task_results: Cache | None = None,
+        scheduler: Scheduler | None = None,
     ):
         """Init the flow.
 
@@ -208,13 +202,13 @@ class Flow(TaskProxyBase):
 def flow(
     func: Callable = None,
     *,
-    name: Optional[str] = None,
-    cache_policy: Optional[CachePolicy] = None,
-    checkpoint_policy: Optional[CheckpointPolicy] = None,
-    retry_policy: Optional[RetryPolicy] = None,
-    execution_policy: Optional[ExecutionPolicy] = None,
-    task_results: Optional[Cache] = None,
-    scheduler: Optional[Scheduler] = None,
+    name: str | None = None,
+    cache_policy: CachePolicy | None = None,
+    checkpoint_policy: CheckpointPolicy | None = None,
+    retry_policy: RetryPolicy | None = None,
+    execution_policy: ExecutionPolicy | None = None,
+    task_results: Cache | None = None,
+    scheduler: Scheduler | None = None,
 ) -> Flow:
     """Decorator to wrap a function as a Flow.
 
