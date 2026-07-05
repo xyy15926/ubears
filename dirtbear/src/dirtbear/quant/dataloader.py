@@ -8,9 +8,7 @@
 # ---------------------------------------------------------
 
 # %%
-from typing import Dict, List
 import logging
-import numpy as np
 import pandas as pd
 # from pathlib import Path
 from functools import partial
@@ -21,7 +19,7 @@ if __name__ == "__main__":
     from flagbear.slp import databundle
     reload(databundle)
 
-from flagbear.slp.databundle import DataBundleFactory, bundle_cache
+from flagbear.slp.databundle import bundle_cache
 
 # %%
 logging.basicConfig(

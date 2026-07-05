@@ -9,8 +9,7 @@
 
 # %%
 from __future__ import annotations
-from typing import Any, TypeVar, TYPE_CHECKING
-from collections.abc import Iterable
+from typing import Any
 
 import logging
 from pathlib import Path

@@ -9,7 +9,7 @@
 
 # %%
 import logging
-from typing import Dict, List, Tuple, Self
+from typing import Dict, List, Self
 
 from pyecharts.charts.chart import Chart, RectChart
 from pyecharts import options as opts

@@ -10,10 +10,9 @@
 # %%
 from __future__ import annotations
 import logging
-from typing import Any, TypeVar, TYPE_CHECKING
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pathlib import Path
-from collections.abc import Callable, Iterator
 
 from collections import Counter
 import numpy as np
@@ -255,16 +254,20 @@ def dfdesc(
     Return:
     ---------------------
     factor_df: DataFrame of factor-level granularity description.
-                labels_Cnt  FreqR   WOEs    IVs     Lifts     AccLifts  AccLiftsR
-      Col1  F1
-            F2
-            ...
-      Col2  ...
+    |      |     | labels_Cnt | FreqR | WOEs | IVs | Lifts | AccLifts | AccLiftsR |
+    |------+-----+------------+-------+------+-----+-------+----------+-----------|
+    | Col1 | F1  |
+    |      | F2  |
+    |      | ... |
+    | Col2 | F1  |
+    |      | F2  |
+    | ...  |
     col_log: DataFrame of column-level granularity description.
-            Chi2  Chi2PV  IV  T1Lift  T1Acc   T1AccR  AccKenCorr  AccKenPV    Pearson
-      Col1
-      Col2
-      ...
+    |      | Chi2 | Chi2PV | IV | T1Lift | T1Acc | T1AccR | AccKenCorr | AccKenPV | Pearson |
+    |------+------+--------+----+--------+-------+--------+------------+----------+---------|
+    | Col1 |
+    | Col2 |
+    | ...  |
     """
     factor_logs, ser_logs = [], []
     # Log for each column.
@@ -306,20 +309,22 @@ def dfdiffm(
     --------------------
     Series representing the mapping from `sero` to `sern` with index:
       `cat_df`: 1-to-1 mapper
-                FROM
-         Col1   Val1    New1
-                Val2    New2
-                ...
-         Col2   ...
-         ...
+         |      | FROM |      |
+         |------+------+------|
+         | Col1 | Val1 | New1 |
+         |      | Val2 | New2 |
+         |      | ...  |
+         | Col2 | ...  |
+         | ...  |
       `num_df`: interval-to-1 mapper for numeric with `to_interval` set
-                LEFT        RIGHT
-         Col_1  MIN[        E1)         New1
-                E1[         E2)         New2
-                ...
-                En[         MAX]        NewN
-         Col_2  ...
-         ...
+         |       | LEFT | RIGHT |      |
+         |-------+------+-------+------|
+         | Col_1 | MIN[ | E1)   | New1 |
+         |       | E1[  | E2)   | New2 |
+         |       | ...  |
+         |       | En[  | MAX]  | NewN |
+         | Col_2 | ...  |
+         | ...   |
     """
     # Build the mappings DataFrame.
     cat_map = {}

@@ -8,7 +8,7 @@
 # ---------------------------------------------------------
 
 # %%
-from typing import Dict, List
+from typing import Dict
 import logging
 import numpy as np
 # from pathlib import Path

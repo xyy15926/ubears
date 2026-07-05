@@ -9,7 +9,6 @@
 
 # %%
 from __future__ import annotations
-from typing import TypeVar, Any
 
 import logging
 import numpy as np
@@ -192,7 +191,7 @@ def rand_mobile() -> str:
 
     f3s = TELE + UNICOM + MOBILE
     f3sv = VTELE + VUNICOM + VMOBILE
-    f3 = np.random.choice(f3s)
+    f3 = np.random.choice(f3s + f3sv)
     tail = np.random.randint(0, 9, 8)
     tail = "".join([str(ele) for ele in tail])
 

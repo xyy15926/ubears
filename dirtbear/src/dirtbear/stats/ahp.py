@@ -11,12 +11,6 @@
 # %%
 from __future__ import annotations
 import logging
-from typing import Any, TypeVar
-from collections.abc import Callable, Iterator
-try:
-    from typing import NamedTuple, Self
-except ImportError:
-    from typing_extensions import NamedTuple, Self
 # from IPython.core.debugger import set_trace
 
 from functools import lru_cache
@@ -143,7 +137,7 @@ def AHP_get_RCI_n(n: int) -> float:
     evals = []
     nn = np.arange(1, 10)
     nn = np.concatenate([nn, (1 / nn)[1:]])
-    for i in range(1000):
+    for _i in range(1000):
         # Random choice from 1, 10 and their reciprocal.
         a = np.random.choice(nn, (n, n)).astype(np.float64)
         a[np.diag_indices_from(a)] = 1

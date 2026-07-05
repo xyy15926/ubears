@@ -3,12 +3,15 @@
 #   Name: geoenc.py
 #   Author: xyy15926
 #   Created: 2024-07-25 14:01:53
-#   Updated: 2026-04-03 14:47:07
+#   Updated: 2026-07-03 19:33:32
 #   Description:
 # ---------------------------------------------------------
 
 # %%
 from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    import jieba
 import logging
 # from IPython.core.debugger import set_trace
 
@@ -83,7 +86,6 @@ class CHNGovEncoder:
       Mapper to get the possible region-id of given region-name.
     """
     def __init__(self):
-        import jieba
         from jieba import posseg
 
         self.ptoker = posseg.POSTokenizer(self.get_gregion_toker())
@@ -247,7 +249,7 @@ class CHNGovEncoder:
                 break
         if end_addr_ext is not None:
             # Traverse to get the pos of the last region in address tokens.
-            for idx, field, flag in addr_toks:
+            for idx, field, flag in addr_toks:  # noqa: B007
                 if end_addr_ext.startswith(field):
                     break
         else:

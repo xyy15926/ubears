@@ -10,8 +10,7 @@
 # %%
 from __future__ import annotations
 import logging
-from typing import Any, TypeVar, Tuple
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Sequence
 
 import numpy as np
 from pandas.tseries.holiday import AbstractHolidayCalendar, Holiday

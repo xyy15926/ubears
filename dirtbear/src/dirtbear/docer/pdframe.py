@@ -12,12 +12,9 @@
 from __future__ import annotations
 import os
 import logging
-from typing import Any, TypeVar, Tuple
-from collections.abc import Callable, Iterator
 # from IPython.core.debugger import set_trace
 
 import re
-import numpy as np
 import pandas as pd
 import pdfplumber
 
@@ -56,7 +53,7 @@ def extract_tables(
                 table_D.setdefault(len(table.columns),
                                    []).append(pd.DataFrame(table.extract()))
     rets = []
-    for col_N, tables in table_D.items():
+    for _col_N, tables in table_D.items():
         rets.append(pd.concat(tables).reset_index(drop=True))
 
     return rets
@@ -127,5 +124,5 @@ def format_table(
     if dtypes is not None:
         for col, _dtype in dtypes.items():
             table[col] = table[col].apply(
-                lambda x: str_caster(x, _dtype, extended=True, dforced=True))
+                lambda x, dt=_dtype: str_caster(x, dt, extended=True, dforced=True))
     return table, desc
