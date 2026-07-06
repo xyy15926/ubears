@@ -22,17 +22,20 @@ from dirtbear.dflater import callables
 logging.basicConfig(
     format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
     level=logging.INFO,
-    force=(__name__ == "__main__"))
+    force=(__name__ == "__main__"),
+)
 logger = logging.getLogger()
 logger.info("Logging Start.")
 
 
 # %%
-def get_envp(env = None):
-    """Get EnvParser with default inner dict.
-    """
-    calls = {fn: getattr(callables, fn)
-             for fn in dir(callables) if callable(getattr(callables, fn))}
+def get_envp(env=None):
+    """Get EnvParser with default inner dict."""
+    calls = {
+        fn: getattr(callables, fn)
+        for fn in dir(callables)
+        if callable(getattr(callables, fn))
+    }
     calls.update(callables.consts)
     if env is None:
         return EnvParser(calls)

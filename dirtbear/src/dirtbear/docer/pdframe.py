@@ -24,7 +24,8 @@ from flagbear.str2.dtyper import str_caster
 logging.basicConfig(
     format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
     level=logging.INFO,
-    force=(__name__ == "__main__"))
+    force=(__name__ == "__main__"),
+)
 logger = logging.getLogger()
 logger.info("Logging Start.")
 
@@ -50,8 +51,9 @@ def extract_tables(
     with pdfplumber.open(file) as pdf:
         for page in pdf.pages:
             for table in page.find_tables():
-                table_D.setdefault(len(table.columns),
-                                   []).append(pd.DataFrame(table.extract()))
+                table_D.setdefault(len(table.columns), []).append(
+                    pd.DataFrame(table.extract())
+                )
     rets = []
     for _col_N, tables in table_D.items():
         rets.append(pd.concat(tables).reset_index(drop=True))
@@ -95,8 +97,9 @@ def format_table(
     if drop_chars is not None:
         ptn = re.compile("|".join(list(drop_chars)))
         if isinstance(drop_chars, str):
-            table = table.applymap(lambda x: re.sub(ptn, "", x)
-                                   if isinstance(x, str) else x)
+            table = table.applymap(
+                lambda x: re.sub(ptn, "", x) if isinstance(x, str) else x
+            )
 
     # Find the rows the head of the column.
     if columns is not None:
@@ -116,13 +119,17 @@ def format_table(
         else:
             _first, *_rest = col_head_idxs
             desc = table.iloc[:_first].copy()
-            table = (table.drop(_rest + list(range(_first + 1)), axis=0)
-                     .reset_index(drop=True))
+            table = table.drop(
+                _rest + list(range(_first + 1)), axis=0
+            ).reset_index(drop=True)
             table.columns = columns
 
     # Apply dtype transformation.
     if dtypes is not None:
         for col, _dtype in dtypes.items():
             table[col] = table[col].apply(
-                lambda x, dt=_dtype: str_caster(x, dt, extended=True, dforced=True))
+                lambda x, dt=_dtype: str_caster(
+                    x, dt, extended=True, dforced=True
+                )
+            )
     return table, desc

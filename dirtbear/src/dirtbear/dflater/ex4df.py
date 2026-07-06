@@ -25,7 +25,8 @@ from dirtbear.dflater.exoptim import get_envp
 logging.basicConfig(
     format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
     level=logging.INFO,
-    force=(__name__ == "__main__"))
+    force=(__name__ == "__main__"),
+)
 logger = logging.getLogger()
 logger.info("Logging Start.")
 
@@ -81,7 +82,9 @@ def trans_on_df(
         elif len(rule) == 3:
             key, cond, trans = rule
         else:
-            logger.warning(f"Invalid rule: {rule} for transformation on DataFrame.")
+            logger.warning(
+                f"Invalid rule: {rule} for transformation on DataFrame."
+            )
             continue
 
         tcols.append(key)
@@ -90,8 +93,9 @@ def trans_on_df(
             new[key] = envp.bind_env(new).parse(trans)
         else:
             cond_flags = envp.bind_env(new).parse(cond)
-            new.loc[cond_flags, key] = (envp.bind_env(new.loc[cond_flags])
-                                        .parse(trans))
+            new.loc[cond_flags, key] = envp.bind_env(
+                new.loc[cond_flags]
+            ).parse(trans)
 
     # Return only tranformed columns.
     if how == "new":
@@ -145,7 +149,9 @@ def agg_on_df(
         elif len(rule) == 3:
             key, cond, agg = rule
         else:
-            logger.warning(f"Invalid rule: {rule} for aggregation on DataFrame.")
+            logger.warning(
+                f"Invalid rule: {rule} for aggregation on DataFrame."
+            )
             continue
 
         # Aggregation.
@@ -212,6 +218,7 @@ class DFKGraph:
     edge_joinkey: Str | tuple | list.
       Field names of the join-key for join the DF of edges.
     """
+
     def __init__(
         self,
         node_df: pd.DataFrame = None,
@@ -302,29 +309,38 @@ class DFKGraph:
                 # Skip the DF that is not about nodes.
                 if fnid not in rdf:
                     continue
-                node_ref_ = pd.DataFrame({
-                    "__iloc__": np.arange(rdf.shape[0]),
-                    fntype: rdf_name,
-                }, index=rdf[fnid].values)
+                node_ref_ = pd.DataFrame(
+                    {
+                        "__iloc__": np.arange(rdf.shape[0]),
+                        fntype: rdf_name,
+                    },
+                    index=rdf[fnid].values,
+                )
                 node_refs.append(node_ref_)
             node_ref = pd.concat(node_refs)
             # The index's name will be kept.
             node_ref.index.set_names(fnid, inplace=True)
         elif fntype not in node_df:
             logger.warning("No additional DF of nodes will be used.")
-            node_ref = pd.DataFrame({
-                "__iloc__": np.arange(node_df.shape[0]),
-                fntype: "__NODE__",
-            }, index=node_df[fnid].values)
+            node_ref = pd.DataFrame(
+                {
+                    "__iloc__": np.arange(node_df.shape[0]),
+                    fntype: "__NODE__",
+                },
+                index=node_df[fnid].values,
+            )
             # Set `node_df` as the default searching DF of nodes.
             ref_dfs["__NODE__"] = node_df
         else:
             # Gather all node-types in node-DF.
             all_ntypes = np.unique(node_df[fntype].values)
-            node_ref = pd.DataFrame({
-                "__iloc__": np.arange(node_df.shape[0]),
-                fntype: node_df[fntype].values,
-            }, index=node_df[fnid])
+            node_ref = pd.DataFrame(
+                {
+                    "__iloc__": np.arange(node_df.shape[0]),
+                    fntype: node_df[fntype].values,
+                },
+                index=node_df[fnid],
+            )
             # set_trace()
 
             for ntype in all_ntypes:
@@ -335,14 +351,18 @@ class DFKGraph:
                     # Inner-join will keep the order of the `rdf`.
                     _mref = pd.merge(rdf, node_ref, on=fnid, how="inner")
                     assert _mref.shape[0] == rdf.shape[0], (
-                        "All nodes must be included in `node_df`.")
+                        "All nodes must be included in `node_df`."
+                    )
                     # node_ref.loc[_mref[fnid], "__iloc__"] = np.arange(_mref.shape[0])
                     # node_ref.loc[_mref[fnid], fntype] = ntype
-                    node_ref.iloc[_mref["__iloc__"].values,
-                                  node_ref.columns.get_loc("__iloc__")] = \
-                        np.arange(_mref.shape[0])
-                    node_ref.iloc[_mref["__iloc__"].values,
-                                  node_ref.columns.get_loc(fntype)] = ntype
+                    node_ref.iloc[
+                        _mref["__iloc__"].values,
+                        node_ref.columns.get_loc("__iloc__"),
+                    ] = np.arange(_mref.shape[0])
+                    node_ref.iloc[
+                        _mref["__iloc__"].values,
+                        node_ref.columns.get_loc(fntype),
+                    ] = ntype
         self.node_ref = node_ref
 
         # Init edge reference for searching the edges to locate the DF of
@@ -352,7 +372,7 @@ class DFKGraph:
         #   node-ids. But `DF.loc` will return duplicates when replicated
         #   index passed and another drop for duplicates is necessary.
         if np.isscalar(edge_joinkey):
-            edge_joinkey = [edge_joinkey, ]
+            edge_joinkey = [edge_joinkey]
         if edge_df is None:
             assert ref_dfs, "Nodes and entity's DF can't all be None."
             nec_keys = np.unique([*edge_joinkey, fsrc, ftgt]).tolist()
@@ -385,14 +405,20 @@ class DFKGraph:
                 else:
                     rdf = ref_dfs[etype]
                     # Inner-join will keep the order of the `rdf`.
-                    _mref = pd.merge(rdf, edge_ref, on=edge_joinkey, how="inner")
+                    _mref = pd.merge(
+                        rdf, edge_ref, on=edge_joinkey, how="inner"
+                    )
                     assert _mref.shape[0] == rdf.shape[0], (
-                        "All edges must be included in `edge_df`.")
-                    edge_ref.iloc[_mref["__iloc__"].values,
-                                  edge_ref.columns.get_loc("__iloc__")] = \
-                        np.arange(_mref.shape[0])
-                    edge_ref.iloc[_mref["__iloc__"].values,
-                                  edge_ref.columns.get_loc(fetype)] = etype
+                        "All edges must be included in `edge_df`."
+                    )
+                    edge_ref.iloc[
+                        _mref["__iloc__"].values,
+                        edge_ref.columns.get_loc("__iloc__"),
+                    ] = np.arange(_mref.shape[0])
+                    edge_ref.iloc[
+                        _mref["__iloc__"].values,
+                        edge_ref.columns.get_loc(fetype),
+                    ] = etype
         self.edge_ref = edge_ref
 
     def agg_on_nodes(
@@ -442,7 +468,7 @@ class DFKGraph:
         else:
             envp = self.envp
         if np.isscalar(nids):
-            nids = [nids, ]
+            nids = [nids]
         node_ref = self.node_ref
         edge_ref = self.edge_ref
         ref_dfs = self.ref_dfs
@@ -469,8 +495,9 @@ class DFKGraph:
             ref_dfs: dict[str, pd.DataFrame],
             envp: EnvParser,
         ) -> pd.DataFrame:
-            cur_edges = (ref_dfs[edge_ref.name]
-                         .iloc[edge_ref["__iloc__"].values])
+            cur_edges = ref_dfs[edge_ref.name].iloc[
+                edge_ref["__iloc__"].values
+            ]
             # set_trace()
             # cur_edges[fetype] = edge_ref.name
             if edge_cond:
@@ -484,8 +511,9 @@ class DFKGraph:
             ref_dfs: dict[str, pd.DataFrame],
             envp: EnvParser,
         ) -> pd.DataFrame:
-            cur_nodes = (ref_dfs[node_ref.name]
-                         .iloc[node_ref["__iloc__"].values])
+            cur_nodes = ref_dfs[node_ref.name].iloc[
+                node_ref["__iloc__"].values
+            ]
             # set_trace()
             # cur_nodes[fntype] = node_ref.name
             if node_cond:
@@ -505,7 +533,9 @@ class DFKGraph:
             elif len(rule) == 3:
                 key, conds, agg = rule
             else:
-                logger.warning(f"Invalid rule: {rule} for aggregation on DataFrame.")
+                logger.warning(
+                    f"Invalid rule: {rule} for aggregation on DataFrame."
+                )
                 continue
 
             # `direction` may be 1 of: source, target, both.
@@ -528,16 +558,23 @@ class DFKGraph:
                     # if edge_cond and not cur_edges.empty:
                     #     edge_flag = envp.bind_env(cur_edges).parse(edge_cond)
                     #     cur_edges = cur_edges.loc[edge_flag]
-                    cur_edges = (edge_ref_.groupby(fetype, as_index=False)
-                                 [edge_ref_.columns]
-                                 .apply(apply_edge_cond,
-                                        edge_cond=edge_cond,
-                                        ref_dfs=ref_dfs,
-                                        envp=envp)
-                                 .reset_index(drop=True))
+                    cur_edges = (
+                        edge_ref_.groupby(fetype, as_index=False)[
+                            edge_ref_.columns
+                        ]
+                        .apply(
+                            apply_edge_cond,
+                            edge_cond=edge_cond,
+                            ref_dfs=ref_dfs,
+                            envp=envp,
+                        )
+                        .reset_index(drop=True)
+                    )
 
                     # 3. Get correspondant nodes of the filtered edges.
-                    oneway_node_ref_ = node_ref.loc[pd.unique(cur_edges[tn].values)]
+                    oneway_node_ref_ = node_ref.loc[
+                        pd.unique(cur_edges[tn].values)
+                    ]
                     if oneway_node_ref_.empty:
                         continue
 
@@ -548,20 +585,27 @@ class DFKGraph:
                     #     node_flag = envp.bind_env(oneway_nodes).parse(node_cond)
                     #     oneway_nodes = oneway_nodes.loc[node_flag]
                     # set_trace()
-                    oneway_nodes = (oneway_node_ref_.groupby(fntype, as_index=False)
-                                    [oneway_node_ref_.columns]
-                                    .apply(apply_node_cond,
-                                           node_cond=node_cond,
-                                           ref_dfs=ref_dfs,
-                                           envp=envp)
-                                    .reset_index(drop=True))
+                    oneway_nodes = (
+                        oneway_node_ref_.groupby(fntype, as_index=False)[
+                            oneway_node_ref_.columns
+                        ]
+                        .apply(
+                            apply_node_cond,
+                            node_cond=node_cond,
+                            ref_dfs=ref_dfs,
+                            envp=envp,
+                        )
+                        .reset_index(drop=True)
+                    )
                     # set_trace()
 
                     all_nodes.append(oneway_nodes)
 
                 # Concat nodes in `all_nodes`
                 if all_nodes:
-                    cur_nodes = pd.concat(all_nodes, axis=0).drop_duplicates(fnid)
+                    cur_nodes = pd.concat(all_nodes, axis=0).drop_duplicates(
+                        fnid
+                    )
                 else:
                     cur_nodes = pd.DataFrame(columns=[fntype, fnid])
                 cur_nids = cur_nodes[fnid]

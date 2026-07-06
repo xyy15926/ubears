@@ -17,6 +17,7 @@ import numpy as np
 if __name__ == "__main__":
     from importlib import reload
     from dirtbear.visual import kline
+
     reload(kline)
 
 from dirtbear.visual.kline import compose_kline
@@ -47,6 +48,7 @@ class SimpleBacktest:
     capital: NDA.
     rules: Dict of constants representing the trade rules.
     """
+
     def __init__(
         self,
         initital_capital: float = 10000,
@@ -68,18 +70,18 @@ class SimpleBacktest:
         self.trades_prices = None
         self.cash = None
         self.positions_lot = None
-        self.capital= None
+        self.capital = None
         self.rules = dict(
-            LOT = 100,
-            SLIPPAGE = 0.001,
-            COMMISION_BUY_RATE = 0.0005,
-            COMMISION_BUY_MIN = 2,
-            COMMISION_SELL_RATE = 0.001,
-            COMMISION_SELL_MIN = 5,
-            BORROW_MONEY_MIN = 10000,
-            BORROW_MONEY_RATE = 0.001,
-            BORROW_STOCKS_LOT_MIN = 1,
-            BORROW_STOCKS_RATE = 0.001,
+            LOT=100,
+            SLIPPAGE=0.001,
+            COMMISION_BUY_RATE=0.0005,
+            COMMISION_BUY_MIN=2,
+            COMMISION_SELL_RATE=0.001,
+            COMMISION_SELL_MIN=5,
+            BORROW_MONEY_MIN=10000,
+            BORROW_MONEY_RATE=0.001,
+            BORROW_STOCKS_LOT_MIN=1,
+            BORROW_STOCKS_RATE=0.001,
         )
         if rules is not None:
             self.rules.update(rules)
@@ -102,10 +104,7 @@ class SimpleBacktest:
         if self.allow_borrow_money or self.allow_borrow_stocks:
             self.borrowed_money = np.zeros(arr_len, dtype=np.float32)
 
-    def process(self,
-        parr: np.ndarray,
-        strategy_func: callable
-    ):
+    def process(self, parr: np.ndarray, strategy_func: callable):
         """Run the strategy.
 
         Params:
@@ -122,8 +121,10 @@ class SimpleBacktest:
         self._init_arrs(parr)
         trade_signals, trade_prices = strategy_func(parr)
         if trade_prices is None:
-            logger.warning("No trade price provided, the average of open "
-                           "and close price will be used.")
+            logger.warning(
+                "No trade price provided, the average of open "
+                "and close price will be used."
+            )
             trade_prices = parr[:, 1]
         for idx in range(1, arr_len):
             sig = trade_signals[idx - 1]
@@ -166,9 +167,8 @@ class SimpleBacktest:
             # Borrow money.
             if try_cash > self.cash[idx - 1]:
                 borrowed = (
-                    ((try_cash - self.cash[idx - 1]) // BORROW_MONEY_MIN + 1)
-                     * BORROW_MONEY_MIN
-                )
+                    (try_cash - self.cash[idx - 1]) // BORROW_MONEY_MIN + 1
+                ) * BORROW_MONEY_MIN
             try_lot = try_cash // (price * (1 + SLIPPAGE) * LOT)
 
         return try_lot, borrowed
@@ -240,21 +240,27 @@ class SimpleBacktest:
         if lotn > 0:
             comission = max(cash_add * COMMISION_BUY_RATE, COMMISION_BUY_MIN)
         elif lotn < 0:
-            comission = max(-cash_add * COMMISION_SELL_RATE, COMMISION_SELL_MIN)
+            comission = max(
+                -cash_add * COMMISION_SELL_RATE, COMMISION_SELL_MIN
+            )
         self.cash[idx] = self.cash[idx - 1] - cash_add - comission
 
         # Calculate the borrowing commisions.
         if self.allow_borrow_money or self.allow_borrow_stocks:
             self.borrowed_money[idx] = self.borrowed_money[idx - 1] + borrowed
-            brate = (BORROW_MONEY_RATE if self.positions_lot[idx] > 0
-                     else BORROW_STOCKS_RATE)
+            brate = (
+                BORROW_MONEY_RATE
+                if self.positions_lot[idx] > 0
+                else BORROW_STOCKS_RATE
+            )
             self.cash[idx] -= self.borrowed_money[idx] * brate
             if self.cash[idx] < 0:
-                logger.warning(f"Cash is not enough for the commissions "
-                               f"for borrowing at {idx}.")
+                logger.warning(
+                    f"Cash is not enough for the commissions "
+                    f"for borrowing at {idx}."
+                )
         self.capital[idx] = (
-            self.cash[idx]
-            + self.positions_lot[idx] * LOT * cls_price
+            self.cash[idx] + self.positions_lot[idx] * LOT * cls_price
         )
 
     def compose_kline(
@@ -276,12 +282,14 @@ class SimpleBacktest:
         chart = compose_kline(
             dates,
             parr[:, :4].tolist(),
-            list(zip(
-                range(parr.shape[0]),
-                parr[:, 4].tolist(),
-                ((parr[:, 1] > parr[:, 0]).astype(int) * 2 - 1).tolist(),
-                strict=True,
-            )),
+            list(
+                zip(
+                    range(parr.shape[0]),
+                    parr[:, 4].tolist(),
+                    ((parr[:, 1] > parr[:, 0]).astype(int) * 2 - 1).tolist(),
+                    strict=True,
+                )
+            ),
             {
                 "MA5": MA(parr[:, 1], 5).round(2).tolist(),
                 "MA30": MA(parr[:, 1], 30).round(2).tolist(),
@@ -289,12 +297,14 @@ class SimpleBacktest:
             {
                 "Capital": self.capital.round(2).tolist(),
             },
-            list(zip(
-                dates,
-                self.trades_prices.tolist(),
-                self.trades_lot.tolist(),
-                strict=True,
-            )),
+            list(
+                zip(
+                    dates,
+                    self.trades_prices.tolist(),
+                    self.trades_lot.tolist(),
+                    strict=True,
+                )
+            ),
             self.cash.round(2).tolist(),
             (self.capital - self.cash).round(2).tolist(),
         )
@@ -303,10 +313,7 @@ class SimpleBacktest:
 
 
 # %%
-def evaluate_return(
-    initital_capital: float,
-    capital: np.ndarray
-) -> dict:
+def evaluate_return(initital_capital: float, capital: np.ndarray) -> dict:
     """Evaluate the return."""
     NO_RISK_RETURN = 0.015
 
@@ -322,5 +329,5 @@ def evaluate_return(
         "total_return": total_return,
         "annualized_return": annualized_return,
         "sharpe_ratio": sharpe_ratio,
-        "max_drawback": max_drawback
+        "max_drawback": max_drawback,
     }

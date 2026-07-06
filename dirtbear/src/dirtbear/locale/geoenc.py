@@ -10,6 +10,7 @@
 # %%
 from __future__ import annotations
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     import jieba
 import logging
@@ -26,7 +27,8 @@ from flagbear.slp.finer import get_tmp_path
 logging.basicConfig(
     format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
     level=logging.INFO,
-    force=(__name__ == "__main__"))
+    force=(__name__ == "__main__"),
+)
 logger = logging.getLogger()
 logger.info("Logging Start.")
 
@@ -62,7 +64,8 @@ def get_chn_govrs(deep: int = None):
         raise ValueError(f"Unexpected governing level: {deep}.")
     reg_df = pd.read_csv(GOVERN_REGION_LV4)
     reg_df["PinYin"] = reg_df["pinyin"].apply(
-        lambda x: "".join([ele.capitalize() for ele in x.split(" ")]))
+        lambda x: "".join([ele.capitalize() for ele in x.split(" ")])
+    )
 
     if deep is None:
         reg_lved = reg_df
@@ -85,6 +88,7 @@ class CHNGovEncoder:
     reg_name_map: ChainMap[region-name, List[region-id]]
       Mapper to get the possible region-id of given region-name.
     """
+
     def __init__(self):
         from jieba import posseg
 
@@ -93,8 +97,7 @@ class CHNGovEncoder:
 
     @staticmethod
     def get_gregion_toker() -> jieba.Tokenizer:
-        """Get Jieba Tokenizer with region names dict loaded.
-        """
+        """Get Jieba Tokenizer with region names dict loaded."""
         import jieba
 
         greg_dict = get_tmp_path() / "govern_region_names.txt"
@@ -104,26 +107,26 @@ class CHNGovEncoder:
 
             # Get region names and set word freq.
             # The region with higher level will be set with larger word freq.
-            reg_names = (reg_df[["name", "deep", "pos"]]
-                         .drop_duplicates("name")
-                         .copy())
+            reg_names = (
+                reg_df[["name", "deep", "pos"]].drop_duplicates("name").copy()
+            )
             reg_names["deep"] = 10000 // (reg_names["deep"] + 1) ** 2
 
             # Get region ext-names and set word freqs.
-            reg_exts = (reg_df[["ext_name", "deep", "pos"]]
-                        .drop_duplicates("ext_name")
-                        .copy())
+            reg_exts = (
+                reg_df[["ext_name", "deep", "pos"]]
+                .drop_duplicates("ext_name")
+                .copy()
+            )
             reg_exts["deep"] = 150000000 // (reg_exts["deep"] + 1) ** 2
             # Parameter `copy` replaces `inplace` in Pandas > 2.0.
             # And neither `copy` nor `inplace` is used here for compatabilty.
             reg_exts = reg_exts.set_axis(["name", "deep", "pos"], axis=1)
 
             # Write regions name to word dict file.
-            reg_names = (pd.concat([reg_names, reg_exts])
-                         .to_csv(greg_dict,
-                                 sep=" ",
-                                 index=None,
-                                 header=None))
+            reg_names = pd.concat([reg_names, reg_exts]).to_csv(
+                greg_dict, sep=" ", index=None, header=None
+            )
 
         toker = jieba.Tokenizer(greg_dict)
         # Load user dict.
@@ -171,8 +174,8 @@ class CHNGovEncoder:
         reg_df = self.reg_df
 
         # Cut address into tokens of address and others.
-        addr_lv_ids = {}        # {id-len: [], }
-        addr_toks = []          # [(idx, field, flag), ]
+        addr_lv_ids = {}  # {id-len: [], }
+        addr_toks = []  # [(idx, field, flag), ]
         tokens = ptoker.lcut(addr)
         for idx, (field, flag) in enumerate(tokens):
             # Atmost 4 address parts are allowed.
@@ -218,7 +221,9 @@ class CHNGovEncoder:
 
             # Filter the child ids with pid.
             if last_id is not None:
-                intersec = set([ele for ele in intersec if ele.startswith(last_id)])
+                intersec = set(
+                    [ele for ele in intersec if ele.startswith(last_id)]
+                )
 
             # Pop the intersection as the id.
             if len(intersec) == 0:
@@ -234,12 +239,13 @@ class CHNGovEncoder:
             upper_rid = addr_ids[idx]
             lower_rid = addr_ids[idx - 1]
             if upper_rid is None and lower_rid is not None:
-                addr_ids[idx] = lower_rid[:addr_stops[idx]]
+                addr_ids[idx] = lower_rid[: addr_stops[idx]]
 
         # Map to get the precise region-names.
-        addr_exts = [reg_df.loc[rid, "ext_name"]
-                     if rid is not None else None
-                     for rid in addr_ids]
+        addr_exts = [
+            reg_df.loc[rid, "ext_name"] if rid is not None else None
+            for rid in addr_ids
+        ]
 
         # Drop tokens before the tokens for structure infomation.
         end_addr_ext = None
@@ -258,16 +264,21 @@ class CHNGovEncoder:
 
         # Construct return dict.
         rets = {}
-        for lv_name, rid, rname in zip(addr_stop_mapper.values(),
-                                       addr_ids, addr_exts):
+        for lv_name, rid, rname in zip(
+            addr_stop_mapper.values(), addr_ids, addr_exts
+        ):
             rets[f"{lv_name}_id"] = rid
             rets[f"{lv_name}"] = rname
 
-        rets["detail"] = "".join([field for field, flag in tokens[idx + 1:]])
+        rets["detail"] = "".join([field for field, flag in tokens[idx + 1 :]])
         # Filter the not-noun tokens which is considered to be less necessary
         # so to get the core infomations of the detail.
-        rets["detail_core"] = "".join([field for field, flag
-                                       in tokens[idx + 1:]
-                                       if flag.startswith("n")])
+        rets["detail_core"] = "".join(
+            [
+                field
+                for field, flag in tokens[idx + 1 :]
+                if flag.startswith("n")
+            ]
+        )
 
         return rets

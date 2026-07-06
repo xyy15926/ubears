@@ -33,7 +33,7 @@ def biclf_select_nodes(
     tree: DecisionTreeClassifier,
     Xs: list[np.ndarray] | None = None,
     ys: list[np.ndarray] | None = None,
-    lift_thresh: float = 2
+    lift_thresh: float = 2,
 ) -> list:
     """Select nodes in DTC according to their capacities.
 
@@ -54,8 +54,8 @@ def biclf_select_nodes(
     1-D NDA storing node indices.
     """
     # Take tree's original capacities and frequencies into consideration.
-    Xs = [None,] if Xs is None else [None, *Xs]
-    ys = [None,] if ys is None else [None, *ys]
+    Xs = [None] if Xs is None else [None, *Xs]
+    ys = [None] if ys is None else [None, *ys]
 
     node_map = np.ones(tree.tree_.node_count, dtype=np.bool_)
     # Traverse to get all capacities and frequencies of all the nodes.
@@ -63,7 +63,7 @@ def biclf_select_nodes(
     for X, y in zip(Xs, ys):
         rfreqs, freqs = tree_node_metric(tree, X, y, "freq")
         lift_41 = rfreqs[:, -1] / rfreqs[0, -1]
-        node_map &= (lift_41 > lift_thresh)
+        node_map &= lift_41 > lift_thresh
 
     return np.arange(tree.tree_.node_count)[node_map]
 
@@ -100,20 +100,25 @@ def extract_paths_from_tree(
     """
     tree_ = tree.tree_
     # Construct parent indices.
-    parent = build_parent_from_children(tree_.children_left,
-                                        tree_.children_right)
-    node_indices = (range(tree_.node_count) if node_indices is None
-                    else node_indices)
+    parent = build_parent_from_children(
+        tree_.children_left, tree_.children_right
+    )
+    node_indices = (
+        range(tree_.node_count) if node_indices is None else node_indices
+    )
     valid_paths = []
     for node_index in node_indices:
         cur_index = parent[node_index]
         path_steps = deque()
         while cur_index >= 0:
-            path_steps.appendleft((
-                cur_index,
-                tree_.feature[cur_index],
-                tree_.threshold[cur_index],
-                tree_.children_right[cur_index] == cur_index,))
+            path_steps.appendleft(
+                (
+                    cur_index,
+                    tree_.feature[cur_index],
+                    tree_.threshold[cur_index],
+                    tree_.children_right[cur_index] == cur_index,
+                )
+            )
             cur_index = parent[cur_index]
         valid_paths.append(path_steps)
 
@@ -155,7 +160,7 @@ def tree_node_metric(
     X: np.ndarray | None = None,
     y: np.ndarray | None = None,
     metric: str = "freq",
-    weights: np.ndarray | None = None
+    weights: np.ndarray | None = None,
 ) -> tuple:
     """Calculate given criterion for each node in the tree.
 
@@ -212,7 +217,9 @@ def tree_node_metric(
         paths = tree.decision_path(X).toarray()
         if weights is not None:
             paths *= weights.reshape(-1, 1)
-        freqs = enhanced_freqs(y, others=paths, agg=lambda x: x.sum(axis=0))[0].T
+        freqs = enhanced_freqs(y, others=paths, agg=lambda x: x.sum(axis=0))[
+            0
+        ].T
         cri = freqs / freqs.sum(axis=1, keepdims=True)
     # Fetch `tree.tree_.value` as freqs directly.
     else:

@@ -21,7 +21,8 @@ from chinese_calendar import holidays
 logging.basicConfig(
     format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
     level=logging.INFO,
-    force=(__name__ == "__main__"))
+    force=(__name__ == "__main__"),
+)
 logger = logging.getLogger()
 logger.info("Logging Start.")
 
@@ -32,8 +33,10 @@ _starty = _holidates[0].year
 _endy = _holidates[-1].year
 logger.info(f"Holidays from {_starty} to {_endy} are considered.")
 if np.datetime64(_holidates[-1], "Y") < np.datetime64("today", "Y"):
-    logger.warning("Chinese calender is outdated. "
-                   "You may updated the module with pip first.")
+    logger.warning(
+        "Chinese calender is outdated. "
+        "You may updated the module with pip first."
+    )
 
 
 # %%
@@ -58,8 +61,8 @@ class ChineseHolidaysCalendar(AbstractHolidayCalendar):
     which only record the holiday from 2004 to the current year.
     So remember to update the package annually or it will be outdated.
     """
+
     rules = [
-        Holiday(val, year=key.year,
-                month=key.month,
-                day=key.day)
-        for key, val in holidays.items()]
+        Holiday(val, year=key.year, month=key.month, day=key.day)
+        for key, val in holidays.items()
+    ]

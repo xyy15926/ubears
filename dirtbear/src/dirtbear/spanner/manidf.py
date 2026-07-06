@@ -22,7 +22,8 @@ from tqdm import tqdm
 logging.basicConfig(
     format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
     level=logging.INFO,
-    force=(__name__ == "__main__"))
+    force=(__name__ == "__main__"),
+)
 logger = logging.getLogger()
 logger.info("Logging Start.")
 
@@ -148,12 +149,12 @@ def merge_dfs(
         logger.warning("No no-empty DataFrame passed.")
         return pd.DataFrame()
 
-    ons = [[ons], ] * len(dfs) if np.isscalar(ons) else ons
+    ons = [[ons]] * len(dfs) if np.isscalar(ons) else ons
     if bys is None:
         bys = [None] * len(dfs)
     elif np.isscalar(bys):
-        bys = [[bys], ] * len(dfs)
-    hows = [hows, ] * (len(dfs) - 1) if np.isscalar(hows) else hows
+        bys = [[bys]] * len(dfs)
+    hows = [hows] * (len(dfs) - 1) if np.isscalar(hows) else hows
 
     # Rename overlaped elements if necessary and then construct the column
     # mapper for each DataFrame with join and group keys excluded.
@@ -163,8 +164,12 @@ def merge_dfs(
     for ocols, ncols, on_, by_ in zip(ori_colss, new_colss, ons, bys):
         cols_D = {}
         for ocol, ncol in zip(ocols, ncols):
-            if (ocol == on_ or (isinstance(on_, list) and ocol in on_)
-                    or ocol == by_ or (isinstance(by_, list) and ocol in by_)):
+            if (
+                ocol == on_
+                or (isinstance(on_, list) and ocol in on_)
+                or ocol == by_
+                or (isinstance(by_, list) and ocol in by_)
+            ):
                 continue
             cols_D[ocol] = ncol
         col_Ds.append(cols_D)
@@ -174,18 +179,23 @@ def merge_dfs(
     merged = dfs[0].sort_values(lon).rename(col_Ds[0], axis=1)
 
     # Merge on by one with `pd.merge_asof` for inexact matching join.
-    for rdf, ron, how, rby, rcol_D in zip(dfs[1:], ons[1:], hows, bys[1:], col_Ds[1:]):
+    for rdf, ron, how, rby, rcol_D in zip(
+        dfs[1:], ons[1:], hows, bys[1:], col_Ds[1:]
+    ):
         rdf = rdf.sort_values(ron).rename(rcol_D, axis=1)
         if tolerance == 0:
-            merged = pd.merge(merged, rdf,
-                              left_on=lon, right_on=ron,
-                              how=how)
+            merged = pd.merge(merged, rdf, left_on=lon, right_on=ron, how=how)
         else:
-            merged = pd.merge_asof(merged, rdf,
-                                   left_on=lon, right_on=ron,
-                                   left_by=lby, right_by=rby,
-                                   tolerance=tolerance,
-                                   direction=direction)
+            merged = pd.merge_asof(
+                merged,
+                rdf,
+                left_on=lon,
+                right_on=ron,
+                left_by=lby,
+                right_by=rby,
+                tolerance=tolerance,
+                direction=direction,
+            )
         lon, lby = ron, rby
 
     return merged
@@ -215,7 +225,9 @@ def pivot_tags(
         ...
     """
     # Split tags.
-    tags = tags.fillna("").astype(str).str.strip(sep).str.split(sep, expand=False)
+    tags = (
+        tags.fillna("").astype(str).str.strip(sep).str.split(sep, expand=False)
+    )
     tag_counts = (
         pd.DataFrame(
             {

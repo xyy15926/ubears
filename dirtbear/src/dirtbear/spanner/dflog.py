@@ -11,6 +11,7 @@
 from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from pathlib import Path
 
@@ -48,7 +49,7 @@ def serdesc(
     ser: pd.Series | np.ndarray,
     label: pd.Series | np.ndarray = None,
     with_woe: bool = True,
-    with_lift: bool = True
+    with_lift: bool = True,
 ) -> tuple[pd.DataFrame, pd.Series]:
     """Describe the sequences.
 
@@ -97,10 +98,10 @@ def serdesc(
     fux, fuy = None, None
     if not is_numeric_dtype(seq):
         seq, fux = pd.factorize(seq, sort=True)
-        fux = np.concatenate([fux, [np.nan,]])
+        fux = np.concatenate([fux, [np.nan]])
     if not is_numeric_dtype(larr):
         larr, fuy = pd.factorize(larr, sort=True)
-        fuy = np.concatenate([fuy, [np.nan,]])
+        fuy = np.concatenate([fuy, [np.nan]])
 
     (ux, uy), ctab = contingency.crosstab(seq, larr)
     df_index = fux.take(ux) if fux is not None else ux
@@ -173,8 +174,10 @@ def serdiffm(
         dt = pd.concat([sero, sern], axis=1)
         sero, sern = dt.values[:, 0], dt.values[:, 1]
     elif len(sero) != len(sern):
-        logger.warning("Diffmap can't be applied on no-Series sequences of"
-                       " different length.")
+        logger.warning(
+            "Diffmap can't be applied on no-Series sequences of"
+            " different length."
+        )
         return None
 
     # Construct mapper from `sero` to `sern`.
@@ -191,8 +194,10 @@ def serdiffm(
             changed = True
         vr = mapper.setdefault(vo, vn)
         if vr != vn and vr is not vn:
-            logger.warning(f"The value {vo} has been mapped to multiple values"
-                           f": {vn}, {vr}.")
+            logger.warning(
+                f"The value {vo} has been mapped to multiple values"
+                f": {vn}, {vr}."
+            )
     if not changed:
         return None
 
@@ -223,9 +228,9 @@ def serdiffm(
         else:
             range_mapper[(left, right)] = last
 
-        ret = (pd.Series(range_mapper)
-               .rename_axis(["LEFT", "RIGHT"])
-               .rename("TO"))
+        ret = (
+            pd.Series(range_mapper).rename_axis(["LEFT", "RIGHT"]).rename("TO")
+        )
         return ret
 
     ret = pd.Series(mapper, name="TO").rename_axis("FROM")
@@ -237,7 +242,7 @@ def dfdesc(
     data: pd.DataFrame,
     label: pd.Series | np.ndarray = None,
     with_woe: bool = True,
-    with_lift: bool = True
+    with_lift: bool = True,
 ) -> tuple[pd.DataFrame, pd.Series]:
     """Describe the DataFrame.
 
@@ -331,11 +336,11 @@ def dfdiffm(
     num_map = {}
     for colname in dfn.columns:
         if colname not in dfo.columns:
-            logger.info(f"Column {colname} doesn't exists in original"
-                        f" DataFrame.")
+            logger.info(
+                f"Column {colname} doesn't exists in original DataFrame."
+            )
             continue
-        colmap = serdiffm(dfo[colname], dfn[colname],
-                          to_interval=to_interval)
+        colmap = serdiffm(dfo[colname], dfn[colname], to_interval=to_interval)
         if colmap is None:
             continue
         elif colmap.index.nlevels == 1:
@@ -343,10 +348,16 @@ def dfdiffm(
         elif colmap.index.nlevels == 2:
             num_map[colname] = colmap
 
-    cat_df = (pd.Series(dtype=object, name="TO") if len(cat_map) == 0
-              else pd.concat(cat_map.values(), keys=cat_map.keys()))
-    num_df = (pd.Series(dtype=object, name="TO") if len(num_map) == 0
-              else pd.concat(num_map.values(), keys=num_map.keys()))
+    cat_df = (
+        pd.Series(dtype=object, name="TO")
+        if len(cat_map) == 0
+        else pd.concat(cat_map.values(), keys=cat_map.keys())
+    )
+    num_df = (
+        pd.Series(dtype=object, name="TO")
+        if len(num_map) == 0
+        else pd.concat(num_map.values(), keys=num_map.keys())
+    )
 
     return cat_df, num_df
 
@@ -364,14 +375,18 @@ class ProcessLogger:
     log_cnt: Counter
       Counter dict records the number of each type of the logs.
     """
+
     def __init__(self):
         self.proc_logs = {}
         self.log_cnt = Counter()
 
-    def maplog(self, dfo: pd.DataFrame,
-               dfn: pd.DataFrame,
-               to_interval: bool = True,
-               ltag: str = "TRANS") -> None:
+    def maplog(
+        self,
+        dfo: pd.DataFrame,
+        dfn: pd.DataFrame,
+        to_interval: bool = True,
+        ltag: str = "TRANS",
+    ) -> None:
         """Match, compare and build mapping between columns from 2 DataFrame.
 
         Series representing the mapping from `sero` to `sern` with index:
@@ -414,11 +429,14 @@ class ProcessLogger:
         if not num_df.empty:
             proc_logs[f"nummap_{ltag}_{ltag_cnt}"] = num_df
 
-    def vallog(self, data: pd.DataFrame,
-               label: pd.Series | np.ndarray,
-               with_woe: bool = True,
-               with_lift: bool = True,
-               ltag: str = "ABST"):
+    def vallog(
+        self,
+        data: pd.DataFrame,
+        label: pd.Series | np.ndarray,
+        with_woe: bool = True,
+        with_lift: bool = True,
+        ltag: str = "ABST",
+    ):
         """Describe the DataFrame.
 
         DataFrame of description:

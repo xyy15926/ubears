@@ -25,7 +25,8 @@ from dirtbear.dflater.exoptim import get_envp
 logging.basicConfig(
     format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
     level=logging.INFO,
-    force=(__name__ == "__main__"))
+    force=(__name__ == "__main__"),
+)
 logger = logging.getLogger()
 logger.info("Logging Start.")
 
@@ -94,10 +95,13 @@ def rebuild_rec2df(
     envp = get_envp(env) if envp is None else envp
 
     # Return totally empty DF if no valid index-rule nor value-rule.
-    if ((val_rules is None or len(val_rules) == 0)
-            and (index_rules is None or len(index_rules) == 0)):
-        logger.warning("Neither value-rules nor index-rules are specified, "
-                       "empty DataFrame will be returned.")
+    if (val_rules is None or len(val_rules) == 0) and (
+        index_rules is None or len(index_rules) == 0
+    ):
+        logger.warning(
+            "Neither value-rules nor index-rules are specified, "
+            "empty DataFrame will be returned."
+        )
         return pd.DataFrame()
 
     # Check if `rec` can't be deserialized to dict.
@@ -109,9 +113,11 @@ def rebuild_rec2df(
             rec = {}
 
     # Extract values from `rec`.
-    val_dict = (rebuild_dict(rec, val_rules, extended=True, envp=envp)
-                if val_rules is not None and len(val_rules) > 0
-                else {0: rec})
+    val_dict = (
+        rebuild_dict(rec, val_rules, extended=True, envp=envp)
+        if val_rules is not None and len(val_rules) > 0
+        else {0: rec}
+    )
 
     # Construct DF with columns specifed by `val_rules`.
     # `vals` will always have the same columns, though in some cases that
@@ -135,7 +141,7 @@ def rebuild_rec2df(
         # Convert `index_dict` into MultiIndex.
         for ival in index_dict.values():
             if isinstance(ival, list):
-                assert (len(ival) == len(vals))
+                assert len(ival) == len(vals)
                 index_arrays.append(ival)
             else:
                 index_arrays.append([ival] * len(vals))
@@ -222,10 +228,14 @@ def compress_hierarchy(
         valid_index = []
         for idx, val in src.items():
             # `explode` is set to flatten the values extractions.
-            val_df = rebuild_rec2df(val, val_rules, index_rules,
-                                    envp=envp,
-                                    explode=True,
-                                    range_index=range_index)
+            val_df = rebuild_rec2df(
+                val,
+                val_rules,
+                index_rules,
+                envp=envp,
+                explode=True,
+                range_index=range_index,
+            )
             # In case empty DataFrame or None that represents unsuccessful
             # field extraction from records.
             if val_df is None or val_df.empty:
@@ -241,7 +251,7 @@ def compress_hierarchy(
             # or ValueError will be raised when concatenating the pd.Series.
             src = pd.concat(valid_values, keys=valid_index)
             # Update the index names with the result of `rebuild_rec2df`.
-            ori_index_names += src.index.names[len(ori_index_names):]
+            ori_index_names += src.index.names[len(ori_index_names) :]
             # Recover the Index names.
             src.index.set_names(ori_index_names, inplace=True)
         else:
@@ -309,16 +319,12 @@ def flat_records(
     # Init EnvParser.
     envp = get_envp(env) if envp is None else envp
 
-    ret = src.apply(rebuild_rec2df,
-                    val_rules=confs,
-                    envp=envp,
-                    explode=True)
+    ret = src.apply(rebuild_rec2df, val_rules=confs, envp=envp, explode=True)
 
     # In case empty result that doesn't support `pd.concat`.
     if ret.empty:
         # Retain the columns and index names.
-        ret = pd.DataFrame(columns=[i[0] for i in confs],
-                           index=src.index[0:0])
+        ret = pd.DataFrame(columns=[i[0] for i in confs], index=src.index[0:0])
     else:
         ret = pd.concat(ret.values, keys=src.index)
         if drop_rid:

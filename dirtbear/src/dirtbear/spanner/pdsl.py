@@ -25,7 +25,8 @@ from flagbear.slp.finer import tmp_file, date_order_mark
 logging.basicConfig(
     format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
     level=logging.INFO,
-    force=(__name__ == "__main__"))
+    force=(__name__ == "__main__"),
+)
 logger = logging.getLogger()
 logger.info("Logging Start.")
 
@@ -102,8 +103,9 @@ def save_with_excel(
             while stop * EXCEL_COLUMN_MAX < df.shape[1]:
                 start = stop * EXCEL_COLUMN_MAX
                 end = (stop + 1) * EXCEL_COLUMN_MAX
-                df.iloc[:, start: end].to_excel(
-                    xlw, sheet_name=f"{part}_part{stop}")
+                df.iloc[:, start:end].to_excel(
+                    xlw, sheet_name=f"{part}_part{stop}"
+                )
                 stop += 1
     xlw.close()
     logger.info(f"Data saved at {tfname}.")
@@ -167,7 +169,7 @@ def tmp_table(
     engine: sa.engine.Engine,
     tblname: str = "tmp",
     dmark: str | None = "today",
-    incr: int = 1
+    incr: int = 1,
 ) -> str:
     """Generate table name in given database.
 
@@ -180,10 +182,9 @@ def tmp_table(
     ----------------------
     Table name with format `tblname_<DATE>_<ORDER>`.
     """
-    ftbl = date_order_mark(tblname,
-                           sa.inspect(engine).get_table_names(),
-                           dmark,
-                           incr)
+    ftbl = date_order_mark(
+        tblname, sa.inspect(engine).get_table_names(), dmark, incr
+    )
     return ftbl
 
 
@@ -220,17 +221,15 @@ def save_with_db(
         dbname = tmp_file(fdb)
         fdb = sa.create_engine(f"sqlite:///{dbname}")
         for part, df in dfs.items():
-            df.reset_index().to_sql(name=part,
-                                    con=fdb,
-                                    index=False,
-                                    if_exists="fail")
+            df.reset_index().to_sql(
+                name=part, con=fdb, index=False, if_exists="fail"
+            )
     else:
         for part, df in dfs.items():
             ftbl = tmp_table(fdb, part)
-            df.reset_index().to_sql(name=ftbl,
-                                    con=fdb,
-                                    index=False,
-                                    if_exists="fail")
+            df.reset_index().to_sql(
+                name=ftbl, con=fdb, index=False, if_exists="fail"
+            )
 
     logger.info(f"Data saved at {fdb.url} successfully.")
     return fdb

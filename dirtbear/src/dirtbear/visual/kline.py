@@ -24,7 +24,8 @@ from dirtbear.visual.gridchart import GridChart
 logging.basicConfig(
     format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
     level=logging.INFO,
-    force=(__name__ == "__main__"))
+    force=(__name__ == "__main__"),
+)
 logger = logging.getLogger()
 logger.info("Logging Start.")
 
@@ -69,14 +70,16 @@ def draw_kline(
     prices_ = prices[["open_", "close", "high", "low"]].values.tolist()
     volume_mark = (prices["close"] > prices["open_"]).astype(int) * 2 - 1
     volume = {
-        "volume": list(zip(
-            range(len(prices)),
-            prices["volume"].values.tolist(),
-            volume_mark,
-            strict=True,
-        ))
+        "volume": list(
+            zip(
+                range(len(prices)),
+                prices["volume"].values.tolist(),
+                volume_mark,
+                strict=True,
+            )
+        )
     }
-    bs_points = trades[["date", "price", "lotn" ]].values.tolist()
+    bs_points = trades[["date", "price", "lotn"]].values.tolist()
     cash = trades["cash"].values.tolist()
     stock = (trades["value"] - trades["cash"]).values.tolist()
 
@@ -122,12 +125,14 @@ def compose_kline(
     GridChart
     """
     # Init Grid Chart.
-    grid_chart = GridChart(init_opts = opts.InitOpts(
-        width="1200px",
-        height="800px",
-        animation_opts=opts.AnimationOpts(animation=False),
-        theme=ThemeType.INFOGRAPHIC,
-    ))
+    grid_chart = GridChart(
+        init_opts=opts.InitOpts(
+            width="1200px",
+            height="800px",
+            animation_opts=opts.AnimationOpts(animation=False),
+            theme=ThemeType.INFOGRAPHIC,
+        )
+    )
 
     # Prices KLine.
     kline = prices_kline(xticks, prices, bs_points)
@@ -137,9 +142,7 @@ def compose_kline(
     if mas is not None:
         ma_line = prices_lines(xticks, mas, line=None)
     if signals is not None:
-        kline.extend_axis(
-            yaxis=opts.AxisOpts(type_="value", position="right")
-        )
+        kline.extend_axis(yaxis=opts.AxisOpts(type_="value", position="right"))
         ma_line = signal_lines(xticks, signals, line=ma_line)
     if ma_line is not None:
         kline = kline.overlap(ma_line)
@@ -175,9 +178,10 @@ def prices_markpoints(
             symbol_size=8,
             itemstyle_opts=opts.ItemStyleOpts(
                 color=YELLOW if v > 0 else PURPLE
-            )
+            ),
         )
-        for x, y, v in prices if v != 0
+        for x, y, v in prices
+        if v != 0
     ]
     label_opts = opts.LabelOpts(
         is_show=True,
@@ -211,8 +215,8 @@ def prices_kline(
             series_name=name,
             y_axis=prices,
             itemstyle_opts=opts.ItemStyleOpts(
-                color=RED,                      # Rising red
-                color0=GREEN,                   # Falling green
+                color=RED,  # Rising red
+                color0=GREEN,  # Falling green
                 border_color=RED,
                 border_color0=GREEN,
             ),

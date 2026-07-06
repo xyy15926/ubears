@@ -3,7 +3,7 @@
 #   Name: pronoun.py
 #   Author: xyy15926
 #   Created: 2024-11-21 10:06:38
-#   Updated: 2026-04-03 11:00:30
+#   Updated: 2026-07-06 15:09:46
 #   Description:
 # ---------------------------------------------------------
 
@@ -21,7 +21,8 @@ from dirtbear.locale.geoenc import get_chn_govrs
 logging.basicConfig(
     format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
     level=logging.INFO,
-    force=(__name__ == "__main__"))
+    force=(__name__ == "__main__"),
+)
 logger = logging.getLogger()
 logger.info("Logging Start.")
 
@@ -29,6 +30,7 @@ if __name__ == "__main__":
     datan = files("dirtbear.data")
 else:
     datan = files(__name__.split(".")[0]) / "data"
+
 
 # %%
 def init_short_alts():
@@ -59,6 +61,7 @@ def init_orgno_ws():
 
 
 # Firstname, lastname and orgname alternatives.
+# fmt: off
 FIRSTNAME_ALTS = init_firstname_alts()
 LASTNAME_ALTS = [
     "李", "王", "张", "刘", "陈", "杨", "黄", "赵", "周", "吴",
@@ -72,6 +75,7 @@ LASTNAME_ALTS = [
     "段", "郝", "孔", "邵", "史", "毛", "常", "万", "顾", "赖",
     "武", "康", "贺", "严", "尹", "钱", "施", "牛", "洪", "龚",
 ]
+# fmt: on
 SHORT_ALTS = init_short_alts()
 # Weights of each letter in orgno for validation check.
 ORGNO_WS = init_orgno_ws()
@@ -157,8 +161,9 @@ def rand_certno(
     ty = np.datetime64("today", "Y")
     ed = ((ty - age[0] + 1).astype("M8[D]") - 1).astype(int)
     sd = (ty - age[1]).astype("M8[D]").astype(int)
-    rd = (str(np.array(np.random.randint(sd, ed)).astype("M8[D]"))
-          .replace("-", ""))
+    rd = str(np.array(np.random.randint(sd, ed)).astype("M8[D]")).replace(
+        "-", ""
+    )
 
     # Random regsiter id.
     regnum = np.random.randint(1, 327)
@@ -175,19 +180,20 @@ def rand_certno(
 # %%
 # TODO: Enable SIP selection.
 def rand_mobile() -> str:
-    """Generate random cell phone number.
-    """
-    TELE = [133, 149, 153, 173, 177, 180, 181,
-            189, 190, 191, 193, 199]
-    UNICOM = [130, 131, 132, 145, 155, 156, 166, 167, 171,
-              175, 176, 185, 186, 196]
-    MOBILE = [134,
-              135, 136, 137, 138, 139, 1440, 147, 148, 150,
-              151, 152, 157, 158, 159, 172, 178, 182, 183,
-              184, 187, 188, 195, 197, 198]
+    """Generate random cell phone number."""
+    # fmt: off
+    TELE = [133, 149, 153, 173, 177, 180, 181, 189, 190, 191, 193, 199]
+    UNICOM = [
+        130, 131, 132, 145, 155, 156, 166, 167, 171, 175, 176, 185, 186, 196
+    ]
+    MOBILE = [
+        134, 135, 136, 137, 138, 139, 1440, 147, 148, 150, 151, 152, 157, 158,
+        159, 172, 178, 182, 183, 184, 187, 188, 195, 197, 198,
+    ]
     VTELE = [1700, 1701, 1702, 162]
     VUNICOM = [1704, 1707, 1708, 1709, 171, 167]
     VMOBILE = [1703, 1705, 1706, 165]
+    # fmt: on
 
     f3s = TELE + UNICOM + MOBILE
     f3sv = VTELE + VUNICOM + VMOBILE
@@ -200,8 +206,7 @@ def rand_mobile() -> str:
 
 # %%
 def rand_nname() -> str:
-    """Generate random name.
-    """
+    """Generate random name."""
     # Init global firstname alternatives if necessary.
     global FIRSTNAME_ALTS
     if FIRSTNAME_ALTS is None:
@@ -214,8 +219,7 @@ def rand_nname() -> str:
 
 # %%
 def rand_email(dom: str = "163.com") -> str:
-    """Generate random email address.
-    """
+    """Generate random email address."""
     alts = list(string.digits + string.ascii_lowercase + "_")
     accl = np.random.randint(6, 20)
     return "".join(np.random.choice(alts, accl)) + "@" + dom
@@ -223,8 +227,7 @@ def rand_email(dom: str = "163.com") -> str:
 
 # %%
 def rand_orgname() -> str:
-    """Generate random orgnization name.
-    """
+    """Generate random orgnization name."""
     # Init global shortname alternatives if necessary.
     global SHORT_ALTS
     if SHORT_ALTS is None:
@@ -280,8 +283,7 @@ def check_orgno(orgno: str) -> bool:
 
 # %%
 def rand_orgno() -> str:
-    """Generate random unified orgnization code.
-    """
+    """Generate random unified orgnization code."""
     f12 = np.random.choice(["91", "92", "93"])
     # Some goverment region ID may be 8 digits.
     f38 = str(np.random.choice(get_chn_govrs(2)["id"].values))[:6]
@@ -294,9 +296,7 @@ def rand_orgno() -> str:
 
 
 # %%
-def rand_addr(
-    govrid: str = None
-) -> str:
+def rand_addr(govrid: str = None) -> str:
     """Generate random address.
 
     Params:
@@ -324,7 +324,8 @@ def rand_addr(
         name += np.random.choice(SHORT_ALTS)
     area = np.random.choice(["小区", "村", "农场", "大队"])
 
-    addr = (f'{provr["ext_name"]}{cityr["ext_name"]}{govr["ext_name"]}'
-            f'{name}{area}')
+    addr = (
+        f"{provr['ext_name']}{cityr['ext_name']}{govr['ext_name']}{name}{area}"
+    )
 
     return addr

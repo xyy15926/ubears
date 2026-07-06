@@ -10,6 +10,7 @@
 # %%
 import logging
 import pandas as pd
+
 # from pathlib import Path
 from functools import partial
 import io
@@ -17,6 +18,7 @@ import io
 if __name__ == "__main__":
     from importlib import reload
     from flagbear.slp import databundle
+
     reload(databundle)
 
 from flagbear.slp.databundle import bundle_cache
@@ -37,12 +39,12 @@ def dumps_to_csv(data: pd.DataFrame):
     # Encode the CSV-str into bytes with utf8 explicitly, though
     # `ZipFile.writestr` seems to encode str into bytes with utf8.
     bytes_ = data.to_csv(
-        path_or_buf = None,
-        sep = ",",
-        na_rep = "",
-        header = True,
-        index = True,
-        mode = "w",
+        path_or_buf=None,
+        sep=",",
+        na_rep="",
+        header=True,
+        index=True,
+        mode="w",
     ).encode("utf8")
     return bytes_
 
@@ -53,18 +55,18 @@ def loads_from_csv(
 ):
     """Load DataFrame from bytes of CSV."""
     data = pd.read_csv(
-        filepath_or_buffer = io.BytesIO(bytes_),
-        sep = ",",
-        header = 0,
-        index_col = 0,
+        filepath_or_buffer=io.BytesIO(bytes_),
+        sep=",",
+        header=0,
+        index_col=0,
         encoding="utf8",
     )
     return data
 
 
 csv_cache = partial(
-    bundle_cache, 
-    dumps_data = dumps_to_csv,
-    loads_data = loads_from_csv,
+    bundle_cache,
+    dumps_data=dumps_to_csv,
+    loads_data=loads_from_csv,
 )
 pickle_cache = bundle_cache

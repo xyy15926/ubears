@@ -88,8 +88,9 @@ def AHP_solve(
             # Rnadom Consistency Index Test.
             CI = (eig_val - fea_n) / (fea_n - 1)
             if CI / AHP_get_RCI()[domi - 1] > 0.1:
-                logger.warning(f"AHP Random Consistency Index Test failed "
-                               f"for {mat}.")
+                logger.warning(
+                    f"AHP Random Consistency Index Test failed for {mat}."
+                )
 
             comp_ws.append(eig_vec)
             CIs.append(CI)
@@ -104,8 +105,9 @@ def AHP_solve(
             final_w /= np.sum(final_w)
             # Rnadom Consistency Index Test.
             if np.sum(np.array(CI) * final_w) > 0.1:
-                logger.warning(f"AHP Random Consistency Index Test failed for "
-                               f"level-{lv}.")
+                logger.warning(
+                    f"AHP Random Consistency Index Test failed for level-{lv}."
+                )
             final_w = np.dot(final_w, weight)
 
     return final_w.squeeze()
@@ -114,10 +116,24 @@ def AHP_solve(
 # %%
 @lru_cache
 def AHP_get_RCI():
-    """Get the pre-caled RCI from 1 to 15.
-    """
-    RI = [0, 0, 0.52, 0.89, 1.12, 1.26, 1.36, 1.41,
-          1.46, 1.49, 1.52, 1.54, 1.56, 1.58, 1.59]
+    """Get the pre-caled RCI from 1 to 15."""
+    RI = [
+        0,
+        0,
+        0.52,
+        0.89,
+        1.12,
+        1.26,
+        1.36,
+        1.41,
+        1.46,
+        1.49,
+        1.52,
+        1.54,
+        1.56,
+        1.58,
+        1.59,
+    ]
 
     return RI
 

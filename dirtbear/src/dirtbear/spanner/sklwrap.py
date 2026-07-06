@@ -13,13 +13,16 @@ import logging
 
 import pandas as pd
 
-from sklearn.preprocessing import (FunctionTransformer, )
+from sklearn.preprocessing import (
+    FunctionTransformer,
+)
 
 # %%
 logging.basicConfig(
     format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
     level=logging.INFO,
-    force=(__name__ == "__main__"))
+    force=(__name__ == "__main__"),
+)
 logger = logging.getLogger()
 logger.info("Logging Start.")
 
@@ -42,6 +45,7 @@ class OneToOneFunctionTransformer(FunctionTransformer):
     This implement is based on skikit-learn 1.1.2, this may need to be changed
     with the releases.
     """
+
     def fit(self, X, y=None):
         self.feature_names_out = "one-to-one"
         self.n_features_in_ = X.shape[1]
