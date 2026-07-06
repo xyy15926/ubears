@@ -9,17 +9,23 @@
 
 # %%
 from __future__ import annotations
-from collections.abc import Mapping
 
-import logging
 import json
+import logging
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pandas as pd
-# from IPython.core.debugger import set_trace
 
-from flagbear.llp.parser import EnvParser
-from flagbear.str2.fliper import rebuild_dict
 from dirtbear.dflater.exoptim import get_envp
+
+# from IPython.core.debugger import set_trace
+from flagbear.str2.fliper import rebuild_dict
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from flagbear.llp.parser import EnvParser
 
 # %%
 logging.basicConfig(
@@ -32,14 +38,14 @@ logger.info("Logging Start.")
 
 
 # %%
-def rebuild_rec2df(
+def rebuild_rec2df(  # noqa: C901
     rec: str | dict,
     val_rules: list[tuple],
-    index_rules: list[tuple] = None,
-    env: Mapping = None,
+    index_rules: list[tuple] | None = None,
+    env: Mapping | None = None,
     envp: EnvParser = None,
     explode: bool = False,
-    range_index: str = None,
+    range_index: str | None = None,
 ) -> pd.DataFrame:
     """Parse fields from record to construct DataFrame.
 
@@ -109,7 +115,7 @@ def rebuild_rec2df(
         try:
             rec = json.loads(rec)
         except json.JSONDecodeError:
-            logger.error(f"Invalid JSON string: {rec}.")
+            logger.exception(f"Invalid JSON string: {rec}.")
             rec = {}
 
     # Extract values from `rec`.
@@ -163,7 +169,7 @@ def rebuild_rec2df(
 def compress_hierarchy(
     src: pd.Series[str, dict] | dict,
     confs: list,
-    env: Mapping = None,
+    env: Mapping | None = None,
     envp: EnvParser = None,
     dropna: bool = True,
 ) -> pd.Series:
@@ -206,7 +212,7 @@ def compress_hierarchy(
     # Init EnvParser.
     envp = get_envp(env) if envp is None else envp
 
-    REC2DF_COL = None
+    REC2DF_COL = None  # noqa: N806
     range_index = False
     for step in confs:
         # Value rules.
@@ -270,7 +276,7 @@ def compress_hierarchy(
 def flat_records(
     src: pd.Series[str, dict] | dict,
     confs: list,
-    env: Mapping = None,
+    env: Mapping | None = None,
     envp: EnvParser = None,
     drop_rid: bool = True,
 ) -> pd.DataFrame:

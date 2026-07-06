@@ -9,11 +9,12 @@
 
 # %%
 import logging
-from typing import Dict, List, Self
+from typing import Self
 
-from pyecharts.charts.chart import Chart, RectChart
 from pyecharts import options as opts
 from pyecharts.charts import Grid
+from pyecharts.charts.chart import Chart, RectChart
+
 # from IPython.core.debugger import set_trace
 
 logging.basicConfig(
@@ -41,8 +42,8 @@ class GridChart(Grid):
 
     def __init__(
         self,
-        init_opts: opts.InitOpts | Dict = None,
-        render_opts: opts.RenderOpts | Dict = None,
+        init_opts: opts.InitOpts | dict = None,
+        render_opts: opts.RenderOpts | dict = None,
     ):
         """Init GridChart."""
         super().__init__(
@@ -70,7 +71,7 @@ class GridChart(Grid):
 
     def update_unrect_series(
         self,
-        grids: List[opts.GridOpts | Dict] = None,
+        grids: list[opts.GridOpts | dict] | None = None,
     ):
         """Update the positions for series from non-RectChart.
 
@@ -96,7 +97,7 @@ class GridChart(Grid):
     def add_chart(
         self,
         chart: Chart,
-        grid_opts: opts.GridOpts | Dict = None,
+        grid_opts: opts.GridOpts | dict = None,
     ) -> Self:
         """Add chart.
 
@@ -190,8 +191,8 @@ class GridChart(Grid):
             ):
                 opt = [opt_wrapper(**ele) for ele in opt]
 
-            # `option["title"]` accepts only dict, while other options could handle
-            # both dict and XXXOpts, legend for example.
+            # `option["title"]` accepts only dict, while other options
+            # could handle both dict and XXXOpts, legend for example.
             if opt_key == "title":
                 opt = opt.opts[0]
 
@@ -214,12 +215,12 @@ class GridChart(Grid):
 
     def set_datazoom(
         self,
-        xaxis_index: List | str = "all",
-        yaxis_index: List | str = None,
-        xzoom_type: List = ("inside", "slider"),
-        yzoom_type: List = ("inside",),
+        xaxis_index: list | str = "all",
+        yaxis_index: list | str | None = None,
+        xzoom_type: list = ("inside", "slider"),
+        yzoom_type: list = ("inside",),
         *,
-        datazoom_opts: Dict = None,
+        datazoom_opts: dict | None = None,
     ) -> Self:
         """Set the datazoom.
 
@@ -239,31 +240,31 @@ class GridChart(Grid):
         -------------------------
         Self
         """
-        conf = dict(
-            is_show=True,
-            type_="inside",
-            is_disabled=False,
-            is_realtime=True,
-            is_zoom_lock=False,
+        conf = {
+            "is_show": True,
+            "type_": "inside",
+            "is_disabled": False,
+            "is_realtime": True,
+            "is_zoom_lock": False,
             # Prefered percentage range settings.
-            range_start=90,
-            range_end=100,
+            "range_start": 90,
+            "range_end": 100,
             # min_span=20,
-            max_span=100,
+            "max_span": 100,
             # start_value=20,
             # end_value=100,
             # The `min_value_span` will determine the really `range_start` as
             # `range_start` and `range_end` are close.
-            min_value_span=20,
+            "min_value_span": 20,
             # max_value_span=100,
             # Control xaxis.
-            orient="horizontal",
-            xaxis_index=[0, 1],
+            "orient": "horizontal",
+            "xaxis_index": [0, 1],
             # pos_top="90%",
             # pos_bottom="10%",
             # pos_left="90%",
             # pos_right="10%",
-        )
+        }
         if datazoom_opts is not None:
             conf.update(datazoom_opts)
 
@@ -293,10 +294,10 @@ class GridChart(Grid):
 
     def set_tooltip(
         self,
-        formatter: str = None,
+        formatter: str | None = None,
         *,
-        tooltip_opts: Dict = None,
-        axispointer_opts: Dict = None,
+        tooltip_opts: dict | None = None,
+        axispointer_opts: dict | None = None,
     ) -> Self:
         """Set the tooltip.
 
@@ -310,34 +311,34 @@ class GridChart(Grid):
         ----------------------------
         Self
         """
-        tooltip_conf = dict(
-            is_show=True,
-            trigger="axis",  # Instead of `item`
-            trigger_on="mousemove|click",
-            axis_pointer_type="cross",
-            is_show_content=True,
-            is_always_show_content=False,
-            show_delay=0,
-            formatter=formatter,
-            background_color="rgba(245, 245, 245, 0.5)",
-            border_width=1,
-            border_color="#ccc",
-            textstyle_opts=opts.TextStyleOpts(
+        tooltip_conf = {
+            "is_show": True,
+            "trigger": "axis",  # Instead of `item`
+            "trigger_on": "mousemove|click",
+            "axis_pointer_type": "cross",
+            "is_show_content": True,
+            "is_always_show_content": False,
+            "show_delay": 0,
+            "formatter": formatter,
+            "background_color": "rgba(245, 245, 245, 0.5)",
+            "border_width": 1,
+            "border_color": "#ccc",
+            "textstyle_opts": opts.TextStyleOpts(
                 color="#000",
                 font_weight="bolder",
                 font_size=10,
                 line_height=8,
             ),
-        )
+        }
         if tooltip_opts is not None:
             tooltip_conf.update(tooltip_opts)
         tooltip_opts = opts.TooltipOpts(**tooltip_conf)
 
         # Only valid when the `axis_pointer_type = "cross"`.
-        axispointer_conf = dict(
-            is_show=True,
-            link=[{"xAxisIndex": "all"}],
-            label=opts.LabelOpts(
+        axispointer_conf = {
+            "is_show": True,
+            "link": [{"xAxisIndex": "all"}],
+            "label": opts.LabelOpts(
                 is_show=True,
                 # position = "left",
                 color="#FFFFFF",
@@ -348,7 +349,7 @@ class GridChart(Grid):
                 border_color="FFFFFF",
                 border_width=1,
             ),
-        )
+        }
         if axispointer_opts is not None:
             axispointer_conf.update(axispointer_opts)
         axispointer_opts = opts.AxisPointerOpts(**axispointer_conf)
@@ -363,10 +364,10 @@ class GridChart(Grid):
         self,
         pos_top: int | str = 20,
         pos_left: int | str = "center",
-        pos_bottom: int | str = None,
-        pos_right: int | str = None,
+        pos_bottom: int | str | None = None,
+        pos_right: int | str | None = None,
         *,
-        legend_opts: Dict = None,
+        legend_opts: dict | None = None,
     ) -> Self:
         """Set the legend.
 
@@ -378,14 +379,14 @@ class GridChart(Grid):
         pos_bottom:
         legend_opts: Dict of arguments of opts.LegendOpts.
         """
-        conf = dict(
-            is_show=True,
-            pos_top=pos_top,
-            pos_left=pos_left,
-            pos_bottom=pos_bottom,
-            pos_right=pos_right,
-            background_color="rgba(0, 0, 0, 0.1)",
-        )
+        conf = {
+            "is_show": True,
+            "pos_top": pos_top,
+            "pos_left": pos_left,
+            "pos_bottom": pos_bottom,
+            "pos_right": pos_right,
+            "background_color": "rgba(0, 0, 0, 0.1)",
+        }
         if legend_opts is not None:
             conf.update(legend_opts)
         legend_opts = opts.LegendOpts(**conf)
@@ -400,7 +401,7 @@ class GridChart(Grid):
         pos_left: int | str = "center",
         font_size: int = 18,
         *,
-        title_opts: Dict = None,
+        title_opts: dict | None = None,
     ) -> Self:
         """Set the title.
 
@@ -416,17 +417,17 @@ class GridChart(Grid):
         -------------------------
         Self
         """
-        conf = dict(
-            is_show=True,
-            title=title,
-            pos_top=pos_top,
-            pos_left=pos_left,
-            title_textstyle_opts=opts.TextStyleOpts(
+        conf = {
+            "is_show": True,
+            "title": title,
+            "pos_top": pos_top,
+            "pos_left": pos_left,
+            "title_textstyle_opts": opts.TextStyleOpts(
                 color="#111111",
                 font_weight="normal",
                 font_size=font_size,
             ),
-        )
+        }
         if title_opts is not None:
             conf.update(title_opts)
         title_opts = opts.TitleOpts(**conf)
@@ -434,7 +435,7 @@ class GridChart(Grid):
         self.set_global_opts(title_opts=title_opts)
         return self
 
-    def set_color_map(self, color: List[str] = None) -> Self:
+    def set_color_map(self, color: list[str] | None = None) -> Self:
         """Set the color map.
 
         Params:
@@ -461,7 +462,7 @@ class GridChart(Grid):
         )
         return self
 
-    def auto_margin(self) -> List[int]:
+    def auto_margin(self) -> list[int]:
         """Estimate the margin."""
         # T, B, L, R
         margin = [10, 10, 60, 10]
@@ -496,10 +497,10 @@ class GridChart(Grid):
 
     def set_plain_layout(
         self,
-        heights: List[int] | int = 100,
-        widths: List[int] | int = 100,
-        margin: List[int] = None,
-        gap: List[int] = None,
+        heights: list[int] | int = 100,
+        widths: list[int] | int = 100,
+        margin: list[int] | None = None,
+        gap: list[int] | None = None,
     ) -> Self:
         """Apply plain layout.
 

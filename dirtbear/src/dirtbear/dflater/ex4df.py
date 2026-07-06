@@ -10,16 +10,21 @@
 
 # %%
 from __future__ import annotations
-from typing import Any
-from collections.abc import Mapping
 
 import logging
+from typing import TYPE_CHECKING, Any
+
 import numpy as np
 import pandas as pd
+
+from dirtbear.dflater.exoptim import get_envp
+
 # from IPython.core.debugger import set_trace
 
-from flagbear.llp.parser import EnvParser
-from dirtbear.dflater.exoptim import get_envp
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from flagbear.llp.parser import EnvParser
 
 # %%
 logging.basicConfig(
@@ -36,7 +41,7 @@ def trans_on_df(
     df: pd.DataFrame,
     rules: list[tuple],
     how: str = "inplace",
-    env: Mapping = None,
+    env: Mapping | None = None,
     envp: EnvParser = None,
 ) -> pd.DataFrame:
     """Apply transformation on DataFrame.
@@ -68,10 +73,7 @@ def trans_on_df(
     envp.bind_env(df)
 
     # Make a copy if transformation is not applied on `df`.
-    if how != "inplace":
-        new = df.copy()
-    else:
-        new = df
+    new = df.copy() if how != "inplace" else df
     tcols = []
 
     for rule in rules:
@@ -108,7 +110,7 @@ def trans_on_df(
 def agg_on_df(
     df: pd.DataFrame,
     rules: list[tuple],
-    env: Mapping = None,
+    env: Mapping | None = None,
     envp: EnvParser = None,
 ) -> pd.Series:
     """Apply aggregation on DataFrame.
@@ -199,7 +201,7 @@ class DFKGraph:
       2. `ftgt`: Target-Node-ID in `node_ref`.
       3. `fetype`: Could be used to get the DF of the exact type edges in
         `ref_dfs`, as the the attributions of different edges may be different.
-      4. `edge_joinkey`：The join-key for join the DFs of edges, which should
+      4. `edge_joinkey`: The join-key for join the DFs of edges, which should
         be unique among all the edges, not just the edges of the same type.
         `[fsrc, ftgt]` will be set as the default.
       5. __iloc__: The i-loc of the node in correspondant DF in `ref_dfs`.
@@ -223,7 +225,7 @@ class DFKGraph:
         self,
         node_df: pd.DataFrame = None,
         edge_df: pd.DataFrame = None,
-        ref_dfs: dict[str, pd.DataFrame] = None,
+        ref_dfs: dict[str, pd.DataFrame] | None = None,
         *,
         fnid: str = "nid",
         fsrc: str = "source",
@@ -231,18 +233,18 @@ class DFKGraph:
         fntype: str = "ntype",
         fetype: str = "etype",
         edge_joinkey: str | tuple | list = ("source", "target"),
-        env: Mapping = None,
+        env: Mapping | None = None,
         envp: EnvParser = None,
     ):
         """Init a Knowledge-Graph represented with DFs.
 
         Params:
         ------------------------
-        node_df：DF[`fnid`[, `fntype`]] of all nodes.
+        node_df: DF[`fnid`[, `fntype`]] of all nodes.
         edge_df: DF[`fsrc`, `ftgt`[, `fetype`, ...]] of all edges.
         ref_dfs: Dict of DFs of different type of nodes of edges.
-          One of (`node_df`, `edge_df`) or `ref_dfs` must be provided to build
-          `node_ref` and `edge_ref`.
+          One of (`node_df`, `edge_df`) or `ref_dfs` must be provided to
+          build `node_ref` and `edge_ref`.
         fnid: Field name of the Node-Id in the DF of nodes.
         fsrc: Field name of the Source-Node-Id in the DF of edges.
         ftgt: Field name of the Target-Node-Id in the DF of edges.
@@ -267,7 +269,7 @@ class DFKGraph:
 
         self.envp = get_envp(env) if envp is None else envp
 
-    def init_refs(
+    def init_refs(  # noqa: C901
         self,
         node_df: pd.DataFrame = None,
         edge_df: pd.DataFrame = None,
@@ -285,7 +287,7 @@ class DFKGraph:
 
         Params:
         ------------------------
-        node_df：DF[`fnid`[, `fntype`]] of all nodes.
+        node_df: DF[`fnid`[, `fntype`]] of all nodes.
         edge_df: DF[`fsrc`, `ftgt`[, `fetype`, ...]] of all edges.
 
         Return:
@@ -353,7 +355,9 @@ class DFKGraph:
                     assert _mref.shape[0] == rdf.shape[0], (
                         "All nodes must be included in `node_df`."
                     )
-                    # node_ref.loc[_mref[fnid], "__iloc__"] = np.arange(_mref.shape[0])
+                    # node_ref.loc[_mref[fnid], "__iloc__"] = (
+                    #     np.arange(_mref.shape[0])
+                    # )
                     # node_ref.loc[_mref[fnid], fntype] = ntype
                     node_ref.iloc[
                         _mref["__iloc__"].values,
@@ -421,11 +425,11 @@ class DFKGraph:
                     ] = etype
         self.edge_ref = edge_ref
 
-    def agg_on_nodes(
+    def agg_on_nodes(  # noqa: C901
         self,
         nids: Any,
         rules: list[tuple],
-        env: Mapping = None,
+        env: Mapping | None = None,
         envp: EnvParser = None,
     ) -> pd.Series:
         """Aggregate starting for nodes and on nodes.
@@ -447,12 +451,15 @@ class DFKGraph:
             COND: List of 3-Tuple[DIRECTION, REL_COND, NODE_COND]
               DIRECTION: "source", "target" or "both" determining whether the
                 nodes are the source or the target.
-              REL_COND: Execution string, passed to EnvParser, to filter relations,
-                which should return boolean Series for filtering.
-              NODE_COND: Execution string, passed to EnvParser, to filter nodes,
-                which should return boolean Series for filtering.
-            AGG: Execution string, passed to EnvParser, to apply column-granularity
-              aggregation on DataFrame of nodes.
+              REL_COND: Execution string, passed to EnvParser,
+                to filter relations, which should return boolean Series
+                for filtering.
+              NODE_COND: Execution string, passed to EnvParser,
+                to filter nodes, which should return boolean Series
+                for filtering.
+            AGG: Execution string, passed to EnvParser,
+              to apply column-granularity aggregation on DataFrame
+              of nodes.
         env: Mapping to provide extra searching space for EnvParser.
         envp: EnvParser to execute string.
           ATTENTION: `env` will be ignored is `envp` is passed.
@@ -548,7 +555,9 @@ class DFKGraph:
                     # index is the source-node-id or target-node-id in edge
                     # records that will always be duplicated.
                     # So the `.isin` may be better?
-                    # edge_ref_ = edge_ref_.drop_duplicates(subset=edge_joinkey)
+                    # edge_ref_ = edge_ref_.drop_duplicates(
+                    #     subset=edge_joinkey
+                    # )
                     if edge_ref_.empty:
                         continue
 
@@ -579,10 +588,14 @@ class DFKGraph:
                         continue
 
                     # 4. Filter nodes with the `node_cond`.
-                    # oneway_nodes = (ref_dfs[oneway_node_ref_.iloc[0][fntype]]
-                    #                 .iloc[oneway_node_ref_["__iloc__"].values])
+                    # oneway_nodes = (
+                    #     ref_dfs[oneway_node_ref_.iloc[0][fntype]]
+                    #     .iloc[oneway_node_ref_["__iloc__"].values]
+                    # )
                     # if node_cond and not oneway_nodes.empty:
-                    #     node_flag = envp.bind_env(oneway_nodes).parse(node_cond)
+                    #     node_flag = envp.bind_env(
+                    #         oneway_nodes
+                    #     ).parse(node_cond)
                     #     oneway_nodes = oneway_nodes.loc[node_flag]
                     # set_trace()
                     oneway_nodes = (

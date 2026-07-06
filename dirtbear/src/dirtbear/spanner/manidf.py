@@ -9,12 +9,17 @@
 
 # %%
 from __future__ import annotations
+
 import logging
-from collections.abc import Callable, Iterable
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable
+
 # from IPython.core.debugger import set_trace
 
 
@@ -31,7 +36,7 @@ logger.info("Logging Start.")
 # %%
 def rename_overlaped(
     ori: list[Iterable],
-    suffixs: Iterable = None,
+    suffixs: Iterable | None = None,
 ) -> list[list]:
     """Rename overlaped elements inorder.
 
@@ -49,7 +54,7 @@ def rename_overlaped(
     rets = []
     cnts = set()
     suffixs = range(1, len(ori) + 1) if suffixs is None else suffixs
-    for idx, ll in zip(suffixs, ori):
+    for idx, ll in zip(suffixs, ori, strict=False):
         ret = []
         for ele in ll:
             if ele in cnts:
@@ -67,7 +72,7 @@ def group_addup_apply(
     df: pd.DataFrame,
     groupkey: str | list,
     appfunc: Callable,
-    desc: str = None,
+    desc: str | None = None,
     **kwargs,
 ) -> pd.DataFrame:
     """Progress apply for addup-function application.
@@ -75,8 +80,9 @@ def group_addup_apply(
     Addup functions: Function that won't change the index of the DataFrame but
     just addup some columns in most cases.
 
-    If DF returned by callable applied keep the index unchanged, the duplicates
-    in the (index and the group-key) will slow down the process of concatenation.
+    If DF returned by callable applied keep the index unchanged,
+    the duplicates in the (index and the group-key) will slow down
+    the process of concatenation.
     So and external `rets` will be used to collect the results of the sub-DF.
 
     Params:
@@ -87,7 +93,9 @@ def group_addup_apply(
     desc: Description prompt for tqdm progress bar.
     kwargs: Kwargs for `appfunc`.
 
-    Return
+    Return:
+    -------------------------
+    DataFrame after applying `appfunc`.
     """
     tqdm.pandas(desc=desc)
     rets = []
@@ -107,7 +115,7 @@ def group_addup_apply(
 def merge_dfs(
     dfs: list[pd.DataFrame],
     ons: str | list[list[str]],
-    bys: str | list[list[str]] = None,
+    bys: str | list[list[str]] | None = None,
     hows: str | list[str] = "inner",
     tolerance: int | None = 0,
     direction: str = "nearest",
@@ -160,16 +168,15 @@ def merge_dfs(
     # mapper for each DataFrame with join and group keys excluded.
     ori_colss = [df.columns for df in dfs]
     new_colss = rename_overlaped(ori_colss)
-    col_Ds = []
-    for ocols, ncols, on_, by_ in zip(ori_colss, new_colss, ons, bys):
-        cols_D = {}
-        for ocol, ncol in zip(ocols, ncols):
-            if (
-                ocol == on_
-                or (isinstance(on_, list) and ocol in on_)
-                or ocol == by_
-                or (isinstance(by_, list) and ocol in by_)
-            ):
+    col_Ds = []  # noqa: N806
+    for ocols, ncols, on_, by_ in zip(
+        ori_colss, new_colss, ons, bys, strict=False
+    ):
+        cols_D = {}  # noqa: N806
+        for ocol, ncol in zip(ocols, ncols, strict=False):
+            if ocol in (on_, by_) or (
+                isinstance(on_, list) and ocol in on_
+            ) or (isinstance(by_, list) and ocol in by_):
                 continue
             cols_D[ocol] = ncol
         col_Ds.append(cols_D)
@@ -179,8 +186,8 @@ def merge_dfs(
     merged = dfs[0].sort_values(lon).rename(col_Ds[0], axis=1)
 
     # Merge on by one with `pd.merge_asof` for inexact matching join.
-    for rdf, ron, how, rby, rcol_D in zip(
-        dfs[1:], ons[1:], hows, bys[1:], col_Ds[1:]
+    for rdf, ron, how, rby, rcol_D in zip(  # noqa: N806
+        dfs[1:], ons[1:], hows, bys[1:], col_Ds[1:], strict=False
     ):
         rdf = rdf.sort_values(ron).rename(rcol_D, axis=1)
         if tolerance == 0:

@@ -9,16 +9,19 @@
 
 # %%
 from __future__ import annotations
-from typing import Dict, List, Any
 
 import logging
-import pandas as pd
+from typing import TYPE_CHECKING, Any
+
 from pyecharts import options as opts
-from pyecharts.globals import ThemeType
-from pyecharts.charts import Kline, Line, Bar
+from pyecharts.charts import Bar, Kline, Line
 from pyecharts.commons.utils import JsCode
+from pyecharts.globals import ThemeType
 
 from dirtbear.visual.gridchart import GridChart
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 # %%
 logging.basicConfig(
@@ -39,8 +42,8 @@ PURPLE = "#9370DB"
 def draw_kline(
     prices: pd.DataFrame,
     trades: pd.DataFrame,
-    mas: Dict[str, list],
-    signals: Dict[str, list] = None,
+    mas: dict[str, list],
+    signals: dict[str, list] | None = None,
 ) -> GridChart:
     """Draw KLine with volume bars, trend lines.
 
@@ -98,14 +101,14 @@ def draw_kline(
 
 # %%
 def compose_kline(
-    xticks: List,
-    prices: List,
-    volume: List,
-    mas: Dict[str, List],
-    signals: Dict[str, List],
-    bs_points: List[Any, float, int],
-    cash: List,
-    stock: List,
+    xticks: list,
+    prices: list,
+    volume: list,
+    mas: dict[str, list],
+    signals: dict[str, list],
+    bs_points: list[Any, float, int],
+    cash: list,
+    stock: list,
 ) -> GridChart:
     """Compose different parts of KLine.
 
@@ -167,7 +170,7 @@ def compose_kline(
 def prices_markpoints(
     xticks: list,
     prices: list,
-) -> List[opts.MarkPointItem]:
+) -> list[opts.MarkPointItem]:
     """Generate markpoints on KLine."""
     points = [
         opts.MarkPointItem(
@@ -233,7 +236,7 @@ def prices_kline(
 # %%
 def prices_lines(
     xticks: list,
-    prices: Dict[str, list],
+    prices: dict[str, list],
     xaxis_index: int = 0,
     yaxis_index: int = 0,
     line: Line = None,
@@ -261,7 +264,7 @@ def prices_lines(
 # %%
 def signal_lines(
     xticks: list,
-    signals: Dict[str, list],
+    signals: dict[str, list],
     xaxis_index: int = 0,
     yaxis_index: int = 1,
     line: Line = None,

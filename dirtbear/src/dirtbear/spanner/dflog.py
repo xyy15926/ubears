@@ -9,6 +9,7 @@
 
 # %%
 from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 from collections import Counter
+
 import numpy as np
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
@@ -117,7 +119,7 @@ def serdesc(
 
     # Chi-square stats.
     if len(uy) > 1:
-        chi2, chi2_pv, chi2_dof, *ii = contingency.chi2_contingency(ctab)
+        chi2, chi2_pv, _chi2_dof, *_ii = contingency.chi2_contingency(ctab)
         seq_log["Chi2"] = chi2
         seq_log["Chi2PV"] = chi2_pv
 
@@ -146,7 +148,7 @@ def serdesc(
 
 
 # %%
-def serdiffm(
+def serdiffm(  # noqa: C901
     sero: np.ndarray | pd.Series,
     sern: np.ndarray | pd.Series,
     to_interval: bool = False,
@@ -183,7 +185,7 @@ def serdiffm(
     # Construct mapper from `sero` to `sern`.
     mapper = {}
     changed = False
-    for vo, vn in zip(sero, sern):
+    for vo, vn in zip(sero, sern, strict=False):
         # Unify all `nan` to `np.nan`, as `float("nan")` are not equal.
         # ATTENTION: `np.isnan` only accept numeric value.
         if pd.isna(vo):
@@ -298,8 +300,8 @@ def dfdiffm(
 
     1. Series with 2-level index will be returned if `to_interval` is set and
       `sero` is numeric.
-      1.1 And the cutting edges, as the values in index, will the middle point of
-      the changine points in `sero`.
+      1.1 And the cutting edges, as the values in index,
+        will the middle point of the changing points in `sero`.
       1.2 `num_df` returned will always be empty if `to_interval` not set.
     2. Columns with no change and columns that don't exist in both DataFrame
       will be ignored.

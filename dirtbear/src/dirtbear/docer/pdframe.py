@@ -10,15 +10,20 @@
 
 # %%
 from __future__ import annotations
-import os
-import logging
-# from IPython.core.debugger import set_trace
 
+import logging
+
+# from IPython.core.debugger import set_trace
 import re
+from typing import TYPE_CHECKING
+
 import pandas as pd
 import pdfplumber
 
 from flagbear.str2.dtyper import str_caster
+
+if TYPE_CHECKING:
+    import os
 
 # %%
 logging.basicConfig(
@@ -47,26 +52,25 @@ def extract_tables(
     ---------------------
     [DataFrame, with different widths, with RangeIndex as Index and Column].
     """
-    table_D = {}
+    table_D = {}  # noqa: N806
     with pdfplumber.open(file) as pdf:
         for page in pdf.pages:
             for table in page.find_tables():
                 table_D.setdefault(len(table.columns), []).append(
                     pd.DataFrame(table.extract())
                 )
-    rets = []
-    for _col_N, tables in table_D.items():
-        rets.append(pd.concat(tables).reset_index(drop=True))
-
-    return rets
+    return [
+        pd.concat(tables).reset_index(drop=True)
+        for tables in table_D.values()
+    ]
 
 
 # %%
 def format_table(
     table: pd.DataFrame,
-    columns: list | tuple = None,
+    columns: list | tuple | None = None,
     drop_chars: str | dict = "\n \t",
-    dtypes: dict = None,
+    dtypes: dict | None = None,
 ) -> (pd.DataFrame, pd.DataFrame):
     """Format the table extracted from PDF file.
 

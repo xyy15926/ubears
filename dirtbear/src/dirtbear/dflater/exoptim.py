@@ -12,11 +12,12 @@ from __future__ import annotations
 
 import logging
 from collections import ChainMap
-# from IPython.core.debugger import set_trace
 
+from dirtbear.dflater import callables
+
+# from IPython.core.debugger import set_trace
 from flagbear.llp.lex import Token
 from flagbear.llp.parser import EnvParser
-from dirtbear.dflater import callables
 
 # %%
 logging.basicConfig(

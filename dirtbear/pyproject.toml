@@ -21,7 +21,7 @@ classifiers = [
 	"Programming Language :: Python :: 3.12",
 ]
 license-files = [ "license.txt" ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
 	"numpy >=2.0, <3.0",
 	"pandas >=2.0, <3.0",
@@ -109,20 +109,71 @@ include = [
 	"contrib/**/*.py",
 	"demos/**/*.py",
 ]
-line-length = 88
+line-length = 79
 indent-width = 4
 target-version = "py313"
 
 [tool.ruff.lint]
+# Ref: https://docs.astral.org.cn/ruff/rules/#flake8-use-pathlib-pth
 # select = ["E4", "E7", "E9", "F"]
-select = ["E", "F", "B"]
-ignore = []
+select = [
+    # 基础
+    "E",          # pycodestyle 错误
+    "W",          # pycodestyle 警告
+    "F",          # pyflakes
+    # 代码质量
+    "B",          # bugbear
+    "C4",         # 推导式
+    "UP",         # 语法升级
+    "SIM",        # 简化写法
+    "PERF",       # 性能
+    "RUF",        # ruff 自有规则
+    # 安全
+    "S",          # bandit 安全
+    # 代码风格
+    "I",          # import 排序
+    "N",          # 命名
+    "D",          # docstring
+    # 错误处理
+    "TRY",        # try/except 规范
+    # 其他
+    "LOG",        # logging
+    "C90",        # 复杂度
+    "TCH",        # 类型标注导入
+    "T20",        # 检测 print
+]
+ignore = [
+    "D100",       # 模块不需要 docstring
+    "D104",       # 包不需要 docstring
+    "D107",       # __init__ 不强制 docstring
+    "S101",       # 允许 assert（测试中常用）
+    "TRY003",     # 不强制 raise from
+]
 fixable = ["ALL"]
 unfixable = []
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["E402"]
+"tests/**/*.py" = [
+    "S101",       # 允许 assert
+    "D",          # 测试文件不要求 docstring
+    "ANN",        # 测试文件不要求类型标注
+    "T20",        # 允许 print
+]
+"src/dirtbear/spanner/dflog.py" = [
+    "E501",       # Docstring tables exceed line length
+]
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "flagbear",
+    "statbear",
+    "nutsbear",
+    "distbear",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.ruff.format]
 exclude = ["*.ipynb"]

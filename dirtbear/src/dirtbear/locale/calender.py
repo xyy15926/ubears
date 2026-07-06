@@ -9,13 +9,16 @@
 
 # %%
 from __future__ import annotations
+
 import logging
-from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 import numpy as np
-from pandas.tseries.holiday import AbstractHolidayCalendar, Holiday
 from chinese_calendar import holidays
+from pandas.tseries.holiday import AbstractHolidayCalendar, Holiday
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 # %%
 logging.basicConfig(
@@ -44,11 +47,13 @@ ChnBusdayCalendar = np.busdaycalendar("1111100", list(holidays.keys()))
 
 
 def is_chn_busday(date: str | Sequence):
+    """Check if date is a Chinese business day."""
     date = np.asarray(date, dtype="M8[D]")
     return np.is_busday(date, busdaycal=ChnBusdayCalendar)
 
 
 def not_chn_busday(date: str | Sequence):
+    """Check if date is NOT a Chinese business day."""
     date = np.asarray(date, dtype="M8[D]")
     return ~(np.isnat(date) | np.is_busday(date, busdaycal=ChnBusdayCalendar))
 
@@ -62,7 +67,7 @@ class ChineseHolidaysCalendar(AbstractHolidayCalendar):
     So remember to update the package annually or it will be outdated.
     """
 
-    rules = [
+    rules = [  # noqa: RUF012
         Holiday(val, year=key.year, month=key.month, day=key.day)
         for key, val in holidays.items()
     ]

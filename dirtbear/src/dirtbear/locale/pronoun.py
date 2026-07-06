@@ -11,9 +11,10 @@
 from __future__ import annotations
 
 import logging
-import numpy as np
 import string
 from importlib.resources import files
+
+import numpy as np
 
 from dirtbear.locale.geoenc import get_chn_govrs
 
@@ -34,26 +35,31 @@ else:
 
 # %%
 def init_short_alts():
+    """Initialize short surname alternatives for jieba."""
     fname = datan / "userdict/jieba_dict_small.txt"
     name_alts = []
-    for line in open(fname, "r", encoding="utf8"):
-        zh, w, zht = line.strip().split(" ")
-        if zht in ["j"] and len(zh) <= 2:
-            name_alts.append(zh)
+    with open(fname, encoding="utf8") as f:
+        for line in f:
+            zh, _w, zht = line.strip().split(" ")
+            if zht in ["j"] and len(zh) <= 2:
+                name_alts.append(zh)
     return name_alts
 
 
 def init_firstname_alts():
+    """Initialize firstname alternatives for jieba."""
     fname = datan / "userdict/jieba_dict_small.txt"
     name_alts = []
-    for line in open(fname, "r", encoding="utf8"):
-        zh, w, zht = line.strip().split(" ")
-        if zht in ["nr"] and len(zh) <= 2:
-            name_alts.append(zh)
+    with open(fname, encoding="utf8") as f:
+        for line in f:
+            zh, _w, zht = line.strip().split(" ")
+            if zht in ["nr"] and len(zh) <= 2:
+                name_alts.append(zh)
     return name_alts
 
 
 def init_orgno_ws():
+    """Initialize organization number weights."""
     ws = [0] * 17
     for i in range(1, 18):
         ws[i - 1] = 3 ** (i - 1) % 31
@@ -95,7 +101,7 @@ def certno_parity(certno_p: str) -> str:
     """
     ws = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2]
     wss = 0
-    for w, b in zip(ws, certno_p):
+    for w, b in zip(ws, certno_p, strict=False):
         wss += w * int(b)
     rem = (11 - ((wss - 1) % 11)) % 11
     return "X" if rem == 10 else str(rem)
@@ -115,7 +121,7 @@ def check_certno(certno: str):
     """
     ws = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2, 1]
     wss = 0
-    for w, b in zip(ws, certno):
+    for w, b in zip(ws, certno, strict=False):
         b = 10 if b.upper() == "X" else int(b)
         wss += w * b
     rem = wss % 11
@@ -124,9 +130,9 @@ def check_certno(certno: str):
 
 # %%
 def rand_certno(
-    govrid: str = None,
-    age: int | tuple = None,
-    gender: int = None,
+    govrid: str | None = None,
+    age: int | tuple | None = None,
+    gender: int | None = None,
 ) -> str:
     """Generate random certno.
 
@@ -182,17 +188,17 @@ def rand_certno(
 def rand_mobile() -> str:
     """Generate random cell phone number."""
     # fmt: off
-    TELE = [133, 149, 153, 173, 177, 180, 181, 189, 190, 191, 193, 199]
-    UNICOM = [
+    TELE = [133, 149, 153, 173, 177, 180, 181, 189, 190, 191, 193, 199]  # noqa: N806
+    UNICOM = [  # noqa: N806
         130, 131, 132, 145, 155, 156, 166, 167, 171, 175, 176, 185, 186, 196
     ]
-    MOBILE = [
+    MOBILE = [  # noqa: N806
         134, 135, 136, 137, 138, 139, 1440, 147, 148, 150, 151, 152, 157, 158,
         159, 172, 178, 182, 183, 184, 187, 188, 195, 197, 198,
     ]
-    VTELE = [1700, 1701, 1702, 162]
-    VUNICOM = [1704, 1707, 1708, 1709, 171, 167]
-    VMOBILE = [1703, 1705, 1706, 165]
+    VTELE = [1700, 1701, 1702, 162]  # noqa: N806
+    VUNICOM = [1704, 1707, 1708, 1709, 171, 167]  # noqa: N806
+    VMOBILE = [1703, 1705, 1706, 165]  # noqa: N806
     # fmt: on
 
     f3s = TELE + UNICOM + MOBILE
@@ -255,10 +261,10 @@ def orgno_parity(orgno_p: str) -> str:
     """
     # Init value map.
     alts = list(string.digits + "ABCDEFGHJKLMNPQRTUWXY")
-    alts_M = {c: i for i, c in enumerate(alts)}
+    alts_M = {c: i for i, c in enumerate(alts)}  # noqa: N806
 
     wss = 0
-    for w, b in zip(ORGNO_WS, orgno_p):
+    for w, b in zip(ORGNO_WS, orgno_p, strict=False):
         wss += w * alts_M[b]
     rem = (31 - (wss % 31)) % 31
 
@@ -296,7 +302,7 @@ def rand_orgno() -> str:
 
 
 # %%
-def rand_addr(govrid: str = None) -> str:
+def rand_addr(govrid: str | None = None) -> str:
     """Generate random address.
 
     Params:

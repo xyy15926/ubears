@@ -9,10 +9,10 @@
 
 # %%
 from __future__ import annotations
+
 import logging
 
 import pandas as pd
-
 from sklearn.preprocessing import (
     FunctionTransformer,
 )
@@ -35,18 +35,19 @@ logger.info("Logging Start.")
 # ---------------------------------------------------------------------------
 # %%
 class OneToOneFunctionTransformer(FunctionTransformer):
-    """
-    Description:
-    This class inherits from FunctionTrasnformer with only attributes
-    `faeture_names_out` and `n_features_in` add, which endues the class
+    """Transformer that maps each feature to itself.
+
+    This class inherits from FunctionTransformer with only attributes
+    `feature_names_out` and `n_features_in_` added, which endues the class
     the feature `get_feature_names_out`.
 
     Attention:
-    This implement is based on skikit-learn 1.1.2, this may need to be changed
-    with the releases.
+    This implementation is based on scikit-learn 1.1.2, this may need to be
+    changed with the releases.
     """
 
-    def fit(self, X, y=None):
+    def fit(self, X, y=None):  # noqa: N803
+        """Fit the transformer to the data."""
         self.feature_names_out = "one-to-one"
         self.n_features_in_ = X.shape[1]
         if isinstance(X, pd.DataFrame):

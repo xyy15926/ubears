@@ -10,10 +10,12 @@
 
 # %%
 from __future__ import annotations
-import logging
-# from IPython.core.debugger import set_trace
 
+import logging
+
+# from IPython.core.debugger import set_trace
 from functools import lru_cache
+
 import numpy as np
 import numpy.linalg as linalg
 
@@ -28,7 +30,7 @@ logger.info("Logging Start.")
 
 
 # %%
-def AHP_solve(
+def AHP_solve(  # noqa: N802
     hmats: list[list[np.ndarray]],
     domi: bool = True,
 ) -> np.ndarray:
@@ -69,7 +71,7 @@ def AHP_solve(
     final_w = None
     for lv, mat_comps in enumerate(hmats):
         comp_ws = []
-        CIs = []
+        CIs = []  # noqa: N806
         domi_n = []
         for mat in mat_comps:
             fea_n = mat.shape[0]
@@ -86,7 +88,7 @@ def AHP_solve(
             logger.debug(f"Eigen vector: {eig_vec}.")
 
             # Rnadom Consistency Index Test.
-            CI = (eig_val - fea_n) / (fea_n - 1)
+            CI = (eig_val - fea_n) / (fea_n - 1)  # noqa: N806
             if CI / AHP_get_RCI()[domi - 1] > 0.1:
                 logger.warning(
                     f"AHP Random Consistency Index Test failed for {mat}."
@@ -115,9 +117,9 @@ def AHP_solve(
 
 # %%
 @lru_cache
-def AHP_get_RCI():
+def AHP_get_RCI():  # noqa: N802
     """Get the pre-caled RCI from 1 to 15."""
-    RI = [
+    RI = [  # noqa: N806
         0,
         0,
         0.52,
@@ -139,7 +141,7 @@ def AHP_get_RCI():
 
 
 @lru_cache
-def AHP_get_RCI_n(n: int) -> float:
+def AHP_get_RCI_n(n: int) -> float:  # noqa: N802
     """Calculate Random Consistency Index.
 
     Params:

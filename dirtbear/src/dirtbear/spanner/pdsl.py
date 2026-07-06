@@ -9,17 +9,19 @@
 
 # %%
 from __future__ import annotations
-from typing import Any
 
-import logging
-from pathlib import Path
 import json
+import logging
 import pickle
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 import sqlalchemy as sa
 
-from flagbear.slp.finer import tmp_file, date_order_mark
+from flagbear.slp.finer import date_order_mark, tmp_file
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 # %%
 logging.basicConfig(
@@ -112,7 +114,8 @@ def save_with_excel(
 
     # Save the DataFrames with pickle.
     if with_pickle:
-        pickle.dump(dfs, open(tfname.with_suffix(".pkl"), "wb"))
+        with open(tfname.with_suffix(".pkl"), "wb") as fp:
+            pickle.dump(dfs, fp)
 
     return tfname
 
@@ -135,7 +138,8 @@ def save_with_pickle(
     """
     # Add extname if not provided or not proper.
     tfname = tmp_file(fname).with_suffix(".pkl")
-    pickle.dump(inst, open(tfname, "wb"))
+    with open(tfname, "wb") as fp:
+        pickle.dump(inst, fp)
 
     return tfname
 
@@ -159,7 +163,7 @@ def load_from_pickle(
     """
     tfname = tmp_file(fname, None, 0).with_suffix(".pkl")
     with open(tfname, "rb") as fp:
-        ret = pickle.load(fp)
+        ret = pickle.load(fp)  # noqa: S301
 
     return ret
 
@@ -192,7 +196,7 @@ def tmp_table(
 def save_with_db(
     dfs: dict[str, pd.DataFrame] | pd.DataFrame,
     fdb: str | sa.engine.Engine = "tmp.db",
-    dtype: dict = None,
+    dtype: dict | None = None,
 ) -> sa.engine.Engine:
     """Write dict of DataFrame into Database.
 

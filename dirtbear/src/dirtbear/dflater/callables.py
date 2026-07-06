@@ -9,13 +9,15 @@
 
 # %%
 from __future__ import annotations
+
+import warnings
+from collections.abc import Callable, Container, Mapping, Sequence
 from typing import Any
-from collections.abc import Mapping, Sequence, Callable, Container
+
 import numpy as np
 import pandas as pd
-import warnings
-# from IPython.core.debugger import set_trace
 
+# from IPython.core.debugger import set_trace
 from dirtbear.locale.calender import is_chn_busday, not_chn_busday
 
 consts = {
@@ -34,41 +36,49 @@ not_busiday = not_chn_busday
 # ----------------------------------------------------------------------------
 # %%
 def max(x: Sequence):
+    """Return the maximum value, ignoring NaNs."""
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", "All-NaN (axis|slice) encountered")
         return np.nan if len(x) == 0 else np.nanmax(x)
 
 
 def min(x: Sequence):
+    """Return the minimum value, ignoring NaNs."""
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", "All-NaN (axis|slice) encountered")
         return np.nan if len(x) == 0 else np.nanmin(x)
 
 
 def sum(x: Sequence):
+    """Return the sum of elements, ignoring NaNs."""
     return np.nansum(x)
 
 
 def avg(x: Sequence):
+    """Return the mean value, ignoring NaNs."""
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", "Mean of empty slice")
         return np.nanmean(x)
 
 
 def hist(x: Sequence, edges: list):
+    """Compute histogram counts for given bin edges."""
     return np.histogram(x, edges)[0]
 
 
 def coef_var(x: Sequence):
+    """Return the coefficient of variation (std/mean)."""
     return 0 if len(x) == 0 else np.nanstd(x) / np.nanmean(x)
 
 
 # %%
 def nnfilter(x: Sequence):
+    """Filter out None elements from the sequence."""
     return [ele for ele in x if ele is not None]
 
 
 def getn(x: Sequence, y: int):
+    """Get the element at index y from sequence x."""
     x = np.asarray(x)
     if y is None or y >= len(x):
         return None
@@ -78,7 +88,7 @@ def getn(x: Sequence, y: int):
 
 # TODO
 def drop_duplicates(xs: list[Sequence]):
-    """ """
+    """Drop duplicate elements from a list of sequences."""
     if isinstance(xs, list) and len(xs) > 0 and not np.isscalar(xs[0]):
         df = pd.DataFrame(xs).T
         ret = df.drop_duplicates().values
@@ -94,6 +104,7 @@ def drop_duplicates(xs: list[Sequence]):
 
 # %%
 def argmax(x: Sequence):
+    """Return the index of the maximum value, or None if empty."""
     if len(x) == 0 or np.all(np.isnan(x)):
         return None
     else:
@@ -101,6 +112,7 @@ def argmax(x: Sequence):
 
 
 def argmin(x: Sequence):
+    """Return the index of the minimum value, or None if empty."""
     if len(x) == 0 or np.all(np.isnan(x)):
         return None
     else:
@@ -108,6 +120,7 @@ def argmin(x: Sequence):
 
 
 def argmaxs(x: Sequence, y: Sequence):
+    """Return elements in y where x equals its maximum."""
     if len(x) == 0:
         return np.array([])
     x = np.asarray(x)
@@ -116,6 +129,7 @@ def argmaxs(x: Sequence, y: Sequence):
 
 
 def argmins(x: Sequence, y: Sequence):
+    """Return elements in y where x equals its minimum."""
     if len(x) == 0:
         return np.array([])
     x = np.asarray(x)
@@ -143,24 +157,28 @@ def flat1_max(x: Sequence):
 # ----------------------------------------------------------------------------
 # %%
 def sadd(x: Sequence, y: Sequence):
+    """Element-wise addition of two sequences."""
     x = np.asarray(x)
     y = np.asarray(y)
     return x + y
 
 
 def ssub(x: Sequence, y: Sequence):
+    """Element-wise subtraction of two sequences."""
     x = np.asarray(x)
     y = np.asarray(y)
     return x - y
 
 
 def smul(x: Sequence, y: Sequence):
+    """Element-wise multiplication of two sequences."""
     x = np.asarray(x)
     y = np.asarray(y)
     return x * y
 
 
 def sdiv(x: Sequence, y: Sequence):
+    """Element-wise division of two sequences."""
     x = np.asarray(x)
     y = np.asarray(y)
     with np.errstate(divide="ignore", invalid="ignore"):
@@ -169,6 +187,7 @@ def sdiv(x: Sequence, y: Sequence):
 
 # %%
 def sortby(x: Sequence, y: Sequence, ascending: bool = 1):
+    """Sort x by the values of y."""
     x = np.asarray(x)
     y = np.asarray(y)
     return x[np.argsort(y)][:: 1 if ascending else -1]
@@ -176,6 +195,7 @@ def sortby(x: Sequence, y: Sequence, ascending: bool = 1):
 
 # %%
 def mon_itvl(x: Sequence, y: Sequence):
+    """Calculate the month interval between two dates."""
     x = np.asarray(x, dtype="datetime64[M]")
     y = np.asarray(y, dtype="datetime64[M]")
     sub = x - y
@@ -186,6 +206,7 @@ def mon_itvl(x: Sequence, y: Sequence):
 
 
 def day_itvl(x: Sequence, y: Sequence):
+    """Calculate the day interval between two dates."""
     x = np.asarray(x, dtype="datetime64[D]")
     y = np.asarray(y, dtype="datetime64[D]")
     sub = x - y
@@ -226,6 +247,7 @@ def cb_min(x: Sequence | int | float, y: Sequence | int | float):
 
 # %%
 def get_hour(x: Sequence):
+    """Extract the hour component from datetime sequences."""
     # Call `np.asarray` first so to ensure `pd.to_datetime` will return
     # a DatetimeIndex instead of a Series if a Series passed in.
     x = np.asarray(x)
@@ -247,15 +269,15 @@ def map(*args):
     ---------------------
     Mapping result.
     """
-    if isinstance(args[-1], Callable) or isinstance(args[-1], dict):
+    if isinstance(args[-1], (Callable, dict)):
         *args, ref = args
         # Use `np.nan` as default instead of `None` to prevent the numeric
         # result from being casted into object.
         default = np.nan
-    elif isinstance(args[-2], Callable) or isinstance(args[-2], dict):
+    elif isinstance(args[-2], (Callable, dict)):
         *args, ref, default = args
     else:
-        raise ValueError("No valid mapping reference is provided.")
+        raise TypeError("No valid mapping reference is provided.")
 
     if isinstance(ref, dict):
         assert len(args) == 1, "Invalid mapping source."
@@ -264,7 +286,7 @@ def map(*args):
         if len(args) == 1:
             ret = [ref(ele) for ele in args[0]]
         else:
-            ret = [ref(*ele) for ele in zip(*args)]
+            ret = [ref(*ele) for ele in zip(*args, strict=False)]
 
     return np.asarray(ret)
 
@@ -273,7 +295,7 @@ def sep_map(
     x: Sequence,
     ref: Mapping | Callable,
     sep_from: str = ",",
-    sep_to: str = None,
+    sep_to: str | None = None,
 ):
     """Seperate element and then apply mapping.
 
@@ -299,9 +321,9 @@ def sep_map(
         # `val` maybe None, np.nan or other non-iterable.
         if not np.isscalar(val):
             sval = (
-                set([ref.get(ele) for ele in val if ele in ref])
+                {ref.get(ele) for ele in val if ele in ref}
                 if hasattr(ref, "get")
-                else set([ref(ele) for ele in val])
+                else {ref(ele) for ele in val}
             )
         else:
             sval = set()

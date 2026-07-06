@@ -9,19 +9,20 @@
 
 # %%
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import jieba
 import logging
-# from IPython.core.debugger import set_trace
 
+# from IPython.core.debugger import set_trace
 from collections import ChainMap
-import pandas as pd
 from importlib.resources import files
 
-from flagbear.slp.finer import get_tmp_path
+import pandas as pd
 
+from flagbear.slp.finer import get_tmp_path
 
 # %%
 logging.basicConfig(
@@ -40,10 +41,10 @@ GOVERN_REGION_LV4 = datan / "govern_region/govern_region_level4.csv"
 
 
 # %%
-def get_chn_govrs(deep: int = None):
+def get_chn_govrs(deep: int | None = None):
     """Get get governing region code.
 
-    ATTENTION:
+    Attention:
     Not all government code could be cut into 3-level, 469026 for example.
     So usd pid to chain lower and upper level government region may be better?
 
@@ -67,10 +68,7 @@ def get_chn_govrs(deep: int = None):
         lambda x: "".join([ele.capitalize() for ele in x.split(" ")])
     )
 
-    if deep is None:
-        reg_lved = reg_df
-    else:
-        reg_lved = reg_df[reg_df["deep"] == deep]
+    reg_lved = reg_df if deep is None else reg_df[reg_df["deep"] == deep]
 
     return reg_lved
 
@@ -147,7 +145,7 @@ class CHNGovEncoder:
         self.reg_df = reg_df.set_index("id")
         self.reg_name_map = ChainMap(ext_map, name_map)
 
-    def encode(self, addr: str):
+    def encode(self, addr: str):  # noqa: C901
         """Encode given address into structured infomation.
 
         Params:
@@ -221,9 +219,9 @@ class CHNGovEncoder:
 
             # Filter the child ids with pid.
             if last_id is not None:
-                intersec = set(
-                    [ele for ele in intersec if ele.startswith(last_id)]
-                )
+                intersec = {
+                    ele for ele in intersec if ele.startswith(last_id)
+                }
 
             # Pop the intersection as the id.
             if len(intersec) == 0:
@@ -265,7 +263,7 @@ class CHNGovEncoder:
         # Construct return dict.
         rets = {}
         for lv_name, rid, rname in zip(
-            addr_stop_mapper.values(), addr_ids, addr_exts
+            addr_stop_mapper.values(), addr_ids, addr_exts, strict=False
         ):
             rets[f"{lv_name}_id"] = rid
             rets[f"{lv_name}"] = rname

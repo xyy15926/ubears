@@ -8,15 +8,17 @@
 # ---------------------------------------------------------
 
 # %%
+import io
 import logging
-import pandas as pd
 
 # from pathlib import Path
 from functools import partial
-import io
+
+import pandas as pd
 
 if __name__ == "__main__":
     from importlib import reload
+
     from flagbear.slp import databundle
 
     reload(databundle)
@@ -51,7 +53,7 @@ def dumps_to_csv(data: pd.DataFrame):
 
 def loads_from_csv(
     bytes_: bytes,
-    metadata: dict = None,
+    metadata: dict | None = None,
 ):
     """Load DataFrame from bytes of CSV."""
     data = pd.read_csv(
