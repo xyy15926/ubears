@@ -644,7 +644,7 @@ packages:
 - pypi: ./
   name: dirtbear
   version: 0.1.1
-  sha256: 43cc7c3b2f08f6f8b937e5d3e10755fb4e37a6a772de32565dfc392c003bbed9
+  sha256: 0502b26e54efc604d6e6d3e297faf0abe33dde5ed6c29fddbc5971cf80c39d0e
   requires_dist:
   - chinese-calendar
   - flagbear
@@ -657,7 +657,7 @@ packages:
   - sqlalchemy>=2.0
   - statbear
   - tqdm
-  requires_python: '>=3.9'
+  requires_python: '>=3.10'
   editable: true
 - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/02/10/5da547df7a391dcde17f59520a231527b8571e6f46fc8efb02ccb370ab12/docutils-0.22.4-py3-none-any.whl
   name: docutils
@@ -685,7 +685,7 @@ packages:
 - pypi: ../flagbear
   name: flagbear
   version: 0.1.1
-  sha256: 7343b8cbbdc51d4d108431b37183597907cdad1be302ba5b73c2356da4f98de5
+  sha256: 62e4e240b28ca88cfeb9f66370ff19af41403db68ef7ddfa7fe9249ebc4778f7
   requires_python: '>=3.10'
   editable: true
 - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/d2/d8/09bfa816572a4d83bccd6750df1926f79158b1c36c5f73786e26dbe4ee38/greenlet-3.3.2-cp314-cp314-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl

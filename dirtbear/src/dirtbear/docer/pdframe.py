@@ -60,8 +60,7 @@ def extract_tables(
                     pd.DataFrame(table.extract())
                 )
     return [
-        pd.concat(tables).reset_index(drop=True)
-        for tables in table_D.values()
+        pd.concat(tables).reset_index(drop=True) for tables in table_D.values()
     ]
 
 

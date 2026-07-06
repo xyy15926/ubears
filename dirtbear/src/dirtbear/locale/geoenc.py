@@ -219,9 +219,7 @@ class CHNGovEncoder:
 
             # Filter the child ids with pid.
             if last_id is not None:
-                intersec = {
-                    ele for ele in intersec if ele.startswith(last_id)
-                }
+                intersec = {ele for ele in intersec if ele.startswith(last_id)}
 
             # Pop the intersection as the id.
             if len(intersec) == 0:

@@ -174,9 +174,11 @@ def merge_dfs(
     ):
         cols_D = {}  # noqa: N806
         for ocol, ncol in zip(ocols, ncols, strict=False):
-            if ocol in (on_, by_) or (
-                isinstance(on_, list) and ocol in on_
-            ) or (isinstance(by_, list) and ocol in by_):
+            if (
+                ocol in (on_, by_)
+                or (isinstance(on_, list) and ocol in on_)
+                or (isinstance(by_, list) and ocol in by_)
+            ):
                 continue
             cols_D[ocol] = ncol
         col_Ds.append(cols_D)

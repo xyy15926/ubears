@@ -3,7 +3,7 @@
 #   Name: dlog.py
 #   Author: xyy15926
 #   Created: 2023-12-05 08:55:37
-#   Updated: 2025-02-28 20:16:53
+#   Updated: 2026-07-06 22:05:25
 #   Description:
 # ---------------------------------------------------------
 
@@ -261,20 +261,20 @@ def dfdesc(
     Return:
     ---------------------
     factor_df: DataFrame of factor-level granularity description.
-    |      |     | labels_Cnt | FreqR | WOEs | IVs | Lifts | AccLifts | AccLiftsR |
-    |------+-----+------------+-------+------+-----+-------+----------+-----------|
-    | Col1 | F1  |
-    |      | F2  |
-    |      | ... |
-    | Col2 | F1  |
-    |      | F2  |
-    | ...  |
+      |      |     | labels_Cnt | FreqR | WOEs | IVs | Lifts | AccLifts | AccLiftsR |
+      |------+-----+------------+-------+------+-----+-------+----------+-----------|
+      | Col1 | F1  |
+      |      | F2  |
+      |      | ... |
+      | Col2 | F1  |
+      |      | F2  |
+      | ...  |
     col_log: DataFrame of column-level granularity description.
-    |      | Chi2 | Chi2PV | IV | T1Lift | T1Acc | T1AccR | AccKenCorr | AccKenPV | Pearson |
-    |------+------+--------+----+--------+-------+--------+------------+----------+---------|
-    | Col1 |
-    | Col2 |
-    | ...  |
+      |      | Chi2 | Chi2PV | IV | T1Lift | T1Acc | T1AccR | AccKenCorr | AccKenPV | Pearson |
+      |------+------+--------+----+--------+-------+--------+------------+----------+---------|
+      | Col1 |
+      | Col2 |
+      | ...  |
     """
     factor_logs, ser_logs = [], []
     # Log for each column.
@@ -315,23 +315,23 @@ def dfdiffm(
     Return:
     --------------------
     Series representing the mapping from `sero` to `sern` with index:
-      `cat_df`: 1-to-1 mapper
-         |      | FROM |      |
-         |------+------+------|
-         | Col1 | Val1 | New1 |
-         |      | Val2 | New2 |
-         |      | ...  |
-         | Col2 | ...  |
-         | ...  |
-      `num_df`: interval-to-1 mapper for numeric with `to_interval` set
-         |       | LEFT | RIGHT |      |
-         |-------+------+-------+------|
-         | Col_1 | MIN[ | E1)   | New1 |
-         |       | E1[  | E2)   | New2 |
-         |       | ...  |
-         |       | En[  | MAX]  | NewN |
-         | Col_2 | ...  |
-         | ...   |
+    `cat_df`: 1-to-1 mapper
+       |      | FROM |      |
+       |------+------+------|
+       | Col1 | Val1 | New1 |
+       |      | Val2 | New2 |
+       |      | ...  |
+       | Col2 | ...  |
+       | ...  |
+    `num_df`: interval-to-1 mapper for numeric with `to_interval` set
+       |       | LEFT | RIGHT |      |
+       |-------+------+-------+------|
+       | Col_1 | MIN[ | E1)   | New1 |
+       |       | E1[  | E2)   | New2 |
+       |       | ...  |
+       |       | En[  | MAX]  | NewN |
+       | Col_2 | ...  |
+       | ...   |
     """
     # Build the mappings DataFrame.
     cat_map = {}
@@ -391,24 +391,25 @@ class ProcessLogger:
     ) -> None:
         """Match, compare and build mapping between columns from 2 DataFrame.
 
-        Series representing the mapping from `sero` to `sern` with index:
-          1. `cat_df`: 1-to-1 mapper
-                    FROM
-             Col1   Val1    New1
-                    Val2    New2
-                    ...
-             Col2   ...
-             ...
-          2. `num_df`: interval-to-1 mapper for numeric with `to_interval` set
-                    LEFT        RIGHT
-             Col1   MIN[        E1)         New1
-                    E1[         E2)         New2
-                    ...
-                    En[         MAX]        NewN
-             Col2   ...
-             ...
-        will be stored in `proc_logs` with key constructed from `ltag`
-        seperately.
+        Series representing the mapping from `sero` to `sern` with index will
+        be stored in `proc_logs` with key constructed from `ltag` seperately.
+        1. `cat_df`: 1-to-1 mapper
+           |      | FROM |      |
+           |------+------+------|
+           | Col1 | Val1 | New1 |
+           |      | Val2 | New2 |
+           |      | ...  |
+           | Col2 | ...  |
+           | ...  |
+        2. `num_df`: interval-to-1 mapper for numeric with `to_interval` set
+           |       | LEFT | RIGHT |      |
+           |-------+------+-------+------|
+           | Col_1 | MIN[ | E1)   | New1 |
+           |       | E1[  | E2)   | New2 |
+           |       | ...  |
+           |       | En[  | MAX]  | NewN |
+           | Col_2 | ...  |
+           | ...   |
 
         Params:
         --------------------
@@ -441,21 +442,24 @@ class ProcessLogger:
     ):
         """Describe the DataFrame.
 
-        DataFrame of description:
-          1. factor_df: DataFrame of factor-level granularity description.
-                      labels_Cnt  FreqR   WOEs    IVs     Lifts...
-            Col1  F1
-                  F2
-                  ...
-            Col2  ...
-          2. col_log: DataFrame of column-level granularity description.
-                  Chi2  Chi2PV  IV  T1Lift  T1Acc   T1AccR  AccKenCorr...
-            Col1
-            Col2
-            ...
-          3. Pearson corelations matrix.
-        will be stored in `proc_logs` with key constructed from `ltag`
-        seperately.
+        DataFrames of description will be stored in `proc_logs` with
+        key constructed from `ltag` seperately.
+        1. factor_df: DataFrame of factor-level granularity description.
+          |      |     | labels_Cnt | FreqR | WOEs | IVs | Lifts | AccLifts | AccLiftsR |
+          |------+-----+------------+-------+------+-----+-------+----------+-----------|
+          | Col1 | F1  |
+          |      | F2  |
+          |      | ... |
+          | Col2 | F1  |
+          |      | F2  |
+          | ...  |
+        2. col_log: DataFrame of column-level granularity description.
+          |      | Chi2 | Chi2PV | IV | T1Lift | T1Acc | T1AccR | AccKenCorr | AccKenPV | Pearson |
+          |------+------+--------+----+--------+-------+--------+------------+----------+---------|
+          | Col1 |
+          | Col2 |
+          | ...  |
+        3. Pearson corelations matrix.
 
         Params:
         ---------------------

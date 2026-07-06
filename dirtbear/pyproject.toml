@@ -148,6 +148,7 @@ ignore = [
     "D107",       # __init__ 不强制 docstring
     "S101",       # 允许 assert（测试中常用）
     "TRY003",     # 不强制 raise from
+    "E501",       # `ruff format` 尽量处理，但 `ruff check` 不报错
 ]
 fixable = ["ALL"]
 unfixable = []
@@ -159,9 +160,6 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
     "D",          # 测试文件不要求 docstring
     "ANN",        # 测试文件不要求类型标注
     "T20",        # 允许 print
-]
-"src/dirtbear/spanner/dflog.py" = [
-    "E501",       # Docstring tables exceed line length
 ]
 
 [tool.ruff.lint.isort]
