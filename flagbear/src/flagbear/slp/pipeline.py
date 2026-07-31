@@ -8,21 +8,23 @@
 # ---------------------------------------------------------
 
 # %%
-import logging
-from typing import Callable, Any, Self
-from collections import Counter
-from abc import ABC, abstractmethod
-from pathlib import Path
-import time
 import datetime
+import logging
+import time
+from abc import ABC, abstractmethod
+from collections import Counter
+from collections.abc import Callable
+from pathlib import Path
+from typing import Any, Self
 
 if __name__ == "__main__":
     from importlib import reload
-    from flagbear.slp import finer, databundle
+
+    from flagbear.slp import databundle, finer
     reload(finer)
     reload(databundle)
-from flagbear.slp.finer import use_dir
 from flagbear.slp.databundle import DataBundle, DataBundleFactory
+from flagbear.slp.finer import use_dir
 
 logger = logging.getLogger(__name__)
 

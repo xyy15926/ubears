@@ -10,6 +10,7 @@
 # %%
 import struct
 
+
 # %%
 # Problem:
 # Count 1 in unsigned bits.

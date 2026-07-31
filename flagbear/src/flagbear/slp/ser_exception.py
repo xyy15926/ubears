@@ -9,10 +9,12 @@
 
 # %%
 from __future__ import annotations
-from typing import Any, Type
-import traceback
-from dataclasses import dataclass, asdict
+
 import json
+import traceback
+from dataclasses import asdict, dataclass
+from typing import Any
+
 
 @dataclass
 class ExceptionRecord:
@@ -79,7 +81,7 @@ class UnrecoverableException(Exception):
 def resolve_exception_class(
     module: str,
     name: str,
-) -> Type[BaseException]:
+) -> type[BaseException]:
     """Resolve the exception with module name and exception name."""
     try:
         import importlib

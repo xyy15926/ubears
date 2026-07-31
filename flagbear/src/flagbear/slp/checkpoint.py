@@ -8,24 +8,26 @@
 # ---------------------------------------------------------
 
 # %%
-import logging
-from typing import Callable, Any
-import json
 import hashlib
-from functools import wraps
-from datetime import datetime, timedelta
+import json
+import logging
+from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime, timedelta
+from functools import wraps
+from typing import Any
 
 if __name__ == "__main__":
     from importlib import reload
-    from flagbear.slp import finer, storage, serializer, cache
+
+    from flagbear.slp import cache, finer, serializer, storage
     reload(finer)
     reload(serializer)
     reload(storage)
     reload(cache)
+from flagbear.slp.cache import Cache, CacheMeta, CachePolicy, PersistentCache
+from flagbear.slp.finer import date_order_mark, get_tmp_path
 from flagbear.slp.storage import LocalFileStorage
-from flagbear.slp.finer import get_tmp_path, date_order_mark
-from flagbear.slp.cache import Cache, PersistentCache, CacheMeta, CachePolicy
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +63,7 @@ def json_args(
         arg_str = json.dumps((args, kwargs), sort_keys=True, default=str)
     except (TypeError, ValueError):
         arg_str = str((args, kwargs))
-    arg_str = hashlib.md5(arg_str.encode("utf8")).hexdigest()[:16]
+    arg_str = hashlib.md5(arg_str.encode("utf8")).hexdigest()[:16]  # noqa: S324
     return arg_str
 
 

@@ -8,19 +8,21 @@
 # ---------------------------------------------------------
 
 # %%
-import logging
-from typing import Callable, Any
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from pathlib import Path
-import pickle
-import json
 import inspect
+import json
+import logging
+import pickle
 import zipfile
+from abc import ABC, abstractmethod
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from functools import wraps
+from pathlib import Path
+from typing import Any
 
 if __name__ == "__main__":
     from importlib import reload
+
     from flagbear.slp import finer
     reload(finer)
 from flagbear.slp.finer import use_file
@@ -276,7 +278,7 @@ class PickableBundle(DataBundle):
 
     @staticmethod
     def loads_data(bytes_, metadata: dict = None) -> Any:
-        return pickle.loads(bytes_)
+        return pickle.loads(bytes_)  # noqa: S301
 
 
 # %%

@@ -9,31 +9,36 @@
 
 # %%
 from __future__ import annotations
+
 import logging
-from typing import Any, Type, Protocol, Self, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Protocol, Self
+
 if TYPE_CHECKING:
     from flagbear.slp.cache import Cache
-from collections.abc import Callable
-from dataclasses import dataclass, asdict, field
-from enum import Enum
 import contextvars
-import json
-from datetime import datetime
-import inspect
-import functools
 import copy
+import functools
+import inspect
+import json
+from collections.abc import Callable
+from dataclasses import asdict, dataclass, field
+from datetime import datetime
+from enum import Enum
 
-from flagbear.slp.ser_exception import(
-    exception_to_records,
-    restore_exception,
-    ExceptionRecord,
-)
-from flagbear.slp.serializer import(
-    checker, serializer, deserializer,
-    serialize, deserialize,
-)
 from flagbear.slp.cache import CachePolicy
 from flagbear.slp.checkpoint import CheckpointPolicy
+from flagbear.slp.ser_exception import (
+    ExceptionRecord,
+    exception_to_records,
+    restore_exception,
+)
+from flagbear.slp.serializer import (
+    checker,
+    deserialize,
+    deserializer,
+    serialize,
+    serializer,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +136,8 @@ class TaskResult:
         value_cache_policy: CachePolicy | None = None,
     ) -> CachePolicy:
         """Construct cache policy for `TaskResult` from cache policy for
-        `TaskResult.value`."""
+        `TaskResult.value`.
+        """
         if value_cache_policy is None:
             return CachePolicy(type_ = "TaskResult")
         if self.value is None:
@@ -198,7 +204,7 @@ class RetryPolicy:
     delay_seconds: float = 1.0
     backoff_factor: float = 2.0
     max_delay: float = 60.0
-    retry_on: tuple[Type[Exception]] | None = None
+    retry_on: tuple[type[Exception]] | None = None
 
     def should_retry(
         self,

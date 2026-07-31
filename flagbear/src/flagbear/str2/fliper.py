@@ -9,21 +9,21 @@
 
 # %%
 from __future__ import annotations
+
+import json
+import logging
+from collections import deque
 from typing import Any
 
-import logging
-import json
-from collections import deque
-
 from flagbear.llp.parser import EnvParser
-from flagbear.str2.dtyper import stype_spec, str_caster
+from flagbear.str2.dtyper import str_caster, stype_spec
 
 # %%
 logger = logging.getLogger(__name__)
 
 
 # %%
-def extract_field(
+def extract_field(  # noqa: C901
     obj: dict | str,
     steps: str,
     envp: EnvParser | None = None,
@@ -160,7 +160,7 @@ def extract_field(
 
 
 # %%
-def reset_field(
+def reset_field(  # noqa: C901
     obj: dict | str,
     steps: str,
     val: Any,

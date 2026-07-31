@@ -7,38 +7,38 @@
 #   Description: Sched subpackage - task scheduler
 # ---------------------------------------------------------
 
-from flagbear.sched.protocols import (
-    TaskState,
-    TaskResult,
-    RetryPolicy,
-    ExecutionPolicy,
-    Task,
-    Future,
-    Context,
-    Executor,
-    Scheduler,
-)
-from flagbear.sched.task import task, TaskOnce
-from flagbear.sched.flow import Flow, flow
-from flagbear.sched.executor import LocalExecutor
-from flagbear.sched.scheduler import DAGScheduler
 from flagbear.sched.context import SimpleContext
+from flagbear.sched.executor import LocalExecutor
+from flagbear.sched.flow import Flow, flow
+from flagbear.sched.protocols import (
+    Context,
+    ExecutionPolicy,
+    Executor,
+    Future,
+    RetryPolicy,
+    Scheduler,
+    Task,
+    TaskResult,
+    TaskState,
+)
+from flagbear.sched.scheduler import DAGScheduler
+from flagbear.sched.task import TaskOnce, task
 
 __all__ = [
-    "TaskState",
-    "TaskResult",
-    "RetryPolicy",
-    "ExecutionPolicy",
-    "Task",
-    "Future",
     "Context",
-    "Executor",
-    "Scheduler",
-    "task",
-    "TaskOnce",
-    "Flow",
-    "flow",
-    "LocalExecutor",
     "DAGScheduler",
+    "ExecutionPolicy",
+    "Executor",
+    "Flow",
+    "Future",
+    "LocalExecutor",
+    "RetryPolicy",
+    "Scheduler",
     "SimpleContext",
+    "Task",
+    "TaskOnce",
+    "TaskResult",
+    "TaskState",
+    "flow",
+    "task",
 ]

@@ -8,27 +8,27 @@
 # ---------------------------------------------------------
 
 from flagbear.const.patterns import REGEXS
+from flagbear.const.prods import (
+    SYN_ARITH_PRODS,
+    SYN_EXPR_PRODS,
+    SYN_STARTSYM,
+)
 from flagbear.const.tokens import (
     LEX_ENDFLAG,
     LEX_RESERVEDS,
     LEX_SKIPS,
-    LEX_TOKEN_SPECS,
     LEX_TOKEN_PRECS,
-)
-from flagbear.const.prods import (
-    SYN_STARTSYM,
-    SYN_ARITH_PRODS,
-    SYN_EXPR_PRODS,
+    LEX_TOKEN_SPECS,
 )
 
 __all__ = [
-    "REGEXS",
     "LEX_ENDFLAG",
     "LEX_RESERVEDS",
     "LEX_SKIPS",
-    "LEX_TOKEN_SPECS",
     "LEX_TOKEN_PRECS",
-    "SYN_STARTSYM",
+    "LEX_TOKEN_SPECS",
+    "REGEXS",
     "SYN_ARITH_PRODS",
     "SYN_EXPR_PRODS",
+    "SYN_STARTSYM",
 ]

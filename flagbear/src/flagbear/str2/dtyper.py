@@ -9,14 +9,14 @@
 
 # %%
 from __future__ import annotations
-from typing import Any
 
 import logging
-
 from functools import lru_cache
-from flagbear.llp.lex import Lexer
+from typing import Any
+
 from flagbear.const.patterns import REGEXS
 from flagbear.const.tokens import LEX_ENDFLAG
+from flagbear.llp.lex import Lexer
 
 # %%
 logger = logging.getLogger(__name__)

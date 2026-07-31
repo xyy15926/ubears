@@ -8,22 +8,25 @@
 # ---------------------------------------------------------
 
 # %%
-import logging
-from typing import Callable, Any, Protocol, Self, TypeAlias
 import json
+import logging
 import threading
-from datetime import datetime, timedelta
+from collections.abc import Callable
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from typing import Any, Protocol, Self, TypeAlias
+
 # from IPython.core.debugger import set_trace
 
 if __name__ == "__main__":
     from importlib import reload
-    from flagbear.slp import finer, storage, serializer
+
+    from flagbear.slp import finer, serializer, storage
     reload(finer)
     reload(storage)
     reload(serializer)
-from flagbear.slp.storage import StorageBackend, LocalFileStorage
-from flagbear.slp.serializer import serialize, deserialize
+from flagbear.slp.serializer import deserialize, serialize
+from flagbear.slp.storage import LocalFileStorage, StorageBackend
 
 logger = logging.getLogger(__name__)
 

@@ -9,9 +9,11 @@
 
 # %%
 from __future__ import annotations
+
+from collections.abc import Callable
 from sys import maxsize as MAXINT
 from typing import TypeVar
-from collections.abc import Callable
+
 # from IPython.core.debugger import set_trace
 
 Node = TypeVar("Node")

@@ -9,10 +9,10 @@
 
 # %%
 from __future__ import annotations
-from typing import TypeVar, Any, Self
-from collections.abc import Callable
 
 import logging
+from collections.abc import Callable
+from typing import Any, Self, TypeVar
 
 # %%
 logger = logging.getLogger(__name__)
@@ -23,8 +23,7 @@ TreeVal = TypeVar("TreeVal")
 # %%
 # TODO: No-recursive version.
 class BiTNode:
-    """
-    Binary tree node.
+    """Binary tree node.
 
     Attrs:
     ---------------------
@@ -73,8 +72,7 @@ class BiTNode:
 # %%
 # TODO: No-recursive version.
 class GeTNode:
-    """
-    Generic tree node.
+    """Generic tree node.
 
     Attrs:
     ---------------------

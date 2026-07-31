@@ -9,19 +9,19 @@
 
 # %%
 from __future__ import annotations
-from typing import Any, NamedTuple
-from collections.abc import Generator, Mapping
 
-import re
 import logging
+import re
+from collections.abc import Generator, Mapping
 from functools import lru_cache
+from typing import Any, NamedTuple
 
 from flagbear.const.tokens import (
-    LEX_TOKEN_SPECS,
-    LEX_RESERVEDS,
     LEX_ENDFLAG,
+    LEX_RESERVEDS,
     LEX_SKIPS,
     LEX_TOKEN_PRECS,
+    LEX_TOKEN_SPECS,
 )
 
 # from IPython.core.debugger import set_trace

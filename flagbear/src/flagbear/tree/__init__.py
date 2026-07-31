@@ -7,13 +7,13 @@
 #   Description: Tree subpackage - tree and graph structures
 # ---------------------------------------------------------
 
+from flagbear.tree.dag import DirectedGraph, Node, topological_sort
 from flagbear.tree.tree import BiTNode, GeTNode
-from flagbear.tree.dag import Node, DirectedGraph, topological_sort
 
 __all__ = [
     "BiTNode",
+    "DirectedGraph",
     "GeTNode",
     "Node",
-    "DirectedGraph",
     "topological_sort",
 ]

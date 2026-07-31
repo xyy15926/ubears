@@ -9,8 +9,9 @@
 
 # %%
 import logging
-from typing import Self, Iterable
 from collections import deque
+from collections.abc import Iterable
+from typing import Self
 
 logger = logging.getLogger(__name__)
 
@@ -541,7 +542,7 @@ def find_cycle(
     # GRAY: Node in current DFS path
     # BLACK: Node not in any cycle
     WHITE, GRAY, BLACK = 0, 1, 2
-    color = {node: WHITE for node in nodes}
+    color = dict.fromkeys(nodes, WHITE)
 
     def dfs(node: Node, path: list[Node]) -> list[Node] | None:
         # Trace the deep first search path.

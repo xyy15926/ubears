@@ -8,34 +8,37 @@
 # ---------------------------------------------------------
 
 # %%
-import logging
-from typing import Any, Coroutine
-from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, Future
-import threading
 import asyncio
-import inspect
 import contextvars
 import functools
+import inspect
+import logging
+import threading
+from collections.abc import Coroutine
+from concurrent.futures import Future, ProcessPoolExecutor, ThreadPoolExecutor
+from datetime import datetime
+from typing import Any
+
 # from IPython.core.debugger import set_trace
 
 if __name__ == "__main__":
     from importlib import reload
+
+    from flagbear.sched import protocols, task
     from flagbear.slp import cache
-    from flagbear.sched import task, protocols
     reload(cache)
     reload(task)
     reload(protocols)
 
-from flagbear.slp.cache import Cache
-from flagbear.sched.protocols import(
-    _current_context,
-    TaskState, 
-    TaskResult,
-    RetryPolicy,
+from flagbear.sched.protocols import (
     ExecutionPolicy,
+    RetryPolicy,
     Task,
+    TaskResult,
+    TaskState,
+    _current_context,
 )
+from flagbear.slp.cache import Cache
 
 logger = logging.getLogger(__name__)
 

@@ -9,33 +9,37 @@
 
 # %%
 from __future__ import annotations
-import logging
-from typing import Callable, Any
+
 import functools
+import logging
+from collections.abc import Callable
+from typing import Any
+
 # from IPython.core.debugger import set_trace
 
 if __name__ == "__main__":
     from importlib import reload
+
     from flagbear.slp import cache, checkpoint
     reload(cache)
     reload(checkpoint)
-    from flagbear.sched import protocols, executor, scheduler, context
+    from flagbear.sched import context, executor, protocols, scheduler
     reload(protocols)
     reload(executor)
     reload(scheduler)
     reload(context)
-from flagbear.sched.protocols import(
+from flagbear.sched.context import SimpleContext
+from flagbear.sched.protocols import (
     Context,
-    RetryPolicy,
     ExecutionPolicy,
-    _current_context,
+    RetryPolicy,
     Scheduler,
     TaskProxyBase,
+    _current_context,
 )
+from flagbear.sched.task import TaskOnce
 from flagbear.slp.cache import Cache, CachePolicy
 from flagbear.slp.checkpoint import CheckpointPolicy
-from flagbear.sched.task import TaskOnce
-from flagbear.sched.context import SimpleContext
 
 logger = logging.getLogger(__name__)
 

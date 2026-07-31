@@ -9,28 +9,31 @@
 
 # %%
 import logging
-from typing import Any, Callable
-from typing import TYPE_CHECKING
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
+
 if TYPE_CHECKING:
     import numpy as np
     import pandas as pd
+import io
 import json
 import pickle
-import zlib
-import io
 import threading
+import zlib
+
 # from IPython.core.debugger import set_trace
 
 if __name__ == "__main__":
     from importlib import reload
-    from flagbear.slp import finer, storage, ser_exception
+
+    from flagbear.slp import finer, ser_exception, storage
     reload(finer)
     reload(storage)
     reload(ser_exception)
 
-from flagbear.slp.ser_exception import(
-    str_exception,
+from flagbear.slp.ser_exception import (
     destr_exception,
+    str_exception,
 )
 
 logger = logging.getLogger(__name__)
@@ -217,7 +220,7 @@ def pickle_deserialize(
     if len(bytes_) == 0:
         return None
 
-    return pickle.loads(bytes_)
+    return pickle.loads(bytes_)  # noqa: S301
 
 
 # %%
@@ -269,8 +272,8 @@ def numpy_deserialize(
 @checker("pddf_csv", priority = 1)
 def is_pddf_csv(obj: Any) -> bool:
     try:
-        import pandas as pd
         import numpy as np
+        import pandas as pd
     except ImportError:
         return False
     return (isinstance(obj, pd.DataFrame)
@@ -314,7 +317,7 @@ def is_pddf_feather(obj: Any) -> bool:
     try:
         import numpy as np
         import pandas as pd
-        import pyarrow          # noqa: F401
+        import pyarrow  # noqa: F401
     except ImportError:
         return False
     return (isinstance(obj, pd.DataFrame)
@@ -355,7 +358,7 @@ def is_pddf_parquet(obj: Any) -> bool:
     try:
         import numpy as np
         import pandas as pd
-        import pyarrow          # noqa: F401
+        import pyarrow  # noqa: F401
     except ImportError:
         return False
     return (isinstance(obj, pd.DataFrame)

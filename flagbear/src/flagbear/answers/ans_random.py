@@ -9,11 +9,11 @@
 
 # %%
 from __future__ import annotations
-from collections.abc import Iterator, Callable
-import logging
 
-from random import uniform, normalvariate
-from math import sin, cos, pi, sqrt, log, exp
+import logging
+from collections.abc import Callable, Iterator
+from math import cos, exp, log, pi, sin, sqrt
+from random import normalvariate, uniform
 
 # %%
 logger = logging.getLogger(__name__)

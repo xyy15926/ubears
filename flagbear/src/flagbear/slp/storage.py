@@ -9,11 +9,11 @@
 
 # %%
 import logging
-from typing import Protocol
-from pathlib import Path
 import os
 import tempfile
 import threading
+from pathlib import Path
+from typing import Protocol
 
 logger = logging.getLogger(__name__)
 
@@ -43,11 +43,11 @@ class LocalFileStorage:
         self.base_dir.mkdir(parents=True, exist_ok=True)
         self._locks: dict[str, threading.Lock] = {}
         self._global_lock = threading.Lock()
-    
+
     def _get_lock(self, key: str) -> threading.Lock:
         """Lock for different keys.
 
-        TODO:
+        Todo:
         Thread lock is used here to handle racing among multithread, while
         file lock may be better to handle racing among multiprocess.
         """
@@ -59,7 +59,7 @@ class LocalFileStorage:
     def _data_path(self, key: str) -> Path:
         """Get data path."""
         return self.base_dir / f"{key}.bin"
-    
+
     def get(self, key: str) -> bytes | None:
         """Read data bytes and data."""
         data_path = self._data_path(key)

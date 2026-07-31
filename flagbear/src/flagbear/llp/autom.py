@@ -9,8 +9,10 @@
 
 # %%
 from __future__ import annotations
-from typing import TYPE_CHECKING, Self
+
 from collections.abc import Hashable
+from typing import TYPE_CHECKING, Self
+
 if TYPE_CHECKING:
     import pandas as pd
 # from IPython.core.debugger import set_trace

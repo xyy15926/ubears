@@ -9,35 +9,38 @@
 
 # %%
 from __future__ import annotations
+
 import logging
-from typing import Self
 import uuid
+from typing import Self
+
 # from IPython.core.debugger import set_trace
 
 if __name__ == "__main__":
     from importlib import reload
+
     from flagbear.tree import dag
     reload(dag)
-    from flagbear.slp import finer, storage, serializer, cache
+    from flagbear.slp import cache, finer, serializer, storage
     reload(finer)
     reload(storage)
     reload(serializer)
     reload(cache)
-    from flagbear.sched import protocols, executor, scheduler
+    from flagbear.sched import executor, protocols, scheduler
     reload(protocols)
     reload(executor)
     reload(scheduler)
 
-from flagbear.slp.cache import Cache, MemoryCache
-from flagbear.sched.protocols import(
-    TaskResult,
-    Task,
-    Context,
-    _current_context,
-    Scheduler,
-)
 from flagbear.sched.executor import LocalExecutor
+from flagbear.sched.protocols import (
+    Context,
+    Scheduler,
+    Task,
+    TaskResult,
+    _current_context,
+)
 from flagbear.sched.scheduler import DAGScheduler
+from flagbear.slp.cache import Cache, MemoryCache
 
 logger = logging.getLogger(__name__)
 

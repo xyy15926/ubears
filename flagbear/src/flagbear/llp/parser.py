@@ -9,28 +9,29 @@
 
 # %%
 from __future__ import annotations
-from typing import TypeVar, Any, Self
-from collections.abc import Callable, Mapping
+
 # from IPython.core.debugger import set_trace
-
 import builtins
-import logging
 import copy
+import logging
+from collections.abc import Callable, Mapping
 from functools import lru_cache
+from typing import Any, Self, TypeVar
 
-from flagbear.tree.tree import GeTNode
-from flagbear.llp.lex import Token, Lexer
-from flagbear.llp.syntax import Production, Syntaxer
-from flagbear.const.tokens import (
-    LEX_TOKEN_SPECS,
-    LEX_SKIPS,
-    LEX_RESERVEDS,
-    LEX_ENDFLAG,
-)
 from flagbear.const.prods import (
-    SYN_STARTSYM,
     SYN_EXPR_PRODS,
+    SYN_STARTSYM,
 )
+from flagbear.const.tokens import (
+    LEX_ENDFLAG,
+    LEX_RESERVEDS,
+    LEX_SKIPS,
+    LEX_TOKEN_SPECS,
+)
+from flagbear.llp.lex import Lexer, Token
+from flagbear.llp.syntax import Production, Syntaxer
+from flagbear.tree.tree import GeTNode
+
 # from flagbear.const import callables as PY_BUITINS_
 
 # %%

@@ -3,7 +3,7 @@
 #   Name: syntax.py
 #   Author: xyy15926
 #   Created: 2023-11-29 20:20:12
-#   Updated: 2025-01-13 20:11:20
+#   Updated: 2026-07-31 16:32:45
 #   Description:
 #     PLY Ref: <https://github.com/dabeaz/ply>
 #     Lookahead Caculation Ref: <https://dl.acm.org/doi/pdf/10.1145/69622.357187>
@@ -11,21 +11,20 @@
 
 # %%
 from __future__ import annotations
-from typing import TypeVar, Any, NamedTuple, Self
-from collections.abc import Iterator, Callable, Hashable
 
 # from IPython.core.debugger import set_trace
-
 import copy
 import logging
 from collections import deque
+from collections.abc import Callable, Hashable, Iterator
 from sys import maxsize as MAXINT
+from typing import Any, NamedTuple, Self, TypeVar
 
-from flagbear.tree.tree import GeTNode
-from flagbear.llp.graph import backward_update_traverse
-from flagbear.llp.autom import AutomState, StatesPDA
+from flagbear.const.prods import SYN_ARITH_PRODS, SYN_STARTSYM
 from flagbear.const.tokens import LEX_ENDFLAG
-from flagbear.const.prods import SYN_STARTSYM, SYN_ARITH_PRODS
+from flagbear.llp.autom import AutomState, StatesPDA
+from flagbear.llp.graph import backward_update_traverse
+from flagbear.tree.tree import GeTNode
 
 # %%
 logger = logging.getLogger(__name__)
@@ -250,7 +249,7 @@ class LRItem:
         return self.index
 
     @staticmethod
-    def prefer(lhs: Self, rhs:Self):
+    def prefer(lhs: Self, rhs: Self):
         """Get the prefered LRItem in conflict.
 
         1. Prefer larger precedence.
@@ -268,11 +267,9 @@ class LRItem:
         prec2, assoc2 = rhs.production.prec, rhs.production.assoc  # noqa: F841
         if prec1 > prec2:
             return lhs
-        elif prec2 > prec1:
-            return rhs
         # Reduction first when the preferences are the same and the production
         # after shift is left-associated.
-        elif rhs.nsym is None and lhs.nsym is not None and assoc1 == "L":
+        elif prec2 > prec1 or (rhs.nsym is None and lhs.nsym is not None and assoc1 == "L"):
             return rhs
         else:
             return lhs
@@ -575,7 +572,7 @@ class Syntaxer:
         Read as the initial status and `backward_update_traverse` will be
         called to compute the Follows.
 
-        ATTENTION:
+        Attention:
         The Follow depends not only the LRItem but also LRState in LR(1) but
         will be merged together to LRItem granularity in LALR(1) for
         simplicity.

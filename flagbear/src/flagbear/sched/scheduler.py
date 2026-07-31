@@ -9,33 +9,36 @@
 
 # %%
 from __future__ import annotations
+
+import functools
 import logging
 import threading
-import functools
+
 # from IPython.core.debugger import set_trace
 
 if __name__ == "__main__":
     from importlib import reload
+
     from flagbear.tree import dag
     reload(dag)
-    from flagbear.slp import finer, storage, serializer, cache
+    from flagbear.slp import cache, finer, serializer, storage
     reload(finer)
     reload(storage)
     reload(serializer)
     reload(cache)
-    from flagbear.sched import protocols, executor
+    from flagbear.sched import executor, protocols
     reload(protocols)
     reload(executor)
+from flagbear.sched.executor import LocalExecutor
+from flagbear.sched.protocols import (
+    Executor,
+    Future,
+    Task,
+)
+from flagbear.slp.cache import Cache, MemoryCache
 from flagbear.tree.dag import (
     DirectedGraph,
 )
-from flagbear.slp.cache import Cache, MemoryCache
-from flagbear.sched.protocols import(
-    Task,
-    Future,
-    Executor,
-)
-from flagbear.sched.executor import LocalExecutor
 
 logger = logging.getLogger(__name__)
 

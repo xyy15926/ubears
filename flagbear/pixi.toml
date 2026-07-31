@@ -48,7 +48,7 @@ no-binary = []
 # Pixi will always try to install the latest version of python and then
 # try to solve the dependencies without try to downgrade the version of
 # python(ABI).
-python				= ">=3.9"
+python				= ">=3.10"
 
 [feature.dev.pypi-dependencies]
 ipython				= "*"
@@ -138,7 +138,7 @@ env = {}
 # 1. It seems that `setuptools` is not compatiable with the `pixi`.
 #   So `hatchling` is used to package.
 # 2. The build metadata for python package is in 'pyproject.toml`.
-python				= ">=3.9"
+python				= ">=3.10"
 pip					= "*"
 hatchling			= "*"
 # setuptools			= ">=60.0"
@@ -147,8 +147,8 @@ hatchling			= "*"
 
 [package.host-dependencies]
 # Dependecies for host when building.
-python				= ">=3.9"
+python				= ">=3.10"
 hatchling			= "*"
 
 [package.run-dependencies]
-python				= ">=3.9"
+python				= ">=3.10"

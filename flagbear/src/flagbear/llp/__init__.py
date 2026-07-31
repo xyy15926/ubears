@@ -7,18 +7,18 @@
 #   Description: LLP subpackage - lexer, parser, and syntax analyzer
 # ---------------------------------------------------------
 
-from flagbear.llp.lex import Token, Lexer
+from flagbear.llp.autom import Automaton, AutomState
+from flagbear.llp.lex import Lexer, Token
 from flagbear.llp.parser import EnvParser
-from flagbear.llp.syntax import Production, LRItem, Syntaxer
-from flagbear.llp.autom import AutomState, Automaton
+from flagbear.llp.syntax import LRItem, Production, Syntaxer
 
 __all__ = [
-    "Token",
-    "Lexer",
-    "EnvParser",
-    "Production",
-    "LRItem",
-    "Syntaxer",
     "AutomState",
     "Automaton",
+    "EnvParser",
+    "LRItem",
+    "Lexer",
+    "Production",
+    "Syntaxer",
+    "Token",
 ]

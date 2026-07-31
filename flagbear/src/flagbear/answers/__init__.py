@@ -13,26 +13,26 @@ from flagbear.answers.ans_bits import (
     reverse_bits,
     sqrt,
 )
-from flagbear.answers.ans_scalar import (
-    euclid_gcd,
-    euclid_lcm,
-    poly_eval,
-)
 from flagbear.answers.ans_random import (
     box_muller,
     metropolis,
     metropolis_hastings,
 )
+from flagbear.answers.ans_scalar import (
+    euclid_gcd,
+    euclid_lcm,
+    poly_eval,
+)
 
 __all__ = [
+    "box_muller",
     "count_one",
     "count_one_odd",
-    "reverse_bits",
-    "sqrt",
     "euclid_gcd",
     "euclid_lcm",
-    "poly_eval",
-    "box_muller",
     "metropolis",
     "metropolis_hastings",
+    "poly_eval",
+    "reverse_bits",
+    "sqrt",
 ]

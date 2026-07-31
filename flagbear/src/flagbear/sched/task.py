@@ -9,30 +9,34 @@
 
 # %%
 from __future__ import annotations
+
 import logging
-from typing import Callable, Any, Self
 import uuid
+from collections.abc import Callable
+from typing import Any, Self
+
 # from IPython.core.debugger import set_trace
 
 if __name__ == "__main__":
     from importlib import reload
+
     from flagbear.slp import cache, checkpoint
     reload(cache)
     reload(checkpoint)
-    from flagbear.sched import task, flow, protocols
+    from flagbear.sched import flow, protocols, task
     reload(task)
     reload(flow)
     reload(protocols)
 
-from flagbear.slp.cache import CachePolicy, Cache
-from flagbear.slp.checkpoint import CheckpointPolicy
-from flagbear.sched.protocols import(
-    RetryPolicy,
-    ExecutionPolicy,
+from flagbear.sched.protocols import (
     Context,
-    _current_context,
+    ExecutionPolicy,
+    RetryPolicy,
     TaskProxyBase,
+    _current_context,
 )
+from flagbear.slp.cache import Cache, CachePolicy
+from flagbear.slp.checkpoint import CheckpointPolicy
 
 logger = logging.getLogger(__name__)
 
@@ -187,7 +191,7 @@ class TaskOnce:
         """Create a TaskOnce with function and arguments directly."""
         task = TaskProxy(
             func,
-            name, 
+            name,
             cache_policy,
             checkpoint_policy,
             retry_policy,
