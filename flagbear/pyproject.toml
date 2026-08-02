@@ -130,12 +130,20 @@ select = [
     "T20",        # 检测 print
 ]
 ignore = [
+    # Docstring
     "D100",       # 模块不需要 docstring
     "D104",       # 包不需要 docstring
     "D107",       # __init__ 不强制 docstring
+    # 代码质量
     "S101",       # 允许 assert（测试中常用）
     "TRY003",     # 不强制 raise from
     "E501",       # `ruff format` 尽量处理，但 `ruff check` 不报错
+    # 命名规则 - 项目使用匈牙利命名法和数学符号惯例
+    "N802",       # 函数名非小写（如 LR0, LALR, camelCase 等缩写）
+    "N803",       # 参数名非小写（如 N 表示数量，_F/_D/_ST/_Q 类型后缀）
+    "N806",       # 函数内变量非小写（常量、匈牙利命名法）
+    "N812",       # 导入别名非小写（如 MAXINT）
+    "N818",       # 异常名无 Error 后缀（如 UnrecoverableException）
 ]
 fixable = ["ALL"]
 unfixable = []

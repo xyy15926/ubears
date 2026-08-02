@@ -387,10 +387,10 @@ _current_context: contextvars.ContextVar[Context | None] = contextvars.ContextVa
 
 class Future(Protocol):
     """Protocol for asynchronous task results."""
-    def result() -> Any:
+    def result(self) -> Any:
         """Get the result of the future."""
         ...
-    def add_done_callback(callback: callable):
+    def add_done_callback(self, callback: callable):
         """Register a callback for when the future completes."""
         ...
 
