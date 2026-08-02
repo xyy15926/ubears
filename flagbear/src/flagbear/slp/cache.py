@@ -215,7 +215,7 @@ class MemoryCache:
         on_hit: Hook function to call when cache hits.
         on_miss: Hook function to call when cache misses.
         """
-        self.storage = dict()
+        self.storage = {}
         self.ttl = timedelta(days = 1e4) if ttl is None else ttl
         self.on_hit = on_hit
         self.on_miss = on_miss
@@ -318,7 +318,7 @@ class PersistentCache:
           the data to store inline, in memory, with metadata by default.
         """
         self.storage = storage or LocalFileStorage("./cache")
-        self.meta_storage = dict()
+        self.meta_storage = {}
         self.ttl = timedelta(days = 1e4) if ttl is None else ttl
         self.on_hit = on_hit
         self.on_miss = on_miss

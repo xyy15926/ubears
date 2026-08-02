@@ -208,7 +208,7 @@ class Flow(TaskProxyBase):
 
 # %%
 def flow(
-    func: Callable = None,
+    func: Callable | None = None,
     *,
     name: str | None = None,
     cache_policy: CachePolicy | None = None,

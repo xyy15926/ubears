@@ -371,7 +371,7 @@ class LocalExecutor:
                 )
                 state = TaskState.FAILED
                 if not retry_policy.should_retry(error, attempt):
-                    logger.error(f"Task {task_name} failed: {error}.")
+                    logger.exception(f"Task {task_name} failed: {error}.")
                     # logger.exception(error)
                     break
 
@@ -391,7 +391,7 @@ class LocalExecutor:
                 error = e
                 state = TaskState.FAILED
                 if not retry_policy.should_retry(error, attempt):
-                    logger.error(f"Task {task_name} failed: {error}.")
+                    logger.exception(f"Task {task_name} failed: {error}.")
                     # logger.exception(error)
                     break
 

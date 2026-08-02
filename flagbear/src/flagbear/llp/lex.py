@@ -209,7 +209,7 @@ class Lexer:
         rpn = []                                        # List of postfix notion.
         tok_st = [Token(LPAR, "(", -1, -1)]           # Temporary stack.
         for tok in self.input(words):
-            out_type, *ele = tok
+            out_type, *_ele = tok
             # Break at the end of the tokens.
             if out_type == self.end_flag:
                 break
@@ -279,10 +279,10 @@ class Lexer:
         val_st = []             # Stack storing values temporarily.
         for tok_type, tok_val, *_ele in toks:
             if tok_type in token_precs:
-                priority, arg_n, call = token_precs[tok_type]
+                _priority, arg_n, call = token_precs[tok_type]
                 cur_opts = val_st[-arg_n:]
                 # Reconstruct stack storing values temporarily.
-                val_st = val_st[:-arg_n] + [call(*cur_opts),]
+                val_st = [*val_st[:-arg_n], call(*cur_opts)]
             else:
                 # Identifier must be in bound environment.
                 if tok_type == "ID":

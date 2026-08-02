@@ -92,7 +92,7 @@ def get_assets_path(dest: str = "assets") -> Path:
 # %%
 def date_order_mark(
     kstr: str,
-    alts: Iterable[str] = None,
+    alts: Iterable[str] | None = None,
     rdmark: str | None = "today",
     incr: int = 1,
 ) -> str:

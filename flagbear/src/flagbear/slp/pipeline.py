@@ -42,7 +42,7 @@ class Pipe(ABC):
     config: Process config.
     exec_count: Execution counts.
     """
-    def __init__(self, name: str = None, config: dict = None):
+    def __init__(self, name: str | None = None, config: dict | None = None):
         """Init Pipe."""
         self.config = config or {}
         self.exec_count = 0
@@ -52,7 +52,7 @@ class Pipe(ABC):
         """Process DataBundle."""
         pass
 
-    def __call__(self, bundle: DataBundle, stage_key: str = None) -> DataBundle:
+    def __call__(self, bundle: DataBundle, stage_key: str | None = None) -> DataBundle:
         """Call `process` and do some additional records."""
         start = time.time()
         try:
@@ -69,7 +69,7 @@ class Pipe(ABC):
             )
             return result
         except Exception as e:
-            logger.error(f"Stage [{self.name}] failed: {e}.")
+            logger.exception(f"Stage [{self.name}] failed: {e}.")
             raise
 
 
@@ -84,7 +84,7 @@ class PipeFactory:
     _registry: dict[str, type[Pipe]] = {}
 
     @classmethod
-    def register(cls, reg_name: str = None):
+    def register(cls, reg_name: str | None = None):
         """Register derived pipes."""
         def decorator(pipe_class: type[Pipe]) -> type[Pipe]:
             if not issubclass(pipe_class, Pipe):
@@ -141,7 +141,7 @@ class Pipeline:
     def __init__(
         self,
         name: str,
-        checkpoint_dir: str | Path = None,
+        checkpoint_dir: str | Path | None = None,
     ):
         """Init empty pipeline.
 
@@ -160,7 +160,7 @@ class Pipeline:
         self.stage_counter = Counter()
         self.checkpoint_dir = use_dir(checkpoint_dir or name, "today", 1, "tmp")
 
-    def add_pipe(self, pipe: Pipe, stage_key: str = None) -> Self:
+    def add_pipe(self, pipe: Pipe, stage_key: str | None = None) -> Self:
         """Add a pipe.
 
         Params:
@@ -198,7 +198,7 @@ class Pipeline:
     def process(
         self,
         bundle: DataBundle = None,
-        start_from: str = None,
+        start_from: str | None = None,
         save_checkpoints: bool = False,
     ) -> DataBundle:
         """Process DataBundle.

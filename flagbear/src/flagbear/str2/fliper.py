@@ -27,7 +27,7 @@ def extract_field(  # noqa: C901
     obj: dict | str,
     steps: str,
     envp: EnvParser | None = None,
-    dtype: str = None,
+    dtype: str | None = None,
     extended: bool = False,
     *,
     dfill: Any = None,

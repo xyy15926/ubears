@@ -38,7 +38,7 @@ DEFAULT_EXPIRE = datetime(2099, 12, 12).isoformat()
 def json_args(
     args: list[Any],
     kwargs: dict[str, Any],
-    skip_args: list = None,
+    skip_args: list | None = None,
 ) -> str:
     """Dumps arguments into JSON string.
 

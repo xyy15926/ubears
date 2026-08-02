@@ -170,7 +170,7 @@ def regex_caster(
 # %%
 def str_caster(
     words: str,
-    dtype: str = None,
+    dtype: str | None = None,
     extended: bool = False,
     dfill: Any = None,
     dforced: bool = False,

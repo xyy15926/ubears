@@ -122,11 +122,11 @@ def serialize(
             type_, *addon = splited
         if type_ not in _strategy_map:
             raise RuntimeError("No serializer found.")
-        checker_fn, ser_fn, deser_fn = _strategy_map.get(type_)
+        checker_fn, ser_fn, _deser_fn = _strategy_map.get(type_)
     else:
         addon = None
         for _priority, type_ in _priority_order:
-            checker_fn, ser_fn, deser_fn = _strategy_map[type_]
+            checker_fn, ser_fn, _deser_fn = _strategy_map[type_]
             if checker_fn and checker_fn(obj):
                 break
         else:

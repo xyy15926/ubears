@@ -43,7 +43,7 @@ class AutomState:
     desc: Str.
       Description for repr.
     """
-    def __init__(self, core: Hashable, desc: str = None):
+    def __init__(self, core: Hashable, desc: str | None = None):
         """Init.
 
         Params:
@@ -297,7 +297,7 @@ class StatesPDA(Automaton):
         super().__init__(state_type)
         self.states_stack = None
 
-    def start(self, states: list[AutomState] = None):
+    def start(self, states: list[AutomState] | None = None):
         """Start the automaton.
 
         Params:

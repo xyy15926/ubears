@@ -566,7 +566,7 @@ def find_cycle(
             if color[succ] == GRAY:
                 cycle_start = path.index(succ)
                 # Construct cycle: [succ.id_, ..., succ.id_]
-                cycle = path[cycle_start:] + [succ, ]
+                cycle = [*path[cycle_start:], succ]
                 return cycle
             elif color[succ] == WHITE:
                 result = dfs(succ, path)

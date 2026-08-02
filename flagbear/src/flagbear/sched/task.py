@@ -97,7 +97,7 @@ class TaskProxy(TaskProxyBase):
 
 # %%
 def task(
-    func: Callable = None,
+    func: Callable | None = None,
     *,
     name: str | None = None,
     cache_policy: CachePolicy | None = None,
@@ -282,8 +282,8 @@ class TaskOnce:
         """
         raw_args = self.raw_args
         raw_kwargs = self.raw_kwargs
-        pready, punready, pfailed = self._resolve_with_context(raw_args, cache)
-        kready, kunready, kfailed = self._resolve_with_context(raw_kwargs, cache)
+        _pready, punready, _pfailed = self._resolve_with_context(raw_args, cache)
+        _kready, kunready, _kfailed = self._resolve_with_context(raw_kwargs, cache)
         unready = list(set(punready + kunready))
         return unready
 

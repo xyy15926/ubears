@@ -69,7 +69,7 @@ class DataBundle(ABC):
 
     @staticmethod
     @abstractmethod
-    def loads_data(bytes_: str | bytes, metadata: dict = None) -> Any:
+    def loads_data(bytes_: str | bytes, metadata: dict | None = None) -> Any:
         """Load data from bytes."""
         pass
 
@@ -104,7 +104,7 @@ class DataBundle(ABC):
             logger.info(f"Save data bundle at {fname}.")
             return fname
         except Exception as e:
-            logger.error(f"Fail to save data bundle at {fname}: {e}.")
+            logger.exception(f"Fail to save data bundle at {fname}: {e}.")
             raise
 
     @classmethod
@@ -126,7 +126,7 @@ class DataBundle(ABC):
             bundle = cls(data, metadata, lineage)
             return bundle
         except Exception as e:
-            logger.error(f"Fail to load data bundle at {fname}: {e}.")
+            logger.exception(f"Fail to load data bundle at {fname}: {e}.")
             raise
 
 
@@ -141,7 +141,7 @@ class DataBundleFactory:
     _registry: dict[str, type[DataBundle]] = {}
 
     @classmethod
-    def register(cls, reg_name: str = None):
+    def register(cls, reg_name: str | None = None):
         """Register class derived from DataBundle."""
         def decorator(bundle_class: type[DataBundle]) -> type[DataBundle]:
             if not issubclass(bundle_class, DataBundle):
@@ -261,7 +261,7 @@ class DataBundleFactory:
             with zipfile.ZipFile(fname, "r") as zipf:
                 reg_name = zipf.open("reg_name.txt", "r").read().decode("utf8")
         except Exception as e:
-            logger.error(f"Fail to read the bundle type from {fname}: {e}.")
+            logger.exception(f"Fail to read the bundle type from {fname}: {e}.")
             raise
         return cls.load_instance(reg_name, fname)
 
@@ -280,7 +280,7 @@ class PickableBundle(DataBundle):
         return pickle.dumps(self.data)
 
     @staticmethod
-    def loads_data(bytes_, metadata: dict = None) -> Any:
+    def loads_data(bytes_, metadata: dict | None = None) -> Any:
         """Deserialize pickle bytes."""
         return pickle.loads(bytes_)  # noqa: S301
 
@@ -291,7 +291,7 @@ def pickle_dumps(data) -> bytes:
     return pickle.dumps(data)
 
 
-def pickle_loads(bytes_, metadata: dict = None):
+def pickle_loads(bytes_, metadata: dict | None = None):
     """Deserialize pickle bytes."""
     return pickle.loads(bytes_)
 
@@ -368,8 +368,8 @@ def check_params(
 
 
 def bundle_cache(
-    reg_name: str = None,
-    fname: str | Path = None,
+    reg_name: str | None = None,
+    fname: str | Path | None = None,
     dumps_data: Callable = pickle_dumps,
     loads_data: Callable = pickle_loads,
     *,

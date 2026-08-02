@@ -71,7 +71,7 @@ class EnvParser:
       which differs from the `default_env`.
     """
     def __init__(
-        self, default_env: dict[str, Callable] = None,
+        self, default_env: dict[str, Callable] | None = None,
         token_specs: dict = LEX_TOKEN_SPECS,
         reserveds: dict = LEX_RESERVEDS,
         skips: set = LEX_SKIPS,
