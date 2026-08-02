@@ -12,8 +12,10 @@ from __future__ import annotations
 
 import logging
 import uuid
-from collections.abc import Callable
-from typing import Any, Self
+from typing import TYPE_CHECKING, Any, Self
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 # from IPython.core.debugger import set_trace
 
@@ -35,8 +37,10 @@ from flagbear.sched.protocols import (
     TaskProxyBase,
     _current_context,
 )
-from flagbear.slp.cache import Cache, CachePolicy
 from flagbear.slp.checkpoint import CheckpointPolicy
+
+if TYPE_CHECKING:
+    from flagbear.slp.cache import Cache, CachePolicy
 
 logger = logging.getLogger(__name__)
 

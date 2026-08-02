@@ -13,10 +13,13 @@ from __future__ import annotations
 import logging
 import os
 import re
-from collections.abc import Iterable
 from datetime import date
 from functools import lru_cache
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 # if sys.version_info.major >= 3 and sys.version_info.minor >= 9:
 #     from importlib.resources import files

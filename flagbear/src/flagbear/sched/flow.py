@@ -12,8 +12,10 @@ from __future__ import annotations
 
 import functools
 import logging
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 # from IPython.core.debugger import set_trace
 
@@ -38,8 +40,10 @@ from flagbear.sched.protocols import (
     _current_context,
 )
 from flagbear.sched.task import TaskOnce
-from flagbear.slp.cache import Cache, CachePolicy
-from flagbear.slp.checkpoint import CheckpointPolicy
+
+if TYPE_CHECKING:
+    from flagbear.slp.cache import Cache, CachePolicy
+    from flagbear.slp.checkpoint import CheckpointPolicy
 
 logger = logging.getLogger(__name__)
 

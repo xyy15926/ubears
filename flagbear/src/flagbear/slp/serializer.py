@@ -13,8 +13,8 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    import numpy as np
-    import pandas as pd
+    import numpy as np  # noqa: TC004
+    import pandas as pd  # noqa: TC004
 import io
 import json
 import pickle

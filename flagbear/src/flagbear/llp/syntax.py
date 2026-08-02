@@ -16,9 +16,11 @@ from __future__ import annotations
 import copy
 import logging
 from collections import deque
-from collections.abc import Callable, Hashable, Iterator
 from sys import maxsize as MAXINT
-from typing import Any, NamedTuple, Self, TypeVar
+from typing import TYPE_CHECKING, Any, NamedTuple, Self, TypeVar
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Hashable, Iterator
 
 from flagbear.const.prods import SYN_ARITH_PRODS, SYN_STARTSYM
 from flagbear.const.tokens import LEX_ENDFLAG

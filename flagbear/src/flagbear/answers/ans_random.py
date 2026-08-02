@@ -11,9 +11,12 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable, Iterator
 from math import cos, exp, log, pi, sin, sqrt
 from random import normalvariate, uniform
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
 
 # %%
 logger = logging.getLogger(__name__)

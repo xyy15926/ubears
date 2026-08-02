@@ -20,13 +20,16 @@ import copy
 import functools
 import inspect
 import json
-from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from flagbear.slp.cache import Cache
+    from flagbear.slp.checkpoint import CheckpointPolicy
 
 from flagbear.slp.cache import CachePolicy
-from flagbear.slp.checkpoint import CheckpointPolicy
 from flagbear.slp.ser_exception import (
     ExceptionRecord,
     exception_to_records,

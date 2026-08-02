@@ -14,9 +14,11 @@ from __future__ import annotations
 import builtins
 import copy
 import logging
-from collections.abc import Callable, Mapping
 from functools import lru_cache
-from typing import Any, Self, TypeVar
+from typing import TYPE_CHECKING, Any, Self, TypeVar
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
 
 from flagbear.const.prods import (
     SYN_EXPR_PRODS,

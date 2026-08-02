@@ -13,6 +13,7 @@ from __future__ import annotations
 import functools
 import logging
 import threading
+from typing import TYPE_CHECKING
 
 # from IPython.core.debugger import set_trace
 
@@ -30,15 +31,17 @@ if __name__ == "__main__":
     reload(protocols)
     reload(executor)
 from flagbear.sched.executor import LocalExecutor
-from flagbear.sched.protocols import (
-    Executor,
-    Future,
-    Task,
-)
 from flagbear.slp.cache import Cache, MemoryCache
 from flagbear.tree.dag import (
     DirectedGraph,
 )
+
+if TYPE_CHECKING:
+    from flagbear.sched.protocols import (
+        Executor,
+        Future,
+        Task,
+    )
 
 logger = logging.getLogger(__name__)
 

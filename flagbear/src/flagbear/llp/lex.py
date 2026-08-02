@@ -12,9 +12,11 @@ from __future__ import annotations
 
 import logging
 import re
-from collections.abc import Generator, Mapping
 from functools import lru_cache
-from typing import Any, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
+
+if TYPE_CHECKING:
+    from collections.abc import Generator, Mapping
 
 from flagbear.const.tokens import (
     LEX_ENDFLAG,
