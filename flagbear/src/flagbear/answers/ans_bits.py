@@ -126,6 +126,7 @@ def count_one_odd_division_tbl(x: int) -> int:
 # Fill the 1 or 0 in the highest bit to make the count of 1 in unsigned bits
 # even or odd.
 def even_u8(x: int) -> int:
+    """Fill highest bit to make count of 1 even for 0~127."""
     one_n = count_one(x)
     if one_n % 2 == 1:
         return x + 0x80
@@ -134,6 +135,7 @@ def even_u8(x: int) -> int:
 
 
 def odd_u8(x: int) -> int:
+    """Fill highest bit to make count of 1 odd for 0~127."""
     one_n = count_one(x)
     if one_n % 2 == 1:
         return x
@@ -211,11 +213,13 @@ def count_prepending_zeros_mod(x: int) -> int:
 
 # %%
 def div3(x: int) -> int:
+    """Divide integer by 3 using bit operations."""
     return (x * 2863311531) >> 33
 
 
 # %%
 def sqrt(x: float) -> float:
+    """Compute inverse square root using fast inverse square root algorithm."""
     half = 0.5 * x
     i = struct.unpack("i", struct.pack("f", x))[0]
     i = (0x5f375a86 - (i >> 1)) & 0xffffffff

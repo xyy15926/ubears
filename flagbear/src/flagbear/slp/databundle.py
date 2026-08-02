@@ -267,26 +267,32 @@ class DataBundleFactory:
 
     @classmethod
     def registed_class(cls) -> list:
+        """Return list of registered class names."""
         return list[cls._registry.keys()]
 
 
 # %%
 @DataBundleFactory.register()
 class PickableBundle(DataBundle):
+    """DataBundle using pickle for serialization."""
     def dumps_data(self) -> bytes:
+        """Serialize data with pickle."""
         return pickle.dumps(self.data)
 
     @staticmethod
     def loads_data(bytes_, metadata: dict = None) -> Any:
+        """Deserialize pickle bytes."""
         return pickle.loads(bytes_)  # noqa: S301
 
 
 # %%
 def pickle_dumps(data) -> bytes:
+    """Serialize data with pickle."""
     return pickle.dumps(data)
 
 
 def pickle_loads(bytes_, metadata: dict = None):
+    """Deserialize pickle bytes."""
     return pickle.loads(bytes_)
 
 

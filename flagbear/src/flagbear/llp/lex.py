@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 # %%
 class Token(NamedTuple):
+    """Token type for lexical analysis."""
     type: str
     val: Any
     lineno: int = -1

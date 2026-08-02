@@ -40,6 +40,7 @@ Reduction = TypeVar("Reduction")
 
 # %%
 class Production(NamedTuple):
+    """Production rule for syntax analysis."""
     lp: str                 # Left part
     rp: tuple[str]          # Right part
     reduce: Callable[[list | tuple], Any] | None = None
@@ -324,6 +325,7 @@ class LRState(AutomState):
 
 
 class LRStatesPDA(StatesPDA):
+    """Pushdown automaton for LR states."""
     def add_transition(self, from_: LRState,
                        inp: Hashable,
                        to_: LRState | LRItem) -> Self:

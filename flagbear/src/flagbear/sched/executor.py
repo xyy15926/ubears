@@ -481,6 +481,7 @@ class LocalExecutor:
 
 # %%
 def with_copied_context(func):
+    """Copy context for function execution."""
     ctx = contextvars.copy_context()
     @functools.wraps(func)
     def wrapper(*args, **kwargs):

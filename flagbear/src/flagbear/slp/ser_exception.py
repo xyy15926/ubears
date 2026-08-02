@@ -18,6 +18,7 @@ from typing import Any
 
 @dataclass
 class ExceptionRecord:
+    """Record of a single exception in the chain."""
     exc_type: str
     exc_module: str
     message: str

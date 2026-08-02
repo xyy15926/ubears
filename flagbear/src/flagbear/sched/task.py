@@ -91,6 +91,7 @@ class TaskProxy(TaskProxyBase):
         return task_once
 
     def __repr__(self):
+        """Return repr."""
         return f"Task({self.name})"
 
 
@@ -104,6 +105,7 @@ def task(
     retry_policy: RetryPolicy | None = None,
     execution_policy: ExecutionPolicy | None = None,
 ) -> TaskProxy:
+    """Create a TaskProxy from a callable."""
     def decorator(ffunc):
         nonlocal name, cache_policy, checkpoint_policy
         nonlocal retry_policy, execution_policy
@@ -163,9 +165,11 @@ class TaskOnce:
         self.raw_kwargs = kwargs
 
     def __hash__(self):
+        """Return hash."""
         return hash(self.id_)
 
     def __eq__(self, rhs: Self):
+        """Return equality."""
         return self.id_ == rhs.id_
 
     @property

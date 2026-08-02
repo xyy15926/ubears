@@ -169,6 +169,7 @@ def deserialize(
 # %%
 @checker("json", priority = 99)
 def is_json(obj: Any) -> bool:
+    """Check if object is JSON-serializable."""
     if (isinstance(obj, (dict, list, str, int, float, bool, type(None)))
         and obj.__sizeof__() <= JSON_MAX):
         try:
@@ -184,6 +185,7 @@ def json_serialize(
     obj: Any | None,
     addon: str | list[str] | None = None,
 ) -> bytes:
+    """Serialize object to JSON bytes."""
     return json.dumps(obj, separators=(",", ":"), ensure_ascii=False).encode("utf8")
 
 
@@ -192,6 +194,7 @@ def json_deserialize(
     bytes_: bytes,
     addon: str | list[str] | None = None,
 ) -> Any:
+    """Deserialize JSON bytes to object."""
     if len(bytes_) == 0:
         return None
 
@@ -201,6 +204,7 @@ def json_deserialize(
 # %%
 @checker("pickle", priority = 10)
 def is_anything(obj: Any) -> bool:
+    """Check if object is picklable."""
     return True
 
 
@@ -209,6 +213,7 @@ def pickle_serialize(
     obj: Any | None,
     addon: str | list[str] | None = None,
 ) -> bytes:
+    """Serialize object to pickle bytes."""
     return pickle.dumps(obj, protocol=pickle.HIGHEST_PROTOCOL)
 
 
@@ -217,6 +222,7 @@ def pickle_deserialize(
     bytes_: bytes,
     addon: str | list[str] | None = None,
 ) -> Any:
+    """Deserialize pickle bytes to object."""
     if len(bytes_) == 0:
         return None
 
@@ -226,6 +232,7 @@ def pickle_deserialize(
 # %%
 @checker("numpy", priority = 95)
 def is_numpy(obj: Any) -> bool:
+    """Check if object is a NumPy array."""
     try:
         # Checker will be called first, so check if Numpy is installed here.
         # And it's clear that the object is not np.ndarray if import fails.
@@ -240,6 +247,7 @@ def numpy_serialize(
     obj: np.ndarray | None,
     addon: str | list[str] | None = None,
 ) -> bytes:
+    """Serialize NumPy array to bytes."""
     if obj is None:
         return b""
 
@@ -258,6 +266,7 @@ def numpy_deserialize(
     bytes_: bytes,
     addon: str | list[str] | None = None,
 ) -> np.ndarray:
+    """Deserialize bytes to NumPy array."""
     if len(bytes_) == 0:
         return None
 
@@ -271,6 +280,7 @@ def numpy_deserialize(
 # %%
 @checker("pddf_csv", priority = 1)
 def is_pddf_csv(obj: Any) -> bool:
+    """Check if object is a DataFrame serializable as CSV."""
     try:
         import numpy as np
         import pandas as pd
@@ -287,6 +297,7 @@ def pddf_csv_serialize(
     obj: pd.DataFrame | None,
     addon: str | list[str] | None = None,
 ) -> bytes:
+    """Serialize DataFrame to CSV bytes."""
     if obj is None:
         return b""
 
@@ -300,6 +311,7 @@ def pddf_csv_deserialize(
     bytes_: bytes,
     addon: str | list[str] | None = None,
 ) -> pd.DataFrame:
+    """Deserialize CSV bytes to DataFrame."""
     if len(bytes_) == 0:
         return None
 
@@ -314,6 +326,7 @@ def pddf_csv_deserialize(
 # %%
 @checker("pddf_feather", priority = 85)
 def is_pddf_feather(obj: Any) -> bool:
+    """Check if object is a DataFrame serializable as Feather."""
     try:
         import numpy as np
         import pandas as pd
@@ -331,6 +344,7 @@ def pddf_feather_serialize(
     obj: pd.DataFrame | None,
     addon: str | list[str] | None = None,
 ) -> bytes:
+    """Serialize DataFrame to Feather bytes."""
     if obj is None:
         return b""
 
@@ -344,6 +358,7 @@ def pddf_feather_deserialize(
     bytes_: bytes,
     addon: str | list[str] | None = None,
 ) -> pd.DataFrame:
+    """Deserialize Feather bytes to DataFrame."""
     if len(bytes_) == 0:
         return None
 
@@ -355,6 +370,7 @@ def pddf_feather_deserialize(
 # %%
 @checker("pddf_parquet", priority = 80)
 def is_pddf_parquet(obj: Any) -> bool:
+    """Check if object is a DataFrame serializable as Parquet."""
     try:
         import numpy as np
         import pandas as pd
@@ -371,6 +387,7 @@ def pddf_parquet_serialize(
     obj: pd.DataFrame | None,
     addon: str | list[str] | None = None,
 ) -> bytes:
+    """Serialize DataFrame to Parquet bytes."""
     if obj is None:
         return b""
 
@@ -384,6 +401,7 @@ def pddf_parquet_deserialize(
     bytes_: bytes,
     addon: str | list[str] | None = None,
 ) -> pd.DataFrame:
+    """Deserialize Parquet bytes to DataFrame."""
     if len(bytes_) == 0:
         return None
 
@@ -395,6 +413,7 @@ def pddf_parquet_deserialize(
 # %%
 @checker("exception", priority = 98)
 def is_exception(obj: Any):
+    """Check if object is an exception."""
     if isinstance(obj, BaseException):
         return True
     return False
@@ -405,6 +424,7 @@ def exception_serialize(
     obj: BaseException | None,
     addon: str | list[str] | None = None,
 ) -> bytes:
+    """Serialize exception to bytes."""
     if obj is None:
         return b""
 
@@ -416,6 +436,7 @@ def exception_deserialize(
     bytes_: bytes,
     addon: str | list[str] | None = None,
 ) -> BaseException:
+    """Deserialize bytes to exception."""
     if len(bytes_) == 0:
         return None
 

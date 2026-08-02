@@ -123,6 +123,7 @@ class PipeFactory:
 
     @classmethod
     def registed_pipe(cls) -> list:
+        """Return list of registered pipe names."""
         return list[cls._registry.keys()]
 
 

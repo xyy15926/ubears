@@ -46,15 +46,19 @@ class BiTNode:
         self.rc = right
 
     def __repr__(self):
+        """Return repr."""
         return f"{self.__class__}: {self.val}"
 
     def pre_order(self, visit: Callable[[Self], Any] | None = None) -> Any:
+        """Traverse tree in pre order."""
         pass
 
     def in_order(self, visit: Callable[[Self], Any] | None = None) -> Any:
+        """Traverse tree in in order."""
         pass
 
     def post_order(self, visit: Callable[[Self], Any] | None = None) -> Any:
+        """Traverse tree in post order."""
         visit_none = False
         if visit is None:
             visit_none = True
@@ -92,9 +96,11 @@ class GeTNode:
         self.chn = 0 if self.chs is None else len(children)
 
     def __repr__(self):
+        """Return repr."""
         return f"{self.__class__}: {self.val} with {self.chn} children."
 
     def post_order(self, visit: Callable[[Self], Any] | None = None) -> Any:
+        """Traverse tree in post order."""
         visit_none = False
         if visit is None:
             visit_none = True

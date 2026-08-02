@@ -99,6 +99,7 @@ class CheckpointPolicy:
         args: list[Any],
         kwargs: dict[str, Any],
     ):
+        """Generate cache key from function and arguments."""
         key = (f"{func.__module__}.{func.__qualname__}"
                if callable(func)
                else func)

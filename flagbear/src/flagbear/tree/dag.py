@@ -34,30 +34,37 @@ class Node:
         self.downstream: set[Self] = set()
 
     def __repr__(self):
+        """Return repr."""
         return f"Node({self.id_})"
 
     def __hash__(self):
+        """Return hash."""
         return hash(self.id_)
 
     def __eq__(self, other):
+        """Return whether equal."""
         if isinstance(other, Node):
             return self.id_ == other.id_
         return False
 
     @property
     def in_degree(self) -> int:
+        """In-degree of the node."""
         return len(self.upstream)
 
     @property
     def out_degree(self) -> int:
+        """Out-degree of the node."""
         return len(self.downstream)
 
     @property
     def predecessors(self) -> set[Self]:
+        """Predecessors of the node."""
         return set(self.upstream)
 
     @property
     def successors(self) -> set[Self]:
+        """Successors of the node."""
         return set(self.downstream)
 
     def __rshift__(self, other: Self) -> Self | None:
@@ -155,6 +162,7 @@ class DirectedGraph:
         self.leaf_nodes: set[NID] = set()
 
     def __repr__(self) -> str:
+        """Return repr."""
         return f"Graph(nodes={self.node_count}, edges={self.edge_count})"
 
     def __contains__(
@@ -162,6 +170,7 @@ class DirectedGraph:
         from_id: NID | Node,
         to_id: NID | None = None,
     ) -> bool:
+        """Return whether node or edge exists."""
         if to_id is None:
             return self.has_node(from_id)
         else:

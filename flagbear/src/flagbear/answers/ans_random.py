@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 # %%
 def box_muller() -> Iterator:
+    """Generate normally distributed random numbers using Box-Muller transform."""
     while True:
         a = uniform(0, 1)
         b = uniform(0, 1)

@@ -34,6 +34,7 @@ def forward_update_traverse(
     update_F: Callable[[Container, Container], None],
     result_D: dict[Node, Container],
 ) -> None:
+    """Traverse digraph forward to update node status."""
     pass
 
 

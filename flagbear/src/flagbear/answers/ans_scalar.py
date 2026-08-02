@@ -59,6 +59,7 @@ def poly_eval(p: list[Num], x: Num) -> Num:
 
 # %%
 def bmultiply(x: int, y: int):
+    """Multiply two integers using binary multiplication."""
     pass
 
 

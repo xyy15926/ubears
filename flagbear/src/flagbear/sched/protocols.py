@@ -48,6 +48,7 @@ logger = logging.getLogger(__name__)
 
 # %%
 class TaskState(str, Enum):
+    """Possible states of a task."""
     PENDING = "PENDING"
     RUNNING = "RUNNING"
     SUCCESS = "SUCCESS"
@@ -60,6 +61,7 @@ class TaskState(str, Enum):
 
 @dataclass
 class TaskResult:
+    """Result of a task execution."""
     state: TaskState = TaskState.PENDING
     cache_key: str | None = None
     value: Any | None = None
@@ -73,6 +75,7 @@ class TaskResult:
 
     @property
     def duration(self) -> float:
+        """Calculate duration between start and end times."""
         if self.start_time and self.end_time:
             return self.end_time - self.start_time
         return 0.0
@@ -88,9 +91,11 @@ class TaskResult:
         return None
 
     def is_successful(self) -> bool:
+        """Check if the task completed successfully."""
         return self.state in (TaskState.SUCCESS, TaskState.CACHED)
 
     def is_failed(self) -> bool:
+        """Check if the task failed."""
         return self.state in (TaskState.FAILED, TaskState.SKIPPED, TaskState.CANCELLED)
 
     def to_json(self) -> bytes:
@@ -203,6 +208,7 @@ def task_result_deserialize(
 # %%
 @dataclass
 class RetryPolicy:
+    """Policy for retrying failed tasks."""
     max_retries: int = 1
     delay_seconds: float = 1.0
     backoff_factor: float = 2.0
@@ -214,6 +220,7 @@ class RetryPolicy:
         error: Exception | None,
         attempt: int,
     ) -> bool:
+        """Determine whether to retry based on error and attempt count."""
         if self.retry_on is not None and not isinstance(self.retry_on, tuple):
             self.retry_on = tuple(self.retry_on)
         if attempt >= self.max_retries:
@@ -225,6 +232,7 @@ class RetryPolicy:
         return True
 
     def get_delay(self, attempt: int) -> float:
+        """Get the delay duration for a given attempt."""
         delay = self.delay_seconds * (self.backoff_factor ** attempt)
         return min(delay, self.max_delay)
 
@@ -232,6 +240,7 @@ class RetryPolicy:
 # %%
 @dataclass
 class ExecutionPolicy:
+    """Policy for task execution settings."""
     timeout: float | None = None
     use_process: bool = False
     with_context: bool = False
@@ -292,6 +301,7 @@ class TaskProxyBase:
         functools.update_wrapper(self, func)
 
     def __getattr__(self, name: str) -> Any:
+        """Get policy attributes from current policies."""
         if name in ["name", "cache_policy", "checkpoint_policy",
                     "retry_policy", "execution_policy"]:
             return self._current_policies[name]
@@ -299,6 +309,7 @@ class TaskProxyBase:
         return getattr(super(), name)
 
     def __setattr__(self, name: str, value: Any):
+        """Set policy attributes in current policies."""
         if name in ["name", "cache_policy", "checkpoint_policy",
                     "retry_policy", "execution_policy"]:
             self._current_policies[name] = value
@@ -336,25 +347,35 @@ class TaskProxyBase:
         self._current_policies = copy.deepcopy(self._default_policies)
 
     def __call__(self, *args, **kwargs) -> Any:
+        """Execute the wrapped callable."""
         pass
 
     def run(self, *args, **kwargs) -> Any:
+        """Run the task synchronously."""
         pass
 
     def submit(self, *args, **kwargs) -> Task:
+        """Submit the task for asynchronous execution."""
         pass
 
 
 # %%
 class Task(Protocol):
+    """Protocol defining a schedulable task."""
     id_: str
     name: str
     def resolve_args(
         self,
         ctx: Context | None,
-    ) -> tuple[list[Self], dict[str, Self], list[Self], dict[Self, Exception]]: ...
-    def resolve_dependencies(self, ctx: Context | None) -> list[Self]: ...
-    def result(self, ctx: Context | None) -> Any: ...
+    ) -> tuple[list[Self], dict[str, Self], list[Self], dict[Self, Exception]]:
+        """Resolve task arguments from context."""
+        ...
+    def resolve_dependencies(self, ctx: Context | None) -> list[Self]:
+        """Resolve task dependencies from context."""
+        ...
+    def result(self, ctx: Context | None) -> Any:
+        """Get the result from context."""
+        ...
 
 
 # %%
@@ -365,28 +386,60 @@ _current_context: contextvars.ContextVar[Context | None] = contextvars.ContextVa
 
 
 class Future(Protocol):
-    def result() -> Any: ...
-    def add_done_callback(callback: callable): ...
+    """Protocol for asynchronous task results."""
+    def result() -> Any:
+        """Get the result of the future."""
+        ...
+    def add_done_callback(callback: callable):
+        """Register a callback for when the future completes."""
+        ...
 
 
 class Context(Protocol):
+    """Protocol for task execution context."""
     scheduler: Scheduler
     task_results: Cache
-    def __enter__(self) -> Self:...
-    def __exit__(self, exc_type, exc_val, exc_tb):...
-    def shutdown(self): ...
-    def get_result(self, task: str | Task) -> TaskResult | None: ...
-    def set_result(self, task: str | Task, result: TaskResult): ...
-    def submit(self, task: Task | list[Task]): ...
-    def run(self, task: Task | list[Task]) -> Any | list[Any]: ...
+    def __enter__(self) -> Self:
+        """Enter the context."""
+        ...
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Exit the context."""
+        ...
+    def shutdown(self):
+        """Shutdown the context."""
+        ...
+    def get_result(self, task: str | Task) -> TaskResult | None:
+        """Get the result for a given task."""
+        ...
+    def set_result(self, task: str | Task, result: TaskResult):
+        """Set the result for a given task."""
+        ...
+    def submit(self, task: Task | list[Task]):
+        """Submit a task or list of tasks."""
+        ...
+    def run(self, task: Task | list[Task]) -> Any | list[Any]:
+        """Run a task or list of tasks synchronously."""
+        ...
 
 
 class Executor(Protocol):
-    def submit(self, task_results: Cache, *task: Task) -> Future | list[Future]: ...
-    def shutdown(self):...
+    """Protocol for task execution."""
+    def submit(self, task_results: Cache, *task: Task) -> Future | list[Future]:
+        """Submit tasks for execution."""
+        ...
+    def shutdown(self):
+        """Shutdown the executor."""
+        ...
 
 
 class Scheduler(Protocol):
-    def add(self, *tasks: Task) -> list[TaskResult]: ...
-    def wait(self, *tasks: Task) -> Future | list[Future]: ...
-    def shutdown(self):...
+    """Protocol for task scheduling."""
+    def add(self, *tasks: Task) -> list[TaskResult]:
+        """Add tasks to the scheduler."""
+        ...
+    def wait(self, *tasks: Task) -> Future | list[Future]:
+        """Wait for tasks to complete."""
+        ...
+    def shutdown(self):
+        """Shutdown the scheduler."""
+        ...
