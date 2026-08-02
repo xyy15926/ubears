@@ -10,22 +10,20 @@
 # %%
 from __future__ import annotations
 
-import logging
-from typing import TYPE_CHECKING, Any, Protocol, Self
-
-if TYPE_CHECKING:
-    from flagbear.slp.cache import Cache
 import contextvars
 import copy
 import functools
 import inspect
 import json
+import logging
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Protocol, Self
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from flagbear.slp.cache import Cache
     from flagbear.slp.checkpoint import CheckpointPolicy
 
@@ -143,8 +141,10 @@ class TaskResult:
         self,
         value_cache_policy: CachePolicy | None = None,
     ) -> CachePolicy:
-        """Construct cache policy for `TaskResult` from cache policy for
-        `TaskResult.value`.
+        """Construct cache policy with this `TaskResult`.
+
+        Construct cache policy with this `TaskResult` and additional
+        CachePolicy for `TaskResult.value`.
         """
         if value_cache_policy is None:
             return CachePolicy(type_ = "TaskResult")

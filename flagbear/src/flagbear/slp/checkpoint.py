@@ -111,7 +111,7 @@ class CheckpointPolicy:
 class CheckpointManager:
     """Checkpointer manager.
 
-    CheckpointManager only generate the cache key for a single call to a 
+    CheckpointManager only generate the cache key for a single call to a
     function with some arguments, and the cache things are done by the
     inner cache.
 
@@ -177,7 +177,7 @@ class CheckpointManager:
                 return result
             return wrapper
 
-        # `@checkpoint`：decorate the `func` directly with the default setting
+        # `@checkpoint`: decorate the `func` directly with the default setting
         # `@checkpoint()`: return the inner decorator with customed setting
         return decorator(func) if func else decorator
 

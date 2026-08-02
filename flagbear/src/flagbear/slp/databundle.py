@@ -387,7 +387,7 @@ def bundle_cache(
       the cache file name, so make sure not to change the behavior to use
       the wrapped `func`.
     2. Also the arguments will be saved at the metadata of the data bundle,
-      so make sure the arguments: 
+      so make sure the arguments:
     2.1 Could be dumped by the `json.dumps`
     2.2 And compared with `=`.
     2.3 And won't be modified during the process of the `func`.

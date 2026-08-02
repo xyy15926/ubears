@@ -15,8 +15,7 @@ import struct
 # Problem:
 # Count 1 in unsigned bits.
 def count_one(x: int) -> int:
-    """Count `1` in 32-bits unsigned.
-    """
+    """Count `1` in 32-bits unsigned."""
     one_cnt = 0
     while x:
         if x & 0x1:
@@ -169,14 +168,12 @@ def odd_u8_mod(x: int) -> int:
 # Problem:
 # Reverse bits for 6bits unsigned.
 def reverse_bits(x: int) -> int:
-    """Reverse bits for 6bits unsigned.
-    """
+    """Reverse bits for 6bits unsigned."""
     return int(''.join(reversed(f"{x:06b}")), base=2)
 
 
 def reverse_bits_mod(x: int) -> int:
-    """Reverse bits for 6bits unsinged.
-    """
+    """Reverse bits for 6bits unsinged."""
     return ((x * 0x00082082) & 0x01122408) % 0xff
 
 
@@ -184,8 +181,7 @@ def reverse_bits_mod(x: int) -> int:
 # Problem:
 # Count the number of prepending 0s for 32bits unsigned.
 def count_prepending_zeros(x: int) -> int:
-    """Count the number of prepending 0s for 32bits unsigned.
-    """
+    """Count the number of prepending 0s for 32bits unsigned."""
     ans = 0
     while x:
         x >>= 1
@@ -194,8 +190,7 @@ def count_prepending_zeros(x: int) -> int:
 
 
 def count_prepending_zeros_mod(x: int) -> int:
-    """Count the number of prepending 0s for 32bits unsigned.
-    """
+    """Count the number of prepending 0s for 32bits unsigned."""
     tbl = [
         32, 31, 'u', 16, 'u', 30, 3, 'u', 15, 'u', 'u', 'u', 29,
         10, 2, 'u', 'u', 'u', 12, 14, 21, 'u', 19, 'u', 'u', 28,

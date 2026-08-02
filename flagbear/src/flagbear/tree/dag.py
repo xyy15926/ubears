@@ -148,7 +148,7 @@ class Node:
 
 # %%
 class DirectedGraph:
-    """Graph
+    """Graph.
 
     Attrs:
     -----------------------------

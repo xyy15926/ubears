@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Self
 
 if TYPE_CHECKING:
     from collections.abc import Hashable
+
     import pandas as pd
 # from IPython.core.debugger import set_trace
 
@@ -117,7 +118,7 @@ class Automaton:
       End states.
     """
     def __init__(self, state_type: type = AutomState):
-        """Init"""
+        """Init."""
         self.state_type = state_type        # Default state class to init implicitly.
         self.states_store = {}              # {AutomState: AutomState}
         self.states_list = []               # [AutomState]

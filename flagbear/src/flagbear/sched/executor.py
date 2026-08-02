@@ -427,7 +427,7 @@ class LocalExecutor:
 
         1. For async function, coroutine will be awaited directly.
         2. For sync funtion, thread or process will be gotten from inner
-          threadpool or processpool to execute and then wrapped in a 
+          threadpool or processpool to execute and then wrapped in a
           async Future to be scheduled by the event-loop.
 
         Params:

@@ -66,15 +66,13 @@ def get_root_path() -> Path:
 
 @lru_cache
 def get_tmp_path(dest: str = "tmp") -> Path:
-    """Get the absolute path of the `tmp` of the currrent working project.
-    """
+    """Get the absolute path of `tmp` of the currrent working project."""
     return get_root_path() / dest
 
 
 @lru_cache
 def get_assets_path(dest: str = "assets") -> Path:
-    """Get the absolute path of the `assets` of the current working project.
-    """
+    """Get the absolute path of `assets` of the current working project."""
     return get_root_path() / dest
 
 
