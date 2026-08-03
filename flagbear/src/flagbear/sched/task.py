@@ -224,10 +224,7 @@ class TaskOnce:
             if not isinstance(task, cls):
                 ready[key] = task
             else:
-                if cache is not None:
-                    result = cache.get(task.id_)
-                else:
-                    result = None
+                result = cache.get(task.id_) if cache is not None else None
 
                 # Check the state of the result of task.
                 if result is not None and result.is_successful():

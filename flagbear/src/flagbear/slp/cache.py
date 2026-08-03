@@ -276,7 +276,7 @@ class MemoryCache:
 
     def list_keys(self, prefix: str = "") -> list[str]:
         """Delete keys starting with prefix."""
-        return [key for key in self.storage.keys()
+        return [key for key in self.storage
                 if key.startswith(prefix)]
 
 

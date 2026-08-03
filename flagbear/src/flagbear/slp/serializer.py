@@ -414,9 +414,7 @@ def pddf_parquet_deserialize(
 @checker("exception", priority = 98)
 def is_exception(obj: Any):
     """Check if object is an exception."""
-    if isinstance(obj, BaseException):
-        return True
-    return False
+    return isinstance(obj, BaseException)
 
 
 @serializer("exception")

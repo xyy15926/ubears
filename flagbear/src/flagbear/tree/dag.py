@@ -282,11 +282,9 @@ class DirectedGraph:
 
     def get_edges(self) -> list[tuple]:
         """Get all edges represented with tuple."""
-        edges = []
-        for node in self.nodes.values():
-            for succ in node.downstream:
-                edges.append((node.id, succ.id))
-        return edges
+        return [(node.id, succ.id)
+                for node in self.nodes.values()
+                for succ in node.downstream]
 
 # ------------------------------------------------------------------------
 #                                   Existed Nodes
@@ -433,10 +431,12 @@ def visualize(nodes: list[Node]) -> str:
 def to_mermaid(nodes: list[Node]) -> str:
     """Render nodes and edges to mermaid."""
     lines = ["graph TD;"]
-    for node in nodes:
-        for down in node.downstream:
-            lines.append(f"    {node.id_}({node.id_}) --> "
-                         f"{down.id_}({down.id_});")
+    lines.extend(
+        f"    {node.id_}({node.id_}) --> "
+        f"{down.id_}({down.id_});"
+        for node in nodes
+        for down in node.downstream
+    )
     return "\n".join(lines)
 
 

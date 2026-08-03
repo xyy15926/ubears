@@ -79,9 +79,8 @@ class DAGScheduler:
     ) -> bool:
         """If the task has been submitted before."""
         tid = getattr(task, "id_", task)
-        if self.task_dag.has_node(tid) or self.task_results.exists(tid):
-            return False
-        return True
+        return (not self.task_dag.has_node(tid)
+                and not self.task_results.exists(tid))
 
     def shutdown(self, force = False):
         """Shutdown.

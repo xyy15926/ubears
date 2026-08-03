@@ -255,7 +255,7 @@ class LocalExecutor:
         (resolved_args, resolved_kwargs,
          unready_tasks, failed_tasks) = task.resolve_args(task_results)
         if len(failed_tasks) > 0:
-            task_names = ",".join([f.name for f in failed_tasks.keys()])
+            task_names = ",".join([f.name for f in failed_tasks])
             error = RuntimeError(
                 f"Skip to execute task {task_name} because precedent "
                 f"tasks: {task_names} failed."

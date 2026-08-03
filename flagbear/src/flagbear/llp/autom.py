@@ -263,7 +263,7 @@ class Automaton:
         """
         if self.end_states is None:
             raise ValueError("No end-states are set.")
-        return True if self.cur in self.end_states else False
+        return self.cur in self.end_states
 
     def gotodf(self) -> pd.DataFrame:
         """Generate a DataFrame representing the transitions.

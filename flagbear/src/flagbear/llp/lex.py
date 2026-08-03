@@ -219,7 +219,7 @@ class Lexer:
 
             out_level = token_precs[out_type]
             # Oppose the priority of the LPAR and RPAR out of stack.
-            if out_type == LPAR or out_type == RPAR:
+            if out_type in (LPAR, RPAR):
                 out_level *= -1
 
             in_level = token_precs[tok_st[-1][0]]

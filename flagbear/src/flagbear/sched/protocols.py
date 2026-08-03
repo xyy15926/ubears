@@ -166,9 +166,7 @@ class TaskResult:
 @checker("TaskResult", priority = 90)
 def is_task_result(obj: Any):
     """If could serialize and deserialize with this."""
-    if isinstance(obj, TaskResult):
-        return True
-    return False
+    return isinstance(obj, TaskResult)
 
 
 @serializer("TaskResult")
@@ -225,11 +223,9 @@ class RetryPolicy:
             self.retry_on = tuple(self.retry_on)
         if attempt >= self.max_retries:
             return False
-        if (self.retry_on is not None
-            and error is not None
-            and not isinstance(error, self.retry_on)):
-            return False
-        return True
+        return (self.retry_on is None
+                or error is None
+                or isinstance(error, self.retry_on))
 
     def get_delay(self, attempt: int) -> float:
         """Get the delay duration for a given attempt."""
