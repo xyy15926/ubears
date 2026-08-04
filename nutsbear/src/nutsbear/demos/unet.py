@@ -209,4 +209,4 @@ class UNet(nn.Module):
         up1 = self.upc1(up2, inp)
         oup = self.out_conv(up1)
 
-        return F.sigmoid(oup)
+        return torch.sigmoid(oup)

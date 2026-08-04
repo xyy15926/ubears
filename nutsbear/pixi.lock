@@ -47,9 +47,6 @@ environments:
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/78/2d/7fa73dfa841b5ac06c7b8855cfc18622132e365f5b81d02230333ff26e9e/cffi-2.0.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/4e/ef/79a463eb0fff7f96afa04c1d4c51f8fc85426f918db467854bfb6a569ce3/charset_normalizer-3.4.6-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/34/71/1ea5a7352ae516d5512d17babe7e1b87d9db5150b21f794b1377eac1edc0/cryptography-46.0.6-cp311-abi3-manylinux_2_28_x86_64.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/1f/92/f899f7bbb5617bb65ec52a6eac1e9a1447a86b916c4194f8a5001b8cde0c/cuda_bindings-13.2.0-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/93/66/0c02bd330e7d976f83fa68583d6198d76f23581bcbb5c0e98a6148f326e5/cuda_pathfinder-1.5.0-py3-none-any.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/57/b2/453099f5f3b698d7d0eab38916aac44c7f76229f451709e2eb9db6615dcd/cuda_toolkit-13.0.2-py2.py3-none-any.whl
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/4e/8c/f3147f5c4b73e7550fe5f9352eaa956ae838d5c51eb58e7a25b9f3e2643b/decorator-5.2.1-py3-none-any.whl
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/02/10/5da547df7a391dcde17f59520a231527b8571e6f46fc8efb02ccb370ab12/docutils-0.22.4-py3-none-any.whl
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/c1/ea/53f2148663b321f21b5a606bd5f191517cf40b7072c0497d3c92c4a13b1e/executing-2.2.1-py2.py3-none-any.whl
@@ -79,21 +76,18 @@ environments:
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/d6/b7/ec1cbc6b297a808c513f59f501656389623fc09ad6a58c640851289c7854/nh3-0.3.4-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/b6/23/2a1b231b8ff672b4c450dac27164a8b2ca7d9b7144f9c02d2396518352eb/numpy-2.3.5-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/e7/44/423ac00af4dd95a5aeb27207e2c0d9b7118702149bf4704c3ddb55bb7429/nvidia_cublas-13.1.0.3-py3-none-manylinux_2_27_x86_64.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/33/6d/737d164b4837a9bbd202f5ae3078975f0525a55730fe871d8ed4e3b952b0/nvidia_cuda_cupti-13.0.85-py3-none-manylinux_2_25_x86_64.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/c3/68/483a78f5e8f31b08fb1bb671559968c0ca3a065ac7acabfc7cee55214fd6/nvidia_cuda_nvrtc-13.0.88-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/2e/24/d1558f3b68b1d26e706813b1d10aa1d785e4698c425af8db8edc3dced472/nvidia_cuda_runtime-13.0.96-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/a3/22/0b4b932655d17a6da1b92fa92ab12844b053bb2ac2475e179ba6f043da1e/nvidia_cudnn_cu13-9.19.0.56-py3-none-manylinux_2_27_x86_64.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/a8/2f/7b57e29836ea8714f81e9898409196f47d772d5ddedddf1592eadb8ab743/nvidia_cufft-12.0.0.61-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/3f/70/4f193de89a48b71714e74602ee14d04e4019ad36a5a9f20c425776e72cd6/nvidia_cufile-1.15.1.6-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/a5/9f/be0a41ca4a4917abf5cb9ae0daff1a6060cc5de950aec0396de9f3b52bc5/nvidia_curand-10.4.0.35-py3-none-manylinux_2_27_x86_64.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/5f/67/cba3777620cdacb99102da4042883709c41c709f4b6323c10781a9c3aa34/nvidia_cusolver-12.0.4.66-py3-none-manylinux_2_27_x86_64.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/fa/18/623c77619c31d62efd55302939756966f3ecc8d724a14dab2b75f1508850/nvidia_cusparse-12.6.3.3-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/fd/53/43b0d71f4e702fa9733f8b4571fdca50a8813f1e450b656c239beff12315/nvidia_cusparselt_cu13-0.8.0-py3-none-manylinux2014_x86_64.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/b0/b4/878fefaad5b2bcc6fcf8d474a25e3e3774bc5133e4b58adff4d0bca238bc/nvidia_nccl_cu13-2.28.9-py3-none-manylinux_2_18_x86_64.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/56/7a/123e033aaff487c77107195fa5a2b8686795ca537935a24efae476c41f05/nvidia_nvjitlink-13.0.88-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/3c/35/a9bf80a609e74e3b000fef598933235c908fcefcef9026042b8e6dfde2a9/nvidia_nvshmem_cu13-3.4.5-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/c2/f3/d86c845465a2723ad7e1e5c36dcd75ddb82898b3f53be47ebd429fb2fa5d/nvidia_nvtx-13.0.85-py3-none-manylinux1_x86_64.manylinux_2_5_x86_64.whl
+      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/37/6d/121efd7382d5b0284239f4ab1fc1590d86d34ed4a4a2fdb13b30ca8e5740/nvidia_cublas_cu12-12.1.3.1-py3-none-manylinux1_x86_64.whl
+      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/7e/00/6b218edd739ecfc60524e585ba8e6b00554dd908de2c9c66c1af3e44e18d/nvidia_cuda_cupti_cu12-12.1.105-py3-none-manylinux1_x86_64.whl
+      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/b6/9f/c64c03f49d6fbc56196664d05dba14e3a561038a81a638eeb47f4d4cfd48/nvidia_cuda_nvrtc_cu12-12.1.105-py3-none-manylinux1_x86_64.whl
+      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/eb/d5/c68b1d2cdfcc59e72e8a5949a37ddb22ae6cade80cd4a57a84d4c8b55472/nvidia_cuda_runtime_cu12-12.1.105-py3-none-manylinux1_x86_64.whl
+      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/9f/fd/713452cd72343f682b1c7b9321e23829f00b842ceaedcda96e742ea0b0b3/nvidia_cudnn_cu12-9.1.0.70-py3-none-manylinux2014_x86_64.whl
+      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/86/94/eb540db023ce1d162e7bea9f8f5aa781d57c65aed513c33ee9a5123ead4d/nvidia_cufft_cu12-11.0.2.54-py3-none-manylinux1_x86_64.whl
+      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/44/31/4890b1c9abc496303412947fc7dcea3d14861720642b49e8ceed89636705/nvidia_curand_cu12-10.3.2.106-py3-none-manylinux1_x86_64.whl
+      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/bc/1d/8de1e5c67099015c834315e333911273a8c6aaba78923dd1d1e25fc5f217/nvidia_cusolver_cu12-11.4.5.107-py3-none-manylinux1_x86_64.whl
+      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/65/5b/cfaeebf25cd9fdec14338ccb16f6b2c4c7fa9163aefcf057d86b9cc248bb/nvidia_cusparse_cu12-12.1.0.106-py3-none-manylinux1_x86_64.whl
+      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/4b/2a/0a131f572aa09f741c30ccd45a8e56316e8be8dfc7bc19bf0ab7cfef7b19/nvidia_nccl_cu12-2.20.5-py3-none-manylinux2014_x86_64.whl
+      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/46/0c/c75bbfb967457a0b7670b8ad267bfc4fffdf341c074e0a80db06c24ccfd4/nvidia_nvjitlink_cu12-12.9.86-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl
+      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/da/d3/8057f0587683ed2fcd4dbfbdfdfa807b9160b809976099d36b8f60d08f03/nvidia_nvtx_cu12-12.1.105-py3-none-manylinux1_x86_64.whl
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/b7/b9/c538f279a4e237a006a2c98387d081e9eb060d203d8ed34467cc0f0b9b53/packaging-26.0-py3-none-any.whl
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/b6/61/fae042894f4296ec49e3f193aff5d7c18440da9e48102c3315e1bc4519a7/parso-0.8.6-py2.py3-none-any.whl
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/ef/3c/2c197d226f9ea224a9ab8d197933f9da0ae0aac5b6e0f884e2b8d9c8e9f7/pathspec-1.0.4-py3-none-any.whl
@@ -121,10 +115,11 @@ environments:
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/9c/d9/a5db55f88f258ac669a92858b70a714bbbd5acd993820b41ec4a96a4d77f/tensorboard-2.20.0-py3-none-any.whl
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/7a/13/e503968fefabd4c6b2650af21e110aa8466fe21432cd7c43a84577a89438/tensorboard_data_server-0.7.2-py3-none-any.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/1a/c9/82638ef24d7877510f83baf821f5619a61b45568ce21c0a87a91576510aa/torch-2.11.0-cp312-cp312-manylinux_2_28_x86_64.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/f5/d8/cb6ccda1a1f35a6597645818641701207b3e8e13553e75fce5d86bac74b2/torchvision-0.26.0-cp312-cp312-manylinux_2_28_x86_64.whl
+      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/cc/df/5204a13a7a973c23c7ade615bafb1a3112b5d0ec258d8390f078fa4ab0f7/torch-2.4.1-cp312-cp312-manylinux1_x86_64.whl
+      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/47/e1/636e6bc0fbf7bf13a2a206f7b47ecce381335c90c0a761bac243db6c2a37/torch_directml-0.2.5.dev240914-cp312-cp312-manylinux2010_x86_64.whl
+      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/8b/34/fdd2d9e01228a069b28473a7c020bf1812c8ecab8565666feb247659ed30/torchvision-0.19.1-cp312-cp312-manylinux1_x86_64.whl
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/00/c0/8f5d070730d7836adc9c9b6408dec68c6ced86b304a9b26a14df072a6e8c/traitlets-5.14.3-py3-none-any.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/ab/a8/cdf8b3e4c98132f965f88c2313a4b493266832ad47fb52f23d14d4f86bb5/triton-3.6.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/fe/7b/7757205dee3628f75e7991021d15cd1bd0c9b044ca9affe99b50879fc0e1/triton-3.0.0-1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/bb/4a/2e5583e544bc437d5e8e54b47db87430df9031b29b48d17f26d129fa60c0/trove_classifiers-2026.1.14.14-py3-none-any.whl
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/3a/7a/882d99539b19b1490cac5d77c67338d126e4122c8276bf640e411650c830/twine-6.2.0-py3-none-any.whl
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/18/67/36e9267722cc04a6b9f15c7f3441c2363321a3ea07da7ae0c0707beb2a9c/typing_extensions-4.15.0-py3-none-any.whl
@@ -210,8 +205,9 @@ environments:
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/9c/d9/a5db55f88f258ac669a92858b70a714bbbd5acd993820b41ec4a96a4d77f/tensorboard-2.20.0-py3-none-any.whl
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/7a/13/e503968fefabd4c6b2650af21e110aa8466fe21432cd7c43a84577a89438/tensorboard_data_server-0.7.2-py3-none-any.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/1c/ff/6756f1c7ee302f6d202120e0f4f05b432b839908f9071157302cedfc5232/torch-2.11.0-cp312-cp312-win_amd64.whl
-      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/1c/a9/c272623a0f735c35f0f6cd6dc74784d4f970e800cf063bb76687895a2ab9/torchvision-0.26.0-cp312-cp312-win_amd64.whl
+      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/a8/e0/ca8354dfb8d834a76da51b06e8248b70fc182bc163540507919124974bdf/torch-2.4.1-cp312-cp312-win_amd64.whl
+      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/71/f2/eb7d3c601310c758f6aef891773e4a00f7388eeb613d536c0d2681fcb105/torch_directml-0.2.5.dev240914-cp312-cp312-win_amd64.whl
+      - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/6b/b2/fd577e1622b43cdeb74782a60cea4909f88f471813c215ea7b4e7ea84a74/torchvision-0.19.1-cp312-cp312-win_amd64.whl
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/00/c0/8f5d070730d7836adc9c9b6408dec68c6ced86b304a9b26a14df072a6e8c/traitlets-5.14.3-py3-none-any.whl
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/bb/4a/2e5583e544bc437d5e8e54b47db87430df9031b29b48d17f26d129fa60c0/trove_classifiers-2026.1.14.14-py3-none-any.whl
       - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/3a/7a/882d99539b19b1490cac5d77c67338d126e4122c8276bf640e411650c830/twine-6.2.0-py3-none-any.whl
@@ -363,75 +359,6 @@ packages:
   - check-sdist ; extra == 'pep8test'
   - click>=8.0.1 ; extra == 'pep8test'
   requires_python: '>=3.8,!=3.9.0,!=3.9.1'
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/1f/92/f899f7bbb5617bb65ec52a6eac1e9a1447a86b916c4194f8a5001b8cde0c/cuda_bindings-13.2.0-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
-  name: cuda-bindings
-  version: 13.2.0
-  sha256: 46d8776a55d6d5da9dd6e9858fba2efcda2abe6743871dee47dd06eb8cb6d955
-  requires_dist:
-  - cuda-pathfinder~=1.1
-  - cuda-toolkit[nvfatbin,nvjitlink,nvrtc,nvvm]==13.* ; extra == 'all'
-  - cuda-toolkit[cufile]==13.* ; sys_platform == 'linux' and extra == 'all'
-  requires_python: '>=3.10'
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/93/66/0c02bd330e7d976f83fa68583d6198d76f23581bcbb5c0e98a6148f326e5/cuda_pathfinder-1.5.0-py3-none-any.whl
-  name: cuda-pathfinder
-  version: 1.5.0
-  sha256: 498f90a9e9de36044a7924742aecce11c50c49f735f1bc53e05aa46de9ea4110
-  requires_python: '>=3.10'
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/57/b2/453099f5f3b698d7d0eab38916aac44c7f76229f451709e2eb9db6615dcd/cuda_toolkit-13.0.2-py2.py3-none-any.whl
-  name: cuda-toolkit
-  version: 13.0.2
-  sha256: b198824cf2f54003f50d64ada3a0f184b42ca0846c1c94192fa269ecd97a66eb
-  requires_dist:
-  - nvidia-cublas==13.1.0.3.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-cuda-cccl==13.0.85.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-cuda-crt==13.0.88.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-cuda-culibos==13.0.85.* ; sys_platform == 'linux' and extra == 'all'
-  - nvidia-cuda-cupti==13.0.85.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-cuda-cuxxfilt==13.0.85.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-cuda-nvcc==13.0.88.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-cuda-nvrtc==13.0.88.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-cuda-opencl==13.0.85.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-cuda-profiler-api==13.0.85.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-cuda-runtime==13.0.96.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-cuda-sanitizer-api==13.0.85.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-cufft==12.0.0.61.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-cufile==1.15.1.6.* ; sys_platform == 'linux' and extra == 'all'
-  - nvidia-curand==10.4.0.35.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-cusolver==12.0.4.66.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-cusparse==12.6.3.3.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-npp==13.0.1.2.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-nvfatbin==13.0.85.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-nvjitlink==13.0.88.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-nvjpeg==13.0.1.86.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-nvml-dev==13.0.87.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-nvptxcompiler==13.0.88.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-nvtx==13.0.85.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-nvvm==13.0.88.* ; (sys_platform == 'linux' and extra == 'all') or (sys_platform == 'win32' and extra == 'all')
-  - nvidia-cuda-cccl==13.0.85.* ; (sys_platform == 'linux' and extra == 'cccl') or (sys_platform == 'win32' and extra == 'cccl')
-  - nvidia-cuda-crt==13.0.88.* ; (sys_platform == 'linux' and extra == 'crt') or (sys_platform == 'win32' and extra == 'crt')
-  - nvidia-cublas==13.1.0.3.* ; (sys_platform == 'linux' and extra == 'cublas') or (sys_platform == 'win32' and extra == 'cublas')
-  - nvidia-cuda-runtime==13.0.96.* ; (sys_platform == 'linux' and extra == 'cudart') or (sys_platform == 'win32' and extra == 'cudart')
-  - nvidia-cufft==12.0.0.61.* ; (sys_platform == 'linux' and extra == 'cufft') or (sys_platform == 'win32' and extra == 'cufft')
-  - nvidia-cufile==1.15.1.6.* ; sys_platform == 'linux' and extra == 'cufile'
-  - nvidia-cuda-culibos==13.0.85.* ; sys_platform == 'linux' and extra == 'culibos'
-  - nvidia-cuda-cupti==13.0.85.* ; (sys_platform == 'linux' and extra == 'cupti') or (sys_platform == 'win32' and extra == 'cupti')
-  - nvidia-curand==10.4.0.35.* ; (sys_platform == 'linux' and extra == 'curand') or (sys_platform == 'win32' and extra == 'curand')
-  - nvidia-cusolver==12.0.4.66.* ; (sys_platform == 'linux' and extra == 'cusolver') or (sys_platform == 'win32' and extra == 'cusolver')
-  - nvidia-cusparse==12.6.3.3.* ; (sys_platform == 'linux' and extra == 'cusparse') or (sys_platform == 'win32' and extra == 'cusparse')
-  - nvidia-cuda-cuxxfilt==13.0.85.* ; (sys_platform == 'linux' and extra == 'cuxxfilt') or (sys_platform == 'win32' and extra == 'cuxxfilt')
-  - nvidia-npp==13.0.1.2.* ; (sys_platform == 'linux' and extra == 'npp') or (sys_platform == 'win32' and extra == 'npp')
-  - nvidia-cuda-nvcc==13.0.88.* ; (sys_platform == 'linux' and extra == 'nvcc') or (sys_platform == 'win32' and extra == 'nvcc')
-  - nvidia-nvfatbin==13.0.85.* ; (sys_platform == 'linux' and extra == 'nvfatbin') or (sys_platform == 'win32' and extra == 'nvfatbin')
-  - nvidia-nvjitlink==13.0.88.* ; (sys_platform == 'linux' and extra == 'nvjitlink') or (sys_platform == 'win32' and extra == 'nvjitlink')
-  - nvidia-nvjpeg==13.0.1.86.* ; (sys_platform == 'linux' and extra == 'nvjpeg') or (sys_platform == 'win32' and extra == 'nvjpeg')
-  - nvidia-nvml-dev==13.0.87.* ; (sys_platform == 'linux' and extra == 'nvml') or (sys_platform == 'win32' and extra == 'nvml')
-  - nvidia-nvptxcompiler==13.0.88.* ; (sys_platform == 'linux' and extra == 'nvptxcompiler') or (sys_platform == 'win32' and extra == 'nvptxcompiler')
-  - nvidia-cuda-nvrtc==13.0.88.* ; (sys_platform == 'linux' and extra == 'nvrtc') or (sys_platform == 'win32' and extra == 'nvrtc')
-  - nvidia-nvtx==13.0.85.* ; (sys_platform == 'linux' and extra == 'nvtx') or (sys_platform == 'win32' and extra == 'nvtx')
-  - nvidia-nvvm==13.0.88.* ; (sys_platform == 'linux' and extra == 'nvvm') or (sys_platform == 'win32' and extra == 'nvvm')
-  - nvidia-cuda-opencl==13.0.85.* ; (sys_platform == 'linux' and extra == 'opencl') or (sys_platform == 'win32' and extra == 'opencl')
-  - nvidia-cuda-profiler-api==13.0.85.* ; (sys_platform == 'linux' and extra == 'profiler') or (sys_platform == 'win32' and extra == 'profiler')
-  - nvidia-cuda-sanitizer-api==13.0.85.* ; (sys_platform == 'linux' and extra == 'sanitizer') or (sys_platform == 'win32' and extra == 'sanitizer')
 - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/4e/8c/f3147f5c4b73e7550fe5f9352eaa956ae838d5c51eb58e7a25b9f3e2643b/decorator-5.2.1-py3-none-any.whl
   name: decorator
   version: 5.2.1
@@ -1249,89 +1176,73 @@ packages:
   - torch-directml>=0.2.5.dev0 ; extra == 'directml'
   requires_python: '>=3.12'
   editable: true
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/e7/44/423ac00af4dd95a5aeb27207e2c0d9b7118702149bf4704c3ddb55bb7429/nvidia_cublas-13.1.0.3-py3-none-manylinux_2_27_x86_64.whl
-  name: nvidia-cublas
-  version: 13.1.0.3
-  sha256: ee8722c1f0145ab246bccb9e452153b5e0515fd094c3678df50b2a0888b8b171
+- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/37/6d/121efd7382d5b0284239f4ab1fc1590d86d34ed4a4a2fdb13b30ca8e5740/nvidia_cublas_cu12-12.1.3.1-py3-none-manylinux1_x86_64.whl
+  name: nvidia-cublas-cu12
+  version: 12.1.3.1
+  sha256: ee53ccca76a6fc08fb9701aa95b6ceb242cdaab118c3bb152af4e579af792728
   requires_python: '>=3'
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/33/6d/737d164b4837a9bbd202f5ae3078975f0525a55730fe871d8ed4e3b952b0/nvidia_cuda_cupti-13.0.85-py3-none-manylinux_2_25_x86_64.whl
-  name: nvidia-cuda-cupti
-  version: 13.0.85
-  sha256: 4eb01c08e859bf924d222250d2e8f8b8ff6d3db4721288cf35d14252a4d933c8
+- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/7e/00/6b218edd739ecfc60524e585ba8e6b00554dd908de2c9c66c1af3e44e18d/nvidia_cuda_cupti_cu12-12.1.105-py3-none-manylinux1_x86_64.whl
+  name: nvidia-cuda-cupti-cu12
+  version: 12.1.105
+  sha256: e54fde3983165c624cb79254ae9818a456eb6e87a7fd4d56a2352c24ee542d7e
   requires_python: '>=3'
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/c3/68/483a78f5e8f31b08fb1bb671559968c0ca3a065ac7acabfc7cee55214fd6/nvidia_cuda_nvrtc-13.0.88-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl
-  name: nvidia-cuda-nvrtc
-  version: 13.0.88
-  sha256: ad9b6d2ead2435f11cbb6868809d2adeeee302e9bb94bcf0539c7a40d80e8575
+- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/b6/9f/c64c03f49d6fbc56196664d05dba14e3a561038a81a638eeb47f4d4cfd48/nvidia_cuda_nvrtc_cu12-12.1.105-py3-none-manylinux1_x86_64.whl
+  name: nvidia-cuda-nvrtc-cu12
+  version: 12.1.105
+  sha256: 339b385f50c309763ca65456ec75e17bbefcbbf2893f462cb8b90584cd27a1c2
   requires_python: '>=3'
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/2e/24/d1558f3b68b1d26e706813b1d10aa1d785e4698c425af8db8edc3dced472/nvidia_cuda_runtime-13.0.96-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
-  name: nvidia-cuda-runtime
-  version: 13.0.96
-  sha256: 7f82250d7782aa23b6cfe765ecc7db554bd3c2870c43f3d1821f1d18aebf0548
+- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/eb/d5/c68b1d2cdfcc59e72e8a5949a37ddb22ae6cade80cd4a57a84d4c8b55472/nvidia_cuda_runtime_cu12-12.1.105-py3-none-manylinux1_x86_64.whl
+  name: nvidia-cuda-runtime-cu12
+  version: 12.1.105
+  sha256: 6e258468ddf5796e25f1dc591a31029fa317d97a0a94ed93468fc86301d61e40
   requires_python: '>=3'
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/a3/22/0b4b932655d17a6da1b92fa92ab12844b053bb2ac2475e179ba6f043da1e/nvidia_cudnn_cu13-9.19.0.56-py3-none-manylinux_2_27_x86_64.whl
-  name: nvidia-cudnn-cu13
-  version: 9.19.0.56
-  sha256: d20e1734305e9d68889a96e3f35094d733ff1f83932ebe462753973e53a572bf
+- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/9f/fd/713452cd72343f682b1c7b9321e23829f00b842ceaedcda96e742ea0b0b3/nvidia_cudnn_cu12-9.1.0.70-py3-none-manylinux2014_x86_64.whl
+  name: nvidia-cudnn-cu12
+  version: 9.1.0.70
+  sha256: 165764f44ef8c61fcdfdfdbe769d687e06374059fbb388b6c89ecb0e28793a6f
   requires_dist:
-  - nvidia-cublas
+  - nvidia-cublas-cu12
   requires_python: '>=3'
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/a8/2f/7b57e29836ea8714f81e9898409196f47d772d5ddedddf1592eadb8ab743/nvidia_cufft-12.0.0.61-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
-  name: nvidia-cufft
-  version: 12.0.0.61
-  sha256: 6c44f692dce8fd5ffd3e3df134b6cdb9c2f72d99cf40b62c32dde45eea9ddad3
+- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/86/94/eb540db023ce1d162e7bea9f8f5aa781d57c65aed513c33ee9a5123ead4d/nvidia_cufft_cu12-11.0.2.54-py3-none-manylinux1_x86_64.whl
+  name: nvidia-cufft-cu12
+  version: 11.0.2.54
+  sha256: 794e3948a1aa71fd817c3775866943936774d1c14e7628c74f6f7417224cdf56
+  requires_python: '>=3'
+- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/44/31/4890b1c9abc496303412947fc7dcea3d14861720642b49e8ceed89636705/nvidia_curand_cu12-10.3.2.106-py3-none-manylinux1_x86_64.whl
+  name: nvidia-curand-cu12
+  version: 10.3.2.106
+  sha256: 9d264c5036dde4e64f1de8c50ae753237c12e0b1348738169cd0f8a536c0e1e0
+  requires_python: '>=3'
+- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/bc/1d/8de1e5c67099015c834315e333911273a8c6aaba78923dd1d1e25fc5f217/nvidia_cusolver_cu12-11.4.5.107-py3-none-manylinux1_x86_64.whl
+  name: nvidia-cusolver-cu12
+  version: 11.4.5.107
+  sha256: 8a7ec542f0412294b15072fa7dab71d31334014a69f953004ea7a118206fe0dd
   requires_dist:
-  - nvidia-nvjitlink
+  - nvidia-cublas-cu12
+  - nvidia-nvjitlink-cu12
+  - nvidia-cusparse-cu12
   requires_python: '>=3'
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/3f/70/4f193de89a48b71714e74602ee14d04e4019ad36a5a9f20c425776e72cd6/nvidia_cufile-1.15.1.6-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
-  name: nvidia-cufile
-  version: 1.15.1.6
-  sha256: 08a3ecefae5a01c7f5117351c64f17c7c62efa5fffdbe24fc7d298da19cd0b44
-  requires_python: '>=3'
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/a5/9f/be0a41ca4a4917abf5cb9ae0daff1a6060cc5de950aec0396de9f3b52bc5/nvidia_curand-10.4.0.35-py3-none-manylinux_2_27_x86_64.whl
-  name: nvidia-curand
-  version: 10.4.0.35
-  sha256: 1aee33a5da6e1db083fe2b90082def8915f30f3248d5896bcec36a579d941bfc
-  requires_python: '>=3'
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/5f/67/cba3777620cdacb99102da4042883709c41c709f4b6323c10781a9c3aa34/nvidia_cusolver-12.0.4.66-py3-none-manylinux_2_27_x86_64.whl
-  name: nvidia-cusolver
-  version: 12.0.4.66
-  sha256: 0a759da5dea5c0ea10fd307de75cdeb59e7ea4fcb8add0924859b944babf1112
+- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/65/5b/cfaeebf25cd9fdec14338ccb16f6b2c4c7fa9163aefcf057d86b9cc248bb/nvidia_cusparse_cu12-12.1.0.106-py3-none-manylinux1_x86_64.whl
+  name: nvidia-cusparse-cu12
+  version: 12.1.0.106
+  sha256: f3b50f42cf363f86ab21f720998517a659a48131e8d538dc02f8768237bd884c
   requires_dist:
-  - nvidia-cublas
-  - nvidia-nvjitlink
-  - nvidia-cusparse
+  - nvidia-nvjitlink-cu12
   requires_python: '>=3'
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/fa/18/623c77619c31d62efd55302939756966f3ecc8d724a14dab2b75f1508850/nvidia_cusparse-12.6.3.3-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
-  name: nvidia-cusparse
-  version: 12.6.3.3
-  sha256: 2b3c89c88d01ee0e477cb7f82ef60a11a4bcd57b6b87c33f789350b59759360b
-  requires_dist:
-  - nvidia-nvjitlink
+- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/4b/2a/0a131f572aa09f741c30ccd45a8e56316e8be8dfc7bc19bf0ab7cfef7b19/nvidia_nccl_cu12-2.20.5-py3-none-manylinux2014_x86_64.whl
+  name: nvidia-nccl-cu12
+  version: 2.20.5
+  sha256: 057f6bf9685f75215d0c53bf3ac4a10b3e6578351de307abad9e18a99182af56
   requires_python: '>=3'
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/fd/53/43b0d71f4e702fa9733f8b4571fdca50a8813f1e450b656c239beff12315/nvidia_cusparselt_cu13-0.8.0-py3-none-manylinux2014_x86_64.whl
-  name: nvidia-cusparselt-cu13
-  version: 0.8.0
-  sha256: 25e30a8a7323935d4ad0340b95a0b69926eee755767e8e0b1cf8dd85b197d3fd
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/b0/b4/878fefaad5b2bcc6fcf8d474a25e3e3774bc5133e4b58adff4d0bca238bc/nvidia_nccl_cu13-2.28.9-py3-none-manylinux_2_18_x86_64.whl
-  name: nvidia-nccl-cu13
-  version: 2.28.9
-  sha256: e4553a30f34195f3fa1da02a6da3d6337d28f2003943aa0a3d247bbc25fefc42
+- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/46/0c/c75bbfb967457a0b7670b8ad267bfc4fffdf341c074e0a80db06c24ccfd4/nvidia_nvjitlink_cu12-12.9.86-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl
+  name: nvidia-nvjitlink-cu12
+  version: 12.9.86
+  sha256: e3f1171dbdc83c5932a45f0f4c99180a70de9bd2718c1ab77d14104f6d7147f9
   requires_python: '>=3'
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/56/7a/123e033aaff487c77107195fa5a2b8686795ca537935a24efae476c41f05/nvidia_nvjitlink-13.0.88-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl
-  name: nvidia-nvjitlink
-  version: 13.0.88
-  sha256: 13a74f429e23b921c1109976abefacc69835f2f433ebd323d3946e11d804e47b
-  requires_python: '>=3'
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/3c/35/a9bf80a609e74e3b000fef598933235c908fcefcef9026042b8e6dfde2a9/nvidia_nvshmem_cu13-3.4.5-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
-  name: nvidia-nvshmem-cu13
-  version: 3.4.5
-  sha256: 290f0a2ee94c9f3687a02502f3b9299a9f9fe826e6d0287ee18482e78d495b80
-  requires_python: '>=3'
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/c2/f3/d86c845465a2723ad7e1e5c36dcd75ddb82898b3f53be47ebd429fb2fa5d/nvidia_nvtx-13.0.85-py3-none-manylinux1_x86_64.manylinux_2_5_x86_64.whl
-  name: nvidia-nvtx
-  version: 13.0.85
-  sha256: 4936d1d6780fbe68db454f5e72a42ff64d1fd6397df9f363ae786930fd5c1cd4
+- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/da/d3/8057f0587683ed2fcd4dbfbdfdfa807b9160b809976099d36b8f60d08f03/nvidia_nvtx_cu12-12.1.105-py3-none-manylinux1_x86_64.whl
+  name: nvidia-nvtx-cu12
+  version: 12.1.105
+  sha256: dc21cf308ca5691e7c04d962e213f8a4aa9bbfa23d95412f452254c2caeb09e5
   requires_python: '>=3'
 - conda: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/linux-64/openssl-3.6.1-h35e630c_1.conda
   sha256: 44c877f8af015332a5d12f5ff0fb20ca32f896526a7d0cdb30c769df1144fb5c
@@ -1786,74 +1697,98 @@ packages:
   purls: []
   size: 3526350
   timestamp: 1769460339384
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/1a/c9/82638ef24d7877510f83baf821f5619a61b45568ce21c0a87a91576510aa/torch-2.11.0-cp312-cp312-manylinux_2_28_x86_64.whl
+- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/a8/e0/ca8354dfb8d834a76da51b06e8248b70fc182bc163540507919124974bdf/torch-2.4.1-cp312-cp312-win_amd64.whl
   name: torch
-  version: 2.11.0
-  sha256: 0f68f4ac6d95d12e896c3b7a912b5871619542ec54d3649cf48cc1edd4dd2756
+  version: 2.4.1
+  sha256: ebea70ff30544fc021d441ce6b219a88b67524f01170b1c538d7d3ebb5e7f56c
   requires_dist:
   - filelock
-  - typing-extensions>=4.10.0
-  - setuptools<82
-  - sympy>=1.13.3
-  - networkx>=2.5.1
+  - typing-extensions>=4.8.0
+  - sympy
+  - networkx
   - jinja2
-  - fsspec>=0.8.5
-  - cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.2 ; sys_platform == 'linux'
-  - cuda-bindings>=13.0.3,<14 ; sys_platform == 'linux'
-  - nvidia-cudnn-cu13==9.19.0.56 ; sys_platform == 'linux'
-  - nvidia-cusparselt-cu13==0.8.0 ; sys_platform == 'linux'
-  - nvidia-nccl-cu13==2.28.9 ; sys_platform == 'linux'
-  - nvidia-nvshmem-cu13==3.4.5 ; sys_platform == 'linux'
-  - triton==3.6.0 ; sys_platform == 'linux'
-  - optree>=0.13.0 ; extra == 'optree'
+  - fsspec
+  - setuptools
+  - nvidia-cuda-nvrtc-cu12==12.1.105 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+  - nvidia-cuda-runtime-cu12==12.1.105 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+  - nvidia-cuda-cupti-cu12==12.1.105 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+  - nvidia-cudnn-cu12==9.1.0.70 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+  - nvidia-cublas-cu12==12.1.3.1 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+  - nvidia-cufft-cu12==11.0.2.54 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+  - nvidia-curand-cu12==10.3.2.106 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+  - nvidia-cusolver-cu12==11.4.5.107 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+  - nvidia-cusparse-cu12==12.1.0.106 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+  - nvidia-nccl-cu12==2.20.5 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+  - nvidia-nvtx-cu12==12.1.105 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+  - triton==3.0.0 ; python_full_version < '3.13' and platform_machine == 'x86_64' and sys_platform == 'linux'
   - opt-einsum>=3.3 ; extra == 'opt-einsum'
-  - pyyaml ; extra == 'pyyaml'
-  requires_python: '>=3.10'
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/1c/ff/6756f1c7ee302f6d202120e0f4f05b432b839908f9071157302cedfc5232/torch-2.11.0-cp312-cp312-win_amd64.whl
+  - optree>=0.11.0 ; extra == 'optree'
+  requires_python: '>=3.8.0'
+- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/cc/df/5204a13a7a973c23c7ade615bafb1a3112b5d0ec258d8390f078fa4ab0f7/torch-2.4.1-cp312-cp312-manylinux1_x86_64.whl
   name: torch
-  version: 2.11.0
-  sha256: fbf39280699d1b869f55eac536deceaa1b60bd6788ba74f399cc67e60a5fab10
+  version: 2.4.1
+  sha256: fdc4fe11db3eb93c1115d3e973a27ac7c1a8318af8934ffa36b0370efe28e042
   requires_dist:
   - filelock
-  - typing-extensions>=4.10.0
-  - setuptools<82
-  - sympy>=1.13.3
-  - networkx>=2.5.1
+  - typing-extensions>=4.8.0
+  - sympy
+  - networkx
   - jinja2
-  - fsspec>=0.8.5
-  - cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.2 ; sys_platform == 'linux'
-  - cuda-bindings>=13.0.3,<14 ; sys_platform == 'linux'
-  - nvidia-cudnn-cu13==9.19.0.56 ; sys_platform == 'linux'
-  - nvidia-cusparselt-cu13==0.8.0 ; sys_platform == 'linux'
-  - nvidia-nccl-cu13==2.28.9 ; sys_platform == 'linux'
-  - nvidia-nvshmem-cu13==3.4.5 ; sys_platform == 'linux'
-  - triton==3.6.0 ; sys_platform == 'linux'
+  - fsspec
+  - setuptools
+  - nvidia-cuda-nvrtc-cu12==12.1.105 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+  - nvidia-cuda-runtime-cu12==12.1.105 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+  - nvidia-cuda-cupti-cu12==12.1.105 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+  - nvidia-cudnn-cu12==9.1.0.70 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+  - nvidia-cublas-cu12==12.1.3.1 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+  - nvidia-cufft-cu12==11.0.2.54 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+  - nvidia-curand-cu12==10.3.2.106 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+  - nvidia-cusolver-cu12==11.4.5.107 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+  - nvidia-cusparse-cu12==12.1.0.106 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+  - nvidia-nccl-cu12==2.20.5 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+  - nvidia-nvtx-cu12==12.1.105 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+  - triton==3.0.0 ; python_full_version < '3.13' and platform_machine == 'x86_64' and sys_platform == 'linux'
   - opt-einsum>=3.3 ; extra == 'opt-einsum'
-  - optree>=0.13.0 ; extra == 'optree'
-  - pyyaml ; extra == 'pyyaml'
-  requires_python: '>=3.10'
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/1c/a9/c272623a0f735c35f0f6cd6dc74784d4f970e800cf063bb76687895a2ab9/torchvision-0.26.0-cp312-cp312-win_amd64.whl
+  - optree>=0.11.0 ; extra == 'optree'
+  requires_python: '>=3.8.0'
+- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/47/e1/636e6bc0fbf7bf13a2a206f7b47ecce381335c90c0a761bac243db6c2a37/torch_directml-0.2.5.dev240914-cp312-cp312-manylinux2010_x86_64.whl
+  name: torch-directml
+  version: 0.2.5.dev240914
+  sha256: 26915aff5008a8567ea7641b74cf8cb53c1767d0c7163fc06e0a587e7c1c9dce
+  requires_dist:
+  - torch==2.4.1
+  - torchvision==0.19.1
+  requires_python: '>=3.7'
+- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/71/f2/eb7d3c601310c758f6aef891773e4a00f7388eeb613d536c0d2681fcb105/torch_directml-0.2.5.dev240914-cp312-cp312-win_amd64.whl
+  name: torch-directml
+  version: 0.2.5.dev240914
+  sha256: ea19d11e33e9450b290311c06f7eb10924dd25c555e504d367b7b437d3eb24d0
+  requires_dist:
+  - torch==2.4.1
+  - torchvision==0.19.1
+  requires_python: '>=3.7'
+- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/6b/b2/fd577e1622b43cdeb74782a60cea4909f88f471813c215ea7b4e7ea84a74/torchvision-0.19.1-cp312-cp312-win_amd64.whl
   name: torchvision
-  version: 0.26.0
-  sha256: 7993c01648e7c61d191b018e84d38fe0825c8fcb2720cd0f37caf7ba14404aa1
+  version: 0.19.1
+  sha256: b4283d283675556bb0eae31d29996f53861b17cbdcdf3509e6bc050414ac9289
   requires_dist:
   - numpy
-  - torch==2.11.0
+  - torch==2.4.1
   - pillow>=5.3.0,!=8.3.*
   - gdown>=4.7.3 ; extra == 'gdown'
   - scipy ; extra == 'scipy'
-  requires_python: '>=3.10,!=3.14.1'
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/f5/d8/cb6ccda1a1f35a6597645818641701207b3e8e13553e75fce5d86bac74b2/torchvision-0.26.0-cp312-cp312-manylinux_2_28_x86_64.whl
+  requires_python: '>=3.8'
+- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/8b/34/fdd2d9e01228a069b28473a7c020bf1812c8ecab8565666feb247659ed30/torchvision-0.19.1-cp312-cp312-manylinux1_x86_64.whl
   name: torchvision
-  version: 0.26.0
-  sha256: d61a5abb6b42a0c0c311996c2ac4b83a94418a97182c83b055a2a4ae985e05aa
+  version: 0.19.1
+  sha256: c659ff92a61f188a1a7baef2850f3c0b6c85685447453c03d0e645ba8f1dcc1c
   requires_dist:
   - numpy
-  - torch==2.11.0
+  - torch==2.4.1
   - pillow>=5.3.0,!=8.3.*
   - gdown>=4.7.3 ; extra == 'gdown'
   - scipy ; extra == 'scipy'
-  requires_python: '>=3.10,!=3.14.1'
+  requires_python: '>=3.8'
 - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/00/c0/8f5d070730d7836adc9c9b6408dec68c6ced86b304a9b26a14df072a6e8c/traitlets-5.14.3-py3-none-any.whl
   name: traitlets
   version: 5.14.3
@@ -1869,26 +1804,24 @@ packages:
   - pytest-mypy-testing ; extra == 'test'
   - pytest>=7.0,<8.2 ; extra == 'test'
   requires_python: '>=3.8'
-- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/ab/a8/cdf8b3e4c98132f965f88c2313a4b493266832ad47fb52f23d14d4f86bb5/triton-3.6.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+- pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/fe/7b/7757205dee3628f75e7991021d15cd1bd0c9b044ca9affe99b50879fc0e1/triton-3.0.0-1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
   name: triton
-  version: 3.6.0
-  sha256: 74caf5e34b66d9f3a429af689c1c7128daba1d8208df60e81106b115c00d6fca
+  version: 3.0.0
+  sha256: 34e509deb77f1c067d8640725ef00c5cbfcb2052a1a3cb6a6d343841f92624eb
   requires_dist:
-  - importlib-metadata ; python_full_version < '3.10'
-  - cmake>=3.20,<4.0 ; extra == 'build'
+  - filelock
+  - cmake>=3.20 ; extra == 'build'
   - lit ; extra == 'build'
   - autopep8 ; extra == 'tests'
+  - flake8 ; extra == 'tests'
   - isort ; extra == 'tests'
   - numpy ; extra == 'tests'
   - pytest ; extra == 'tests'
-  - pytest-forked ; extra == 'tests'
-  - pytest-xdist ; extra == 'tests'
   - scipy>=1.7.1 ; extra == 'tests'
   - llnl-hatchet ; extra == 'tests'
   - matplotlib ; extra == 'tutorials'
   - pandas ; extra == 'tutorials'
   - tabulate ; extra == 'tutorials'
-  requires_python: '>=3.10,<3.15'
 - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/bb/4a/2e5583e544bc437d5e8e54b47db87430df9031b29b48d17f26d129fa60c0/trove_classifiers-2026.1.14.14-py3-none-any.whl
   name: trove-classifiers
   version: 2026.1.14.14

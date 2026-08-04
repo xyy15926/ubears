@@ -8,6 +8,8 @@
 # ---------------------------------------------------------
 
 # %%
+from __future__ import annotations
+
 import logging
 from typing import List, Any, Tuple, Callable
 from collections.abc import Sequence
@@ -60,7 +62,7 @@ class Trainer:
     def __init__(
         self,
         mod: nn.Module,
-        pred_loss_fn: "nn.Function",
+        pred_loss_fn: Callable,
         optimizer: optim.Optimizer = None,
         mod_name: str = None,
     ):

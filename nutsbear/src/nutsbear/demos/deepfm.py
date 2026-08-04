@@ -8,6 +8,8 @@
 # ---------------------------------------------------------
 
 # %%
+from __future__ import annotations
+
 import logging
 from typing import List, Any, Tuple
 from collections.abc import Sequence
@@ -139,8 +141,8 @@ class DeepFM(nn.Module):
         dnn_out = self.dnn(o2emb.flatten(1))
 
         # Sigmoid output.
-        outp = F.sigmoid(fmo1_out.sum(dim=-1) + fmo2_out.sum(dim=-1)
-                         + dnn_out.sum(dim=-1))
+        outp = torch.sigmoid(fmo1_out.sum(dim=-1) + fmo2_out.sum(dim=-1)
+                             + dnn_out.sum(dim=-1))
 
         return outp
 

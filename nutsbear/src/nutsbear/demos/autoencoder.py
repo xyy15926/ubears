@@ -191,7 +191,7 @@ class VAEBase(nn.Module):
         mu: torch.Tensor,
         logsig: torch.Tensor,
         mu_: torch.Tensor = 0,
-    ) -> torch.float64:
+    ) -> torch.Tensor:
         """Compute the loss for VAE.
 
         loss = ce(recon, src) + kl(latent_dist, norm(mu, 1))

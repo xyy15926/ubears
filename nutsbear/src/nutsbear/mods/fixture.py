@@ -3,11 +3,13 @@
 #   Name: fixture.py
 #   Author: xyy15926
 #   Created: 2025-11-20 16:26:50
-#   Updated: 2025-11-22 20:48:36
+#   Updated: 2026-08-04 16:43:07
 #   Description:
 # ---------------------------------------------------------
 
 # %%
+from __future__ import annotations
+
 import torch
 import torch.nn.functional as F
 try:
@@ -77,11 +79,9 @@ def all_close(
         rt = torch.nan_to_num(rt, 0.0)
     if torch.is_tensor(rt):
         # In case `lt`, `rt` has different dtypes and devices, as `.to` can't
-        # move tensor from GPU to CPU and cast dtype simutaneously.
-        rt = (
-            rt.to(dtype=lt.dtype, device=lt.device)
-            .to(dtype=lt.dtype, device=lt.device)
-        )
+        # move tensor from DML to CPU and cast dtype simultaneously, which
+        # seems to be the bug of the `torch-directml=0.2.5.dev240914`.
+        rt = rt.to(device=lt.device).to(dtype=lt.dtype)
         return torch.allclose(
             lt,
             rt,

@@ -148,10 +148,10 @@ def test_to_dtype_DML():
         query = torch.randn(3, 4, 8, **ori_fk)
         q1 = query.to(**dest_fk)
         assert q1.device == dest_fk["device"]
-        # 1. `.to()` can't cast dtype and move tensor from CPU to DML simutaneously,
+        # 1. `.to()` can cast dtype and move tensor from CPU to DML simutaneously,
         if tag == "yes":
             assert q1.dtype is dest_fk["dtype"]
-        # 2. But `.to()` can cast dtype and move tensor from DML to CPU
+        # 2. But `.to()` can't cast dtype and move tensor from DML to CPU
         #   simutaneously.
         else:
             assert q1.dtype is not dest_fk["dtype"]
