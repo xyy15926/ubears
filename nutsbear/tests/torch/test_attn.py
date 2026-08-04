@@ -17,19 +17,19 @@ from torch.nn import functional as F
 
 if __name__ == "__main__":
     from importlib import reload
-    from ubears.nutsbear import fixture
-    from ubears.nutsbear import attention
+    from nutsbear.mods import fixture
+    from nutsbear.mods import attention
     reload(fixture)
     reload(attention)
 
-from ubears.nutsbear.fixture import (
+from nutsbear.mods.fixture import (
     fkwargs_32_cpu,
     fkwargs_64_cpu,
     fkwargs_32_dml,
     fkwargs_64_dml,
     all_close,
 )
-from ubears.nutsbear.attention import (
+from nutsbear.mods.attention import (
     MultiheadAttention,
 )
 

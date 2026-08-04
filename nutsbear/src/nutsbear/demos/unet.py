@@ -144,7 +144,7 @@ class UNetUp(nn.Module):
 
     def forward(
         self,
-        inp: torch.Tesnor,
+        inp: torch.Tensor,
         skip: torch.Tensor,
     ):
         """UNet up scaling forward.

@@ -17,10 +17,10 @@ from torch.nn import functional as F
 
 if __name__ == "__main__":
     from importlib import reload
-    from ubears.nutsbear import fixture
+    from nutsbear.mods import fixture
     reload(fixture)
 
-from ubears.nutsbear.fixture import (
+from nutsbear.mods.fixture import (
     fkwargs_32_cpu,
     fkwargs_64_cpu,
     fkwargs_32_dml,

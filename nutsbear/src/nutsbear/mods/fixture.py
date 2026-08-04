@@ -119,11 +119,11 @@ def ssoftmax(
     Softmax result with 0.0 filled for shoud-be NaN.
     """
     # Transpose the dimension for softmax so to fit up with the bool index.
-    if dim != -1 or dim != inp.dim():
+    if dim != -1 and dim != inp.dim():
         inp = inp.transpose(-1, dim)
     valid_pos = inp.max(dim=-1).values > -torch.inf
     ret = torch.zeros_like(inp, dtype=inp.dtype, device=inp.device)
     ret[valid_pos] = F.softmax(inp[valid_pos], dim=-1)
-    if dim != -1 or dim != inp.dim():
+    if dim != -1 and dim != inp.dim():
         ret = ret.transpose(-1, dim)
     return ret

@@ -188,7 +188,7 @@ class VAEBase(nn.Module):
     def vae_loss(
         recon: torch.Tensor,
         src: torch.Tensor,
-        mu: torch.Tesnor,
+        mu: torch.Tensor,
         logsig: torch.Tensor,
         mu_: torch.Tensor = 0,
     ) -> torch.float64:
