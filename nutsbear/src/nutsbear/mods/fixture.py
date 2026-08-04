@@ -12,8 +12,10 @@ from __future__ import annotations
 
 import torch
 import torch.nn.functional as F
+
 try:
     import torch_directml
+
     DML = torch_directml.device()
     fkwargs_32_dml = {
         "dtype": torch.float32,
@@ -23,7 +25,7 @@ try:
         "dtype": torch.float64,
         "device": DML,
     }
-except ImportError as e:
+except ImportError:
     DML = None
     fkwargs_32_dml = {}
     fkwargs_64_dml = {}
@@ -43,11 +45,11 @@ fkwargs_64_cpu = {
 def all_close(
     lt: torch.Tensor,
     rt: torch.Tensor,
-    lnan_to_zero = False,
-    rnan_to_zero = False,
-    equal_nan = True,
-    rtol = 1e-5,
-    atol = 1e-3,
+    lnan_to_zero=False,
+    rnan_to_zero=False,
+    equal_nan=True,
+    rtol=1e-5,
+    atol=1e-3,
 ) -> bool:
     """Check if `lt` and `rt` are all close element-wisely.
 
@@ -67,7 +69,8 @@ def all_close(
     """
     if lnan_to_zero and torch.is_tensor(lt):
         lt = torch.nan_to_num(lt, 0.0)
-    if (torch.is_tensor(lt)
+    if (
+        torch.is_tensor(lt)
         and equal_nan
         and lt.device == DML
         and lt.dtype == torch.float64
@@ -83,11 +86,7 @@ def all_close(
         # seems to be the bug of the `torch-directml=0.2.5.dev240914`.
         rt = rt.to(device=lt.device).to(dtype=lt.dtype)
         return torch.allclose(
-            lt,
-            rt,
-            rtol=rtol,
-            atol=atol,
-            equal_nan=equal_nan
+            lt, rt, rtol=rtol, atol=atol, equal_nan=equal_nan
         )
     else:
         return torch.allclose(
@@ -95,7 +94,7 @@ def all_close(
             torch.tensor([rt], dtype=lt.dtype, device=lt.device),
             rtol=rtol,
             atol=atol,
-            equal_nan=equal_nan
+            equal_nan=equal_nan,
         )
 
 

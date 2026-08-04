@@ -9,16 +9,16 @@
 
 # %%
 from __future__ import annotations
-from typing import List, Tuple
-import logging
 
 import copy
-import numpy as np
+import logging
+
 import torch
 from torch import nn
-from torch.nn import functional as F
+
 # from torch.nn import MultiheadAttention
 from nutsbear.mods.attention import MultiheadAttention, SimpleMHA
+
 # from IPython.core.debugger import set_trace
 
 # If `need_weights` is set, customed SDPA will be used instead of
@@ -41,6 +41,7 @@ class Transformer(nn.Module):
     encoder: Transformer encoder.
     decoder: Transformer decoder.
     """
+
     def __init__(
         self,
         embed_sz: int,
@@ -49,10 +50,10 @@ class Transformer(nn.Module):
         dropout_p: float = 0.0,
         enc_layers_n: int = 6,
         dec_layers_n: int = 6,
-        encoder: "TransformerEncoder" = None,
-        decoder: "TransformerEncoder" = None,
-        device: str = None,
-        dtype: str = None,
+        encoder: TransformerEncoder = None,
+        decoder: TransformerEncoder = None,
+        device: str | None = None,
+        dtype: str | None = None,
     ):
         """Init Transformer.
 
@@ -74,16 +75,18 @@ class Transformer(nn.Module):
         dtype:
         """
         super().__init__()
-        factory_kwargs = { "device": device, "dtype": dtype }
+        factory_kwargs = {"device": device, "dtype": dtype}
         if encoder is None:
             encoder_layer = TransformerEncoderLayer(
-                embed_sz, heads_n, ffn_sz, dropout_p, **factory_kwargs)
+                embed_sz, heads_n, ffn_sz, dropout_p, **factory_kwargs
+            )
             self.encoder = TransformerEncoder(encoder_layer, enc_layers_n)
         else:
             self.encoder = encoder
         if decoder is None:
             decoder_layer = TransformerDecoderLayer(
-                embed_sz, heads_n, ffn_sz, dropout_p, **factory_kwargs)
+                embed_sz, heads_n, ffn_sz, dropout_p, **factory_kwargs
+            )
             self.decoder = TransformerDecoder(decoder_layer, dec_layers_n)
         else:
             self.decoder = decoder
@@ -138,7 +141,8 @@ class Transformer(nn.Module):
         Output of the decoder.
         """
         memory = self.encoder(
-            src, src_mask, src_key_padding_mask, src_is_causal)
+            src, src_mask, src_key_padding_mask, src_is_causal
+        )
         outp = self.decoder(
             tgt,
             memory,
@@ -147,7 +151,8 @@ class Transformer(nn.Module):
             tgt_key_padding_mask,
             memory_key_padding_mask,
             tgt_is_causal,
-            memory_is_causal)
+            memory_is_causal,
+        )
         return outp
 
 
@@ -165,9 +170,10 @@ class TransformerEncoder(nn.Module):
     - PyTorch Transformer:
       - https://github.com/pytorch/pytorch/blob/v2.7.0/torch/nn/modules/transformer.py
     """
+
     def __init__(
         self,
-        encoder_layer: "TransformerEncoderLayer",
+        encoder_layer: TransformerEncoderLayer,
         layers_n: int = 6,
     ):
         """Init Transformer Encoder.
@@ -180,7 +186,8 @@ class TransformerEncoder(nn.Module):
         super().__init__()
         # `copy.deepcopy` may be more time-efficient than sequent init.
         self.layers = nn.ModuleList(
-            [copy.deepcopy(encoder_layer) for i in range(layers_n)])
+            [copy.deepcopy(encoder_layer) for i in range(layers_n)]
+        )
         self.layers_n = layers_n
 
     def forward(
@@ -229,7 +236,7 @@ class TransformerEncoder(nn.Module):
                 outp,
                 src_mask=bias_mask,
                 src_key_padding_mask=None,
-                is_causal=False
+                is_causal=False,
             )
         return outp
 
@@ -248,9 +255,10 @@ class TransformerDecoder(nn.Module):
     - PyTorch Transformer:
       - https://github.com/pytorch/pytorch/blob/v2.7.0/torch/nn/modules/transformer.py
     """
+
     def __init__(
         self,
-        decoder_layer: "TransformerDecoderLayer",
+        decoder_layer: TransformerDecoderLayer,
         layers_n: int = 6,
     ):
         """Init Transformer Decoder.
@@ -366,6 +374,7 @@ class TransformerEncoderLayer(nn.Module):
     - PyTorch Transformer:
       - https://github.com/pytorch/pytorch/blob/v2.7.0/torch/nn/modules/transformer.py
     """
+
     def __init__(
         self,
         embed_sz: int,
@@ -373,8 +382,8 @@ class TransformerEncoderLayer(nn.Module):
         ffn_sz: int,
         dropout_p: float = 0.0,
         attn_style: str = "SDPA",
-        device: str = None,
-        dtype: str = None,
+        device: str | None = None,
+        dtype: str | None = None,
     ):
         """Encoder Layer Initialization.
 
@@ -392,7 +401,7 @@ class TransformerEncoderLayer(nn.Module):
           qWk: SimpleMHA.
         """
         super().__init__()
-        factory_kwargs = { "device": device, "dtype": dtype }
+        factory_kwargs = {"device": device, "dtype": dtype}
         if attn_style.lower() == "sdpa":
             self.self_attn = MultiheadAttention(
                 embed_sz,
@@ -411,8 +420,12 @@ class TransformerEncoderLayer(nn.Module):
             raise ValueError("Invalid MHA style.")
         self.sa_dropout = nn.Dropout(dropout_p)
 
-        self.ffn_linear1 = nn.Linear(embed_sz, ffn_sz, bias=True, **factory_kwargs)
-        self.ffn_linear2 = nn.Linear(ffn_sz, embed_sz, bias=True, **factory_kwargs)
+        self.ffn_linear1 = nn.Linear(
+            embed_sz, ffn_sz, bias=True, **factory_kwargs
+        )
+        self.ffn_linear2 = nn.Linear(
+            ffn_sz, embed_sz, bias=True, **factory_kwargs
+        )
         self.ffn_activation = nn.ReLU()
         self.ffn_dropout1 = nn.Dropout(dropout_p)
         self.ffn_dropout2 = nn.Dropout(dropout_p)
@@ -432,8 +445,10 @@ class TransformerEncoderLayer(nn.Module):
         # instead the customed one
         # 1. Acceleration (maybe).
         # 2. No NaN from `F.softmax` when all-NInf.
-        attn_val, attn_ws = self.self_attn(
-            inp, inp, inp,
+        attn_val, _attn_ws = self.self_attn(
+            inp,
+            inp,
+            inp,
             key_padding_mask=key_padding_mask,
             attn_mask=attn_mask,
             is_causal=is_causal,
@@ -486,7 +501,7 @@ class TransformerEncoderLayer(nn.Module):
                 src,
                 attn_mask=src_mask,
                 key_padding_mask=src_key_padding_mask,
-                is_causal=is_causal
+                is_causal=is_causal,
             )
         )
         src = self.norm2(src + self._ffn_block(src))
@@ -517,6 +532,7 @@ class TransformerDecoderLayer(nn.Module):
     - PyTorch Transformer:
       - https://github.com/pytorch/pytorch/blob/v2.7.0/torch/nn/modules/transformer.py
     """
+
     def __init__(
         self,
         embed_sz: int,
@@ -524,8 +540,8 @@ class TransformerDecoderLayer(nn.Module):
         ffn_sz: int,
         dropout_p: float = 0.0,
         attn_style: str = "SDPA",
-        device: str = None,
-        dtype: str = None,
+        device: str | None = None,
+        dtype: str | None = None,
     ):
         """Decoder Layer Initialization.
 
@@ -543,7 +559,7 @@ class TransformerDecoderLayer(nn.Module):
           qwk: SimpleMHA.
         """
         super().__init__()
-        factory_kwargs = { "device": device, "dtype": dtype }
+        factory_kwargs = {"device": device, "dtype": dtype}
         if attn_style.lower() == "sdpa":
             self.self_attn = MultiheadAttention(
                 embed_sz,
@@ -575,8 +591,12 @@ class TransformerDecoderLayer(nn.Module):
         self.sa_dropout = nn.Dropout(dropout_p)
         self.ca_dropout = nn.Dropout(dropout_p)
 
-        self.ffn_linear1 = nn.Linear(embed_sz, ffn_sz, bias=True, **factory_kwargs)
-        self.ffn_linear2 = nn.Linear(ffn_sz, embed_sz, bias=True, **factory_kwargs)
+        self.ffn_linear1 = nn.Linear(
+            embed_sz, ffn_sz, bias=True, **factory_kwargs
+        )
+        self.ffn_linear2 = nn.Linear(
+            ffn_sz, embed_sz, bias=True, **factory_kwargs
+        )
         self.ffn_activation = nn.ReLU()
         self.ffn_dropout1 = nn.Dropout(dropout_p)
         self.ffn_dropout2 = nn.Dropout(dropout_p)
@@ -597,8 +617,10 @@ class TransformerDecoderLayer(nn.Module):
         # instead the customed one
         # 1. Acceleration (maybe).
         # 2. No NaN from `F.softmax` when all-NInf.
-        attn_val, attn_ws = self.self_attn(
-            inp, inp, inp,
+        attn_val, _attn_ws = self.self_attn(
+            inp,
+            inp,
+            inp,
             key_padding_mask=key_padding_mask,
             attn_mask=attn_mask,
             is_causal=is_causal,
@@ -620,8 +642,10 @@ class TransformerDecoderLayer(nn.Module):
         # instead the customed one
         # 1. Acceleration (maybe).
         # 2. No NaN from `F.softmax` when all-NInf.
-        attn_val, attn_ws = self.cross_attn(
-            tgt, mem, mem,
+        attn_val, _attn_ws = self.cross_attn(
+            tgt,
+            mem,
+            mem,
             attn_mask=attn_mask,
             key_padding_mask=key_padding_mask,
             is_causal=is_causal,

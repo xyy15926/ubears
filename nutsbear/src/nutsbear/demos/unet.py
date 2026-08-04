@@ -9,14 +9,11 @@
 
 # %%
 from __future__ import annotations
-from typing import List, Tuple
+
 import logging
 
-import copy
-import numpy as np
 import torch
 from torch import nn
-from torch.nn import functional as F
 
 # %%
 logger = logging.getLogger(__name__)
@@ -28,12 +25,13 @@ class DoubleConv(nn.Module):
 
     Sequential double Conv2d with BN and ReLU.
     """
+
     def __init__(
         self,
-        cin:int = 4,
-        cout:int = 8,
-        device: str = None,
-        dtype: str = None,
+        cin: int = 4,
+        cout: int = 8,
+        device: str | None = None,
+        dtype: str | None = None,
     ):
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -48,12 +46,8 @@ class DoubleConv(nn.Module):
             nn.ReLU(inplace=True),
         )
 
-    def forward(
-        self,
-        inp:torch.Tensor
-    ) -> torch.Tensor:
-        """DoubleConv forward.
-        """
+    def forward(self, inp: torch.Tensor) -> torch.Tensor:
+        """DoubleConv forward."""
         return self.double_conv(inp)
 
 
@@ -64,12 +58,13 @@ class UNetDown(nn.Module):
     MaxPool2d + DoubleConv acts as the encoder to extract the global
       information.
     """
+
     def __init__(
         self,
         cin: int,
         cout: int,
-        device: str = None,
-        dtype: str = None,
+        device: str | None = None,
+        dtype: str | None = None,
     ):
         """UNet down-scaling initiation.
 
@@ -81,14 +76,10 @@ class UNetDown(nn.Module):
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
         self.maxpool_dconv = nn.Sequential(
-            nn.MaxPool2d(2),
-            DoubleConv(cin, cout, **factory_kwargs)
+            nn.MaxPool2d(2), DoubleConv(cin, cout, **factory_kwargs)
         )
 
-    def forward(
-        self,
-        inp:torch.Tensor
-    ) -> torch.Tensor:
+    def forward(self, inp: torch.Tensor) -> torch.Tensor:
         """UNet down scaling forward.
 
         Shape:
@@ -99,13 +90,21 @@ class UNetDown(nn.Module):
 
 
 class UNetUp(nn.Module):
+    """UNet up-scaling module.
+
+    Attrs:
+    ---------------------------
+    up_samp: Upsampling layer.
+    conv: Double convolution layer.
+    """
+
     def __init__(
         self,
         cin: int,
         cout: int,
         bilinear: bool = False,
-        device: str = None,
-        dtype: str = None,
+        device: str | None = None,
+        dtype: str | None = None,
     ):
         """UNet up-scaling initiation.
 
@@ -162,17 +161,17 @@ class UNet(nn.Module):
     - https://cuijiahua.com/blog/2019/12/dl-15.html
     - https://zhuanlan.zhihu.com/p/97488817
     """
+
     def __init__(
         self,
         cin: int,
         cout: int,
-        class_n: int = None,
+        class_n: int | None = None,
         bilinear: bool = False,
-        device: str = None,
-        dtype: str = None,
+        device: str | None = None,
+        dtype: str | None = None,
     ):
-        """UNet initialization.
-        """
+        """UNet initialization."""
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
         self.cin = cin
@@ -186,10 +185,7 @@ class UNet(nn.Module):
         self.upc1 = UNetUp(8, 4, bilinear, **factory_kwargs)
         self.out_conv = nn.Conv2d(4, cout, kernel_size=1, **factory_kwargs)
 
-    def forward(
-        self,
-        inp: torch.Tensor
-    ):
+    def forward(self, inp: torch.Tensor):
         """UNet forward.
 
         Shape:

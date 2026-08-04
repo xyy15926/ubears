@@ -9,14 +9,12 @@
 
 # %%
 from __future__ import annotations
-from typing import List, Tuple
+
 import logging
 
-import numpy as np
 import torch
 from torch import nn
-from torch.nn import functional as F
-from torch.nn.init import constant_, xavier_normal_, xavier_uniform_
+
 # from IPython.core.debugger import set_trace
 
 # %%
@@ -42,6 +40,7 @@ class SinPE(nn.Module):
     -------------------------------
     pe_cache: [..., cur_len, embed_sz]
     """
+
     def __init__(
         self,
         base: float = 1e4,
@@ -54,8 +53,8 @@ class SinPE(nn.Module):
         self,
         pos: int | torch.Tensor,
         esz: int,
-        device: str = None,
-        dtype: str = None,
+        device: str | None = None,
+        dtype: str | None = None,
     ) -> torch.Tensor:
         """Get the SinPE.
 
@@ -71,10 +70,7 @@ class SinPE(nn.Module):
         pos: int | [slen]
         RETURN: [slen, esz]
         """
-        if not isinstance(pos, int):
-            max_pos = torch.max(pos) + 1
-        else:
-            max_pos = pos
+        max_pos = torch.max(pos) + 1 if not isinstance(pos, int) else pos
 
         # Update PE cache if necessary.
         if self.pe_cache is None:
@@ -106,8 +102,8 @@ class SinPE(nn.Module):
         slen: int,
         emb_sz: int,
         base: float = 1e4,
-        device: str = None,
-        dtype: str = None,
+        device: str | None = None,
+        dtype: str | None = None,
     ) -> torch.Tensor:
         """Compute the SinPE.
 
@@ -140,7 +136,8 @@ class SinPE(nn.Module):
         x: torch.Tensor,
         pos: torch.Tensor = None,
     ) -> torch.Tensor:
-        """
+        """Forward.
+
         Params:
         -------------------------------
         x: Tensor be updated with position encoding.
@@ -158,10 +155,7 @@ class SinPE(nn.Module):
         Tensor after SinPE embedding.
         """
         # In case that x of integer dtype passed in.
-        if torch.is_floating_point(x):
-            dtype = x.dtype
-        else:
-            dtype = torch.float
+        dtype = x.dtype if torch.is_floating_point(x) else torch.float
         factory_kwargs = {"device": x.device, "dtype": dtype}
 
         *_____, slen, sz = x.size()
@@ -216,7 +210,8 @@ class RotaryPE(nn.Module):
         self.register_buffer("sin_cache", None, persistent=False)
 
     def forward(self, x: torch.Tensor, pos: torch.Tensor = None):
-        """
+        """Forward.
+
         Params:
         -------------------------------
         x: Tensor be updated with position encoding.
@@ -234,10 +229,7 @@ class RotaryPE(nn.Module):
         Tensor after rotary embedding.
         """
         # In case that x of integer dtype passed in.
-        if torch.is_floating_point(x):
-            dtype = x.dtype
-        else:
-            dtype = torch.float32
+        dtype = x.dtype if torch.is_floating_point(x) else torch.float32
         factory_kwargs = {"device": x.device, "dtype": dtype}
         *_____, slen, sz = x.size()
         assert sz == self.embed_sz, "Embedding size must be the same."
@@ -269,8 +261,8 @@ class RotaryPE(nn.Module):
     def rotary_cache(
         self,
         max_pos: int,
-        device: str = None,
-        dtype: str = None,
+        device: str | None = None,
+        dtype: str | None = None,
     ):
         """Calculate rotary cache.
 
@@ -278,12 +270,13 @@ class RotaryPE(nn.Module):
         -----------------------------------
         max_pos: The rotary cache to be calculated.
         """
-        factory_kwargs = {"device": device, "dtype": dtype}
         # Set the rotary parameter.
         esz = self.embed_sz
         theta = -torch.arange(0, esz, 2, device=device) / esz
-        theta = (self.base ** theta).unsqueeze(1).expand(-1, 2).flatten(-2)
-        mtheta = torch.arange(max_pos, device=device).unsqueeze(1) * theta.unsqueeze(0)
+        theta = (self.base**theta).unsqueeze(1).expand(-1, 2).flatten(-2)
+        mtheta = torch.arange(max_pos, device=device).unsqueeze(
+            1
+        ) * theta.unsqueeze(0)
         self.cos_cache = torch.cos(mtheta)
         sin_cache = torch.sin(mtheta)
         sin_cache[:, ::2] *= -1

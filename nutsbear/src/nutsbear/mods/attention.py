@@ -9,15 +9,17 @@
 
 # %%
 from __future__ import annotations
-from typing import List, Tuple
+
 import logging
 
 import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
-from torch.nn.init import constant_, xavier_normal_, xavier_uniform_
+from torch.nn.init import constant_, xavier_uniform_
+
 from nutsbear.mods.fixture import ssoftmax
+
 # from IPython.core.debugger import set_trace
 
 # %%
@@ -91,19 +93,22 @@ def scaled_dot_product_attention(
     attn_weight: Weights for values.
     output: Scaled-dot-product result.
     """
-    *_____, qslen, qksz = query.size()
-    *_____, kvslen, vsz = value.size()
+    *_, qslen, qksz = query.size()
+    *_, kvslen, _vsz = value.size()
     dtype = query.dtype
     device = query.device
 
     # Init mask with ninf.
-    if (attn_mask is not None
-            and attn_mask.dtype != torch.bool
-            and not is_causal):
+    if (
+        attn_mask is not None
+        and attn_mask.dtype != torch.bool
+        and not is_causal
+    ):
         bias_mask = attn_mask
     else:
         bias_mask = torch.zeros(
-            qslen, kvslen,
+            qslen,
+            kvslen,
             dtype=dtype,
             device=device,
         )
@@ -114,10 +119,7 @@ def scaled_dot_product_attention(
                     "Explicit attn_mask and is_causal are be set simultaneously."
                 )
             tril_mask = torch.ones(
-                qslen,
-                kvslen,
-                dtype=torch.bool,
-                device=device
+                qslen, kvslen, dtype=torch.bool, device=device
             ).tril(diagonal=0)
             bias_mask.masked_fill_(tril_mask.logical_not(), float("-inf"))
             bias_mask.to(query.dtype)
@@ -200,17 +202,18 @@ class MultiheadAttention(nn.Module):
     out_proj: nn.Linear
       Linear projection for concated attention ouptut of multi-heads.
     """
+
     def __init__(
         self,
         qsz: int,
         heads_n: int,
-        ksz: int = None,
-        vsz: int = None,
-        tsz: int = None,
+        ksz: int | None = None,
+        vsz: int | None = None,
+        tsz: int | None = None,
         dropout_p: float = 0.0,
         bias: bool = True,
-        device: str = None,
-        dtype: str = None,
+        device: str | None = None,
+        dtype: str | None = None,
     ):
         """MultiheadAttention initialization.
 
@@ -242,8 +245,7 @@ class MultiheadAttention(nn.Module):
         self._qkv_same_embed_dim = qsz == ksz and ksz == vsz
         # Pack inner projection up.
         if self._qkv_same_embed_dim:
-            self.in_proj = nn.Linear(
-                qsz, tsz * 3, bias=bias, **factory_kwargs)
+            self.in_proj = nn.Linear(qsz, tsz * 3, bias=bias, **factory_kwargs)
         else:
             self.q_proj = nn.Linear(qsz, tsz, bias=bias, **factory_kwargs)
             self.k_proj = nn.Linear(ksz, tsz, bias=bias, **factory_kwargs)
@@ -378,7 +380,9 @@ class MultiheadAttention(nn.Module):
 
         if need_weights:
             attn_val, attn_ws = scaled_dot_product_attention(
-                query, key, value,
+                query,
+                key,
+                value,
                 attn_mask=bias_mask,
                 dropout_p=dropout_p,
                 is_causal=False,
@@ -395,7 +399,9 @@ class MultiheadAttention(nn.Module):
                 elif bias_mask.dim() == 2:
                     bias_mask = bias_mask.unsqueeze(0).unsqueeze(0)
             attn_val = F.scaled_dot_product_attention(
-                query, key, value,
+                query,
+                key,
+                value,
                 attn_mask=bias_mask,
                 dropout_p=dropout_p,
                 is_causal=False,
@@ -478,9 +484,7 @@ class MultiheadAttention(nn.Module):
         Tensor[ninf, 0.0] or None
         """
         # Return None directly if no mask need to be generated.
-        if (key_padding_mask is None
-                and attn_mask is None
-                and not is_causal):
+        if key_padding_mask is None and attn_mask is None and not is_causal:
             return None
         # Query length is required to generate causal mask.
         assert not (is_causal and query is None and attn_mask is None), (
@@ -494,9 +498,8 @@ class MultiheadAttention(nn.Module):
         bsz = 1
         if key_padding_mask is not None:
             bsz = key_padding_mask.size(0)
-        elif attn_mask is not None:
-            if attn_mask.dim() == 3:
-                bsz = attn_mask.size(0)
+        elif attn_mask is not None and attn_mask.dim() == 3:
+            bsz = attn_mask.size(0)
 
         if attn_mask is not None:
             qslen = attn_mask.size(-2)
@@ -522,10 +525,12 @@ class MultiheadAttention(nn.Module):
                 break
 
         # Return attention mask directly.
-        if (attn_mask is not None
-                and attn_mask.dtype != torch.bool
-                and key_padding_mask is None
-                and not is_causal):
+        if (
+            attn_mask is not None
+            and attn_mask.dtype != torch.bool
+            and key_padding_mask is None
+            and not is_causal
+        ):
             if attn_mask.dim() == 3:
                 return attn_mask.to(device)
             else:
@@ -538,10 +543,7 @@ class MultiheadAttention(nn.Module):
         if is_causal:
             # set_trace()
             tril_mask = torch.ones(
-                qslen,
-                kslen,
-                dtype=torch.bool,
-                device=device
+                qslen, kslen, dtype=torch.bool, device=device
             ).tril(diagonal=0)
             bias_mask.masked_fill_(tril_mask.logical_not(), float("-inf"))
 
@@ -549,16 +551,14 @@ class MultiheadAttention(nn.Module):
         if key_padding_mask is not None:
             if key_padding_mask.dtype == torch.bool:
                 bias_mask.masked_fill_(
-                    key_padding_mask.view(bsz, 1, kslen),
-                    float("-inf")
+                    key_padding_mask.view(bsz, 1, kslen), float("-inf")
                 )
             else:
                 bias_mask += key_padding_mask.broadcast_to(bsz, qslen, kslen)
         if attn_mask is not None:
             if attn_mask.dtype == torch.bool:
                 bias_mask.masked_fill_(
-                    attn_mask.view(1, qslen, kslen),
-                    float("-inf")
+                    attn_mask.view(1, qslen, kslen), float("-inf")
                 )
             else:
                 bias_mask += attn_mask.broadcast_to(bsz, qslen, kslen)
@@ -612,17 +612,18 @@ class SimpleMHA(nn.Module):
     out_proj: nn.Linear
       Linear projection for concated attention ouptut of multi-heads.
     """
+
     def __init__(
         self,
         qksz: int,
         heads_n: int,
-        vsz: int = None,
-        tsz: int = None,
+        vsz: int | None = None,
+        tsz: int | None = None,
         dropout_p: float = 0.0,
         bias: bool = True,
         out_proj: bool = False,
-        device: str = None,
-        dtype: str = None,
+        device: str | None = None,
+        dtype: str | None = None,
     ):
         """Simplified MultiheadAttention initialization.
 
@@ -635,9 +636,6 @@ class SimpleMHA(nn.Module):
         bias: If to use bias in the projection for Q, K, V.
         device:
         dtype:
-
-        Return:
-        ----------------------------
         """
         vsz = qksz if vsz is None else vsz
         tsz = qksz if tsz is None else tsz

@@ -9,14 +9,13 @@
 
 # %%
 from __future__ import annotations
-from typing import List, Tuple
+
 import logging
 
-import copy
-import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
+
 # from IPython.core.debugger import set_trace
 
 # %%
@@ -39,14 +38,15 @@ class VAEBase(nn.Module):
     fc_logsig: Linear layer to generate log of the variance of the latent
       distribution from the encoder output.
     """
+
     def __init__(
         self,
         lat_sz: int,
         enc_out_sz: int,
         encoder: nn.Module,
         decoder: nn.Module,
-        device: str = None,
-        dtype: str = None,
+        device: str | None = None,
+        dtype: str | None = None,
     ):
         """VAE initiation.
 
@@ -147,8 +147,7 @@ class VAEBase(nn.Module):
         return mu + eps * sig
 
     def forward(
-        self,
-        inp: torch.Tensor
+        self, inp: torch.Tensor
     ) -> (torch.Tensor, torch.Tensor, torch.Tensor):
         """VAE forward.
 

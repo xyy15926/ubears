@@ -11,18 +11,22 @@
 from __future__ import annotations
 
 import logging
-from typing import List, Any, Tuple, Callable
-from collections.abc import Sequence
-import numpy as np
+from typing import TYPE_CHECKING
 
 import torch
 from torch import nn, optim
-from torch.utils.data import DataLoader, Dataset
 from torch.utils.tensorboard import SummaryWriter
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from torch.utils.data import DataLoader
 
 if __name__ == "__main__":
     from importlib import reload
+
     from flagbear.slp import finer
+
     reload(finer)
 
 from flagbear.slp.finer import get_tmp_path, tmp_file
@@ -52,12 +56,13 @@ class Trainer:
       process.
     epoch_idx: The index of current training epoch.
     """
+
     def __init__(
         self,
         mod: nn.Module,
         pred_loss_fn: Callable,
-        optimizer: optim.Optimizer = None,
-        mod_name: str = None,
+        optimizer: optim.Optimizer | None = None,
+        mod_name: str | None = None,
     ):
         """Init trainer.
 
@@ -77,8 +82,9 @@ class Trainer:
         """
         self.mod = mod
         self.pred_loss_fn = pred_loss_fn
-        self.optimizer = (optim.Adam(mod.parameters())
-                          if optimizer is None else optimizer)
+        self.optimizer = (
+            optim.Adam(mod.parameters()) if optimizer is None else optimizer
+        )
         if mod_name is not None:
             self.mod_name = mod_name
             absp = get_tmp_path() / self.mod_name
@@ -205,13 +211,15 @@ class Trainer:
             mod_name = self.mod_name
         spath = tmp_file(f"{mod_name}_E{self.epoch_idx:>04d}")
         torch.save(self.mod.state_dict(), spath)
-        logger.info(f"Save {mod_name} after training {self.epoch_idx} "
-                    f"epochs at {spath}.")
+        logger.info(
+            f"Save {mod_name} after training {self.epoch_idx} "
+            f"epochs at {spath}."
+        )
 
     @staticmethod
     def load(
-        mod: "nn.Module",
-        mod_name: str = None,
+        mod: nn.Module,
+        mod_name: str | None = None,
         *args,
         **kwargs,
     ) -> nn.Module:

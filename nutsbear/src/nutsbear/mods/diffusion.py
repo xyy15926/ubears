@@ -9,14 +9,12 @@
 
 # %%
 from __future__ import annotations
-from typing import List, Tuple
+
 import logging
 
-import copy
-import numpy as np
 import torch
 from torch import nn
-from torch.nn import functional as F
+
 # from IPython.core.debugger import set_trace
 
 
@@ -26,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 # %%
 class GaussianDiffusion(nn.Module):
-    """Denoise Diffustion Probability Model.
+    r"""Denoise Diffustion Probability Model.
 
     Ref:
     -----------------------------
@@ -34,20 +32,21 @@ class GaussianDiffusion(nn.Module):
     - https://github.com/lucidrains/denoising-diffusion-pytorch/blob/main/denoising_diffusion_pytorch/guided_diffusion.py
     - https://github.com/lucidrains/denoising-diffusion-pytorch/blob/main/denoising_diffusion_pytorch/simple_diffusion.py
 
-    Attr:
+    Attrs:
     -----------------------------
     steps_n: The number of steps of diffusion.
     beta: Diffusion rates of each steps.
     alpha: 1 - beta
-    alpha_bar: \\prod alpha_i
+    alpha_bar: \prod alpha_i
     """
+
     def __init__(
         self,
         steps_n: int = 1000,
         beta_start: float = 1e-4,
         beta_end: float = 2e-2,
-        device: str = None,
-        dtype: str = None,
+        device: str | None = None,
+        dtype: str | None = None,
     ):
         """Gaussian Diffusion initialization.
 
@@ -58,10 +57,10 @@ class GaussianDiffusion(nn.Module):
         beta_end: The maximum diffusion rate.
         """
         super().__init__()
-        factory_kwargs = { "device": device, "dtype": dtype }
+        factory_kwargs = {"device": device, "dtype": dtype}
         self.steps_n = steps_n
         beta = torch.linspace(beta_start, beta_end, steps_n, **factory_kwargs)
-        alpha = 1. - beta
+        alpha = 1.0 - beta
         alpha_bar = torch.cumprod(alpha, dim=0)
 
         self.register_buffer("beta", beta)
@@ -94,8 +93,8 @@ class GaussianDiffusion(nn.Module):
         """
         device = inp.device
         zt = torch.randn_like(inp, device=device)
-        ba = self.alpha_bar[tsteps - 1].view([-1,] + [1,] * (inp.dim() - 1))
-        noised = torch.sqrt(ba) * inp + torch.sqrt(1. - ba) * zt
+        ba = self.alpha_bar[tsteps - 1].view([-1] + [1] * (inp.dim() - 1))
+        noised = torch.sqrt(ba) * inp + torch.sqrt(1.0 - ba) * zt
         return noised, zt
 
     @torch.no_grad()
@@ -103,8 +102,8 @@ class GaussianDiffusion(nn.Module):
         self,
         model: nn.Module,
         inp: torch.Tensor | tuple | list,
-        tstart: int = None,
-        labels: torch.Tensor = None,
+        tstart: int | None = None,
+        labels: torch.Tensor | None = None,
     ):
         """Remove gaussian noise with backward diffusion process.
 
@@ -139,9 +138,9 @@ class GaussianDiffusion(nn.Module):
         tstart = self.steps_n if tstart is None else tstart
         for stn in range(tstart - 1, -1, -1):
             t = torch.ones(bsz, dtype=torch.int) * stn
-            beta = self.beta[t].view([-1,] + [1,] * (len(inp_sz) - 1))
-            alpha = self.alpha[t].view([-1,] + [1,] * (len(inp_sz) - 1))
-            ba = self.alpha_bar[t].view([-1,] + [1,] * (len(inp_sz) - 1))
+            beta = self.beta[t].view([-1] + [1] * (len(inp_sz) - 1))
+            alpha = self.alpha[t].view([-1] + [1] * (len(inp_sz) - 1))
+            ba = self.alpha_bar[t].view([-1] + [1] * (len(inp_sz) - 1))
 
             # Predict and remove noise.
             pred_zt = model(inp, t, labels)
@@ -149,11 +148,9 @@ class GaussianDiffusion(nn.Module):
                 noise = torch.randn(inp_sz, device=device)
             else:
                 noise = torch.zeros(inp_sz, device=device)
-            inp = (
-                1 / torch.sqrt(alpha)
-                * (inp - beta / torch.sqrt(1. - ba) * pred_zt)
-                + noise * torch.sqrt(beta)
-            )
+            inp = 1 / torch.sqrt(alpha) * (
+                inp - beta / torch.sqrt(1.0 - ba) * pred_zt
+            ) + noise * torch.sqrt(beta)
         model.train()
         # inp = (inp.clamp(-1, 1) + 1) / 2 * 255
         # return inp.to(torch.int8)

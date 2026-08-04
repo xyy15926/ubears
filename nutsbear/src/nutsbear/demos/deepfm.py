@@ -11,12 +11,9 @@
 from __future__ import annotations
 
 import logging
-from typing import List, Any, Tuple
-from collections.abc import Sequence
 
 import torch
 from torch import nn
-from torch.nn import functional as F
 
 logger = logging.getLogger(__name__)
 
@@ -43,32 +40,32 @@ class DeepFM(nn.Module):
     deep_bn: If to add BN layer in DNN.
     writer: SummaryWriter to log.
     """
+
     def __init__(
         self,
-        fea_catns: List[int],
-        emb_sz:int = 8,
-        hidden_szs:List[int] = [32, 32],
+        fea_catns: list[int],
+        emb_sz: int = 8,
+        hidden_szs: list[int] | None = None,
         dropout_p: float = 0.0,
-        device: str = None,
-        dtype: str = None,
+        device: str | None = None,
+        dtype: str | None = None,
     ):
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
         self.emb_sz = emb_sz
         self.dropout_p = dropout_p
+        if hidden_szs is None:
+            hidden_szs = [32, 32]
         self._init_fm_block(fea_catns, **factory_kwargs)
         self._init_dnn_block(
-            fea_catns,
-            emb_sz * len(fea_catns),
-            hidden_szs,
-            **factory_kwargs
+            fea_catns, emb_sz * len(fea_catns), hidden_szs, **factory_kwargs
         )
 
     def _init_fm_block(
         self,
         fea_catns: list[int],
-        device: str = None,
-        dtype: str = None,
+        device: str | None = None,
+        dtype: str | None = None,
     ):
         """Init FM block.
 
@@ -76,13 +73,15 @@ class DeepFM(nn.Module):
           added up linearly in FM.
         """
         factory_kwargs = {"device": device, "dtype": dtype}
-        self.fmo1_embeds = nn.ModuleList([
-            nn.Embedding(catn, 1, **factory_kwargs) for catn in fea_catns
-        ])
-        self.fmo2_embeds = nn.ModuleList([
-            nn.Embedding(catn, self.emb_sz, **factory_kwargs)
-            for catn in fea_catns
-        ])
+        self.fmo1_embeds = nn.ModuleList(
+            [nn.Embedding(catn, 1, **factory_kwargs) for catn in fea_catns]
+        )
+        self.fmo2_embeds = nn.ModuleList(
+            [
+                nn.Embedding(catn, self.emb_sz, **factory_kwargs)
+                for catn in fea_catns
+            ]
+        )
         self.fmo1_dropout = nn.Dropout(self.dropout_p)
         self.fmo2_dropout = nn.Dropout(self.dropout_p)
 
@@ -91,8 +90,8 @@ class DeepFM(nn.Module):
         fea_catns: list[int],
         in_sz: int,
         hidden_szs: list[int],
-        device: str = None,
-        dtype: str = None,
+        device: str | None = None,
+        dtype: str | None = None,
     ):
         """Init DNN block."""
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -135,8 +134,9 @@ class DeepFM(nn.Module):
         dnn_out = self.dnn(o2emb.flatten(1))
 
         # Sigmoid output.
-        outp = torch.sigmoid(fmo1_out.sum(dim=-1) + fmo2_out.sum(dim=-1)
-                             + dnn_out.sum(dim=-1))
+        outp = torch.sigmoid(
+            fmo1_out.sum(dim=-1) + fmo2_out.sum(dim=-1) + dnn_out.sum(dim=-1)
+        )
 
         return outp
 
@@ -157,7 +157,7 @@ class DeepFM(nn.Module):
         o2emb: (batch_size, embed_size)
 
         """
-        bsz, fea_num = inp_idx.size()
+        bsz, _fea_num = inp_idx.size()
         # [(bsz, 1),...]
         o1emb_arr = [
             emb(inp_idx[:, i]) * torch.unsqueeze(inp_val[:, i], -1)
@@ -179,5 +179,7 @@ class DeepFM(nn.Module):
         """FM block forward."""
         o1out = self.fmo1_dropout(o1emb)
         o2out = self.fmo2_dropout(o2emb)
-        o2out = 0.5 * (torch.sum(o2out, dim=1) ** 2 - torch.sum(o2out ** 2, dim=1))
+        o2out = 0.5 * (
+            torch.sum(o2out, dim=1) ** 2 - torch.sum(o2out**2, dim=1)
+        )
         return o1out, o2out
