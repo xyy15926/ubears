@@ -19,13 +19,7 @@ from torch import nn
 from torch.nn import functional as F
 
 # %%
-logging.basicConfig(
-    format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"),
-)
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
 
 # %%
@@ -155,7 +149,7 @@ class UNetUp(nn.Module):
         skip: [bsz, channel_n, height, width]
         """
         inp = self.up_samp(inp)
-        inp = torch.concat([skip, inp], dim=1)
+        inp = torch.cat([skip, inp], dim=1)
         return self.dconv(inp)
 
 

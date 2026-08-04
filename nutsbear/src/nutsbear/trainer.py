@@ -33,14 +33,7 @@ from flagbear.slp.finer import get_tmp_path, tmp_file
 #           if torch.backends.mps.is_available()
 #           else "cpu")
 
-logging.basicConfig(
-    # format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
-    format="%(message)s",
-    level=logging.INFO,
-    force=(__name__ == "__main__"),
-)
-logger = logging.getLogger()
-logger.info("Logging Start.")
+logger = logging.getLogger(__name__)
 
 
 # %%

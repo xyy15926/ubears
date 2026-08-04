@@ -93,7 +93,7 @@ class MNISTDec(nn.Module):
 
 
 # %%
-@pytest.mark.skip(reason="Time comsuming.")
+@pytest.mark.skip(reason="Time consuming.")
 def test_VAEBase(torch_fkwargs):
     device, dtype = torch_fkwargs["device"], torch_fkwargs["dtype"]
     bsz = 100

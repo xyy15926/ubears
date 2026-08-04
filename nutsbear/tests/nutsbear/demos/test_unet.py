@@ -79,7 +79,7 @@ class ISBIImageDataset(Dataset):
 
 
 # %%
-@pytest.mark.skip(reason="Time comsuming.")
+@pytest.mark.skip(reason="Time consuming.")
 def test_unet(torch_fkwargs):
     device, dtype = torch_fkwargs["device"], torch_fkwargs["dtype"]
     transform = transforms.Compose([

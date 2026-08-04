@@ -140,7 +140,7 @@ class UNetCond(nn.Module):
 
 
 # %%
-@pytest.mark.skip(reason="Time comsuming.")
+@pytest.mark.skip(reason="Time consuming.")
 def test_DDPM(torch_fkwargs):
     device, dtype = torch_fkwargs["device"], torch_fkwargs["dtype"]
     transform = transforms.Compose([

@@ -41,8 +41,8 @@ fkwargs_64_cpu = {
 
 # %%
 def all_close(
-    lt = torch.Tensor,
-    rt = torch.Tensor,
+    lt: torch.Tensor,
+    rt: torch.Tensor,
     lnan_to_zero = False,
     rnan_to_zero = False,
     equal_nan = True,

@@ -59,6 +59,7 @@ pip					= "*"
 hatchling			= "*"
 build				= ">=1.3.0, <2"
 twine				= ">=6.2.0, <7"
+packaging			= "*"
 
 [feature.this.pypi-dependencies]
 nutsbear			= { path = ".", editable = true, extras = [ "directml" ] }
