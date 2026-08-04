@@ -110,7 +110,7 @@ class Node:
         cls = self.__class__
         for node in nodes:
             if not isinstance(node, cls):
-                raise ValueError(
+                raise ValueError(  # noqa: TRY004
                     f"Not {cls} error: {node} could not be set as the upstream."
                 )
             self.upstream.add(node)
@@ -122,7 +122,7 @@ class Node:
         cls = self.__class__
         for node in nodes:
             if not isinstance(node, cls):
-                raise ValueError(
+                raise ValueError(  # noqa: TRY004
                     f"No {cls} error: {node} could not be set as the upstream."
                 )
             self.downstream.add(node)

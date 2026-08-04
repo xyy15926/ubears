@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 def box_muller() -> Iterator:
     """Generate normally distributed random numbers using Box-Muller transform."""
     while True:
-        a = uniform(0, 1)
-        b = uniform(0, 1)
+        a = uniform(0, 1)  # noqa: S311
+        b = uniform(0, 1)  # noqa: S311
         yield cos(2 * pi * a) * sqrt(-2 * log(b))
         yield sin(2 * pi * a) * sqrt(-2 * log(b))
 
@@ -68,7 +68,7 @@ def metropolis(
         # Draw sample subject to conditional gauss distribution.
         new = normalvariate(0, 1) + last
         # Draw accept-rejection prob.
-        rj = uniform(0, 1)
+        rj = uniform(0, 1)  # noqa: S311
         # Calcuate the acception rate.
         alpha = guass_pdf(new - last) * pdf(new)
         # Determine to accept or reject sample.
@@ -108,7 +108,7 @@ def metropolis_hastings(
         # Draw sample subject to conditional gauss distribution.
         new = normalvariate(0, 1) + last
         # Draw accept-rejection prob.
-        rj = uniform(0, 1)
+        rj = uniform(0, 1)  # noqa: S311
         # Determine to accept or reject sample.
         if rj < min(1, pdf(new) / pdf(last)):
             last = new

@@ -18,7 +18,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import wraps
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 if __name__ == "__main__":
     from importlib import reload
@@ -101,11 +101,12 @@ class DataBundle(ABC):
                 zipf.writestr("metadata.json", json.dumps(self.metadata))
                 zipf.writestr("lineage.json", json.dumps(self.lineage))
                 zipf.writestr("reg_name.txt", self.reg_name.encode("utf8"))
+        except Exception:
+            logger.exception(f"Fail to save data bundle at {fname}.")
+            raise
+        else:
             logger.info(f"Save data bundle at {fname}.")
             return fname
-        except Exception as e:
-            logger.exception(f"Fail to save data bundle at {fname}: {e}.")
-            raise
 
     @classmethod
     def load_bundle(cls, fname: str | Path):
@@ -122,12 +123,13 @@ class DataBundle(ABC):
                 metadata = json.loads(zipf.open("metadata.json", "r").read())
                 lineage = json.loads(zipf.open("lineage.json", "r").read())
                 data = cls.loads_data(zipf.open("data.bin", "r").read(), metadata)
+        except Exception:
+            logger.exception(f"Fail to load data bundle at {fname}.")
+            raise
+        else:
             logger.info(f"Load data bundle at {fname}.")
             bundle = cls(data, metadata, lineage)
             return bundle
-        except Exception as e:
-            logger.exception(f"Fail to load data bundle at {fname}: {e}.")
-            raise
 
 
 # %%
@@ -138,7 +140,7 @@ class DataBundleFactory:
     ------------------------
     _registry: Registry of derived DataBundle.
     """
-    _registry: dict[str, type[DataBundle]] = {}
+    _registry: ClassVar[dict[str, type[DataBundle]]] = {}
 
     @classmethod
     def register(cls, reg_name: str | None = None):
@@ -260,8 +262,8 @@ class DataBundleFactory:
         try:
             with zipfile.ZipFile(fname, "r") as zipf:
                 reg_name = zipf.open("reg_name.txt", "r").read().decode("utf8")
-        except Exception as e:
-            logger.exception(f"Fail to read the bundle type from {fname}: {e}.")
+        except Exception:
+            logger.exception(f"Fail to read the bundle type from {fname}.")
             raise
         return cls.load_instance(reg_name, fname)
 
@@ -293,7 +295,7 @@ def pickle_dumps(data) -> bytes:
 
 def pickle_loads(bytes_, metadata: dict | None = None):
     """Deserialize pickle bytes."""
-    return pickle.loads(bytes_)
+    return pickle.loads(bytes_)  # noqa: S301
 
 
 def concat_params(
@@ -437,12 +439,13 @@ def bundle_cache(
                     )
                     is_same = check_params(args, kwargs, bundle.metadata)
                     if (not is_same) and strict:
-                        raise ValueError("Arguments loaded are different "
+                        raise ValueError("Arguments loaded are different "  # noqa: TRY301
                                          "from the ones passed.")
-                    return bundle
                 except Exception as e:
                     logger.warning(f"Recover bundle from cache {fname_all} "
                                    f"failed: {e}.")
+                else:
+                    return bundle
 
             # Roll back to call the `func`.
             if forced or rollback or (not fname_all.is_file()):

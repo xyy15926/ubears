@@ -89,11 +89,12 @@ def resolve_exception_class(
         mod = importlib.import_module(module)
         cls = getattr(mod, name)
         if not issubclass(cls, BaseException):
-            raise TypeError(f"{cls} is not an exception")
-        return cls
+            raise TypeError(f"{cls} is not an exception")  # noqa: TRY301
     except (ImportError, AttributeError, TypeError):
         # Create a new exception class derived from `UnrecoverableException`.
         return type(name, (UnrecoverableException,), {"__module__": module})
+    else:
+        return cls
 
 
 # %%

@@ -174,9 +174,10 @@ def is_json(obj: Any) -> bool:
         and obj.__sizeof__() <= JSON_MAX):
         try:
             json.dumps(obj)
-            return True
         except (TypeError, ValueError):
             return False
+        else:
+            return True
     return False
 
 

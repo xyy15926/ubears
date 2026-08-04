@@ -83,7 +83,7 @@ class LocalFileStorage:
         """Write data."""
         # Lock prevent multithreads access the file at the same time.
         with self._get_lock(key):
-            tmp_data = tempfile.NamedTemporaryFile(
+            tmp_data = tempfile.NamedTemporaryFile(  # noqa: SIM115
                 dir=self.base_dir, delete=False
             )
             tmp_data.write(bytes_)

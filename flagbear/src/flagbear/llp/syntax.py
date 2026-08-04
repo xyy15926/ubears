@@ -126,7 +126,7 @@ class LRItem:
 
         Raise:
         -----------------
-        Exception: End of the production.
+        ValueError: End of the production.
 
         Return:
         -----------------
@@ -136,7 +136,7 @@ class LRItem:
         next_lr = copy.copy(self)
         next_lr.cur += 1
         if next_lr.cur > len(next_lr.rp):
-            raise Exception(f"End of the production {self}.")
+            raise ValueError(f"Reach the end of the production: {self}.")
         next_lr.index += 1
         next_lr.nsym = next_lr._next_sym()
 

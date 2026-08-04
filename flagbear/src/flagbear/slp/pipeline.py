@@ -15,7 +15,7 @@ from abc import ABC, abstractmethod
 from collections import Counter
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Self
+from typing import Any, ClassVar, Self
 
 if __name__ == "__main__":
     from importlib import reload
@@ -67,10 +67,11 @@ class Pipe(ABC):
                     "exec_count": self.exec_count,
                 }
             )
-            return result
-        except Exception as e:
-            logger.exception(f"Stage [{self.name}] failed: {e}.")
+        except Exception:
+            logger.exception(f"Stage [{self.name}] failed.")
             raise
+        else:
+            return result
 
 
 # %%
@@ -81,7 +82,7 @@ class PipeFactory:
     --------------------------
     _registry: Registry of derived pipes.
     """
-    _registry: dict[str, type[Pipe]] = {}
+    _registry: ClassVar[dict[str, type[Pipe]]] = {}
 
     @classmethod
     def register(cls, reg_name: str | None = None):

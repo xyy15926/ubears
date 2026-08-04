@@ -179,8 +179,8 @@ class LocalExecutor:
                 )
                 task_result_cache_policy = result.cache_policy()
                 task_results.set(task.id_, result, task_result_cache_policy)
-            except Exception as e:
-                logger.exception(e)
+            except Exception:
+                logger.exception("Task execution failed.")
             finally:
                 if notify:
                     notify()
