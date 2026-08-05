@@ -100,7 +100,7 @@ def format_table(
     if drop_chars is not None:
         ptn = re.compile("|".join(list(drop_chars)))
         if isinstance(drop_chars, str):
-            table = table.applymap(
+            table = table.map(
                 lambda x: re.sub(ptn, "", x) if isinstance(x, str) else x
             )
 

@@ -685,7 +685,7 @@ packages:
 - pypi: ../flagbear
   name: flagbear
   version: 0.1.1
-  sha256: 62e4e240b28ca88cfeb9f66370ff19af41403db68ef7ddfa7fe9249ebc4778f7
+  sha256: 19ebc29ced234e29bdec1f9f7620a8ea0a3030b09a2a927ea93d8bcf9233c79b
   requires_python: '>=3.10'
   editable: true
 - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/d2/d8/09bfa816572a4d83bccd6750df1926f79158b1c36c5f73786e26dbe4ee38/greenlet-3.3.2-cp314-cp314-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
