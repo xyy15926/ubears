@@ -168,11 +168,11 @@ def merge_dfs(
     # mapper for each DataFrame with join and group keys excluded.
     ori_colss = [df.columns for df in dfs]
     new_colss = rename_overlaped(ori_colss)
-    col_Ds = []  # noqa: N806
+    col_Ds = []
     for ocols, ncols, on_, by_ in zip(
         ori_colss, new_colss, ons, bys, strict=False
     ):
-        cols_D = {}  # noqa: N806
+        cols_D = {}
         for ocol, ncol in zip(ocols, ncols, strict=False):
             if (
                 ocol in (on_, by_)
@@ -188,7 +188,7 @@ def merge_dfs(
     merged = dfs[0].sort_values(lon).rename(col_Ds[0], axis=1)
 
     # Merge on by one with `pd.merge_asof` for inexact matching join.
-    for rdf, ron, how, rby, rcol_D in zip(  # noqa: N806
+    for rdf, ron, how, rby, rcol_D in zip(
         dfs[1:], ons[1:], hows, bys[1:], col_Ds[1:], strict=False
     ):
         rdf = rdf.sort_values(ron).rename(rcol_D, axis=1)

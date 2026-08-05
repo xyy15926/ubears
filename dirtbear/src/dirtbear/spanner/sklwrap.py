@@ -46,7 +46,7 @@ class OneToOneFunctionTransformer(FunctionTransformer):
     changed with the releases.
     """
 
-    def fit(self, X, y=None):  # noqa: N803
+    def fit(self, X, y=None):
         """Fit the transformer to the data."""
         self.feature_names_out = "one-to-one"
         self.n_features_in_ = X.shape[1]

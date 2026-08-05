@@ -155,9 +155,9 @@ class SimpleBacktest:
         try_lot: Lots to buy or sell.
         borrowed: Money borrowed to buy stock.
         """
-        SLIPPAGE = self.rules["SLIPPAGE"]  # noqa: N806
-        BORROW_MONEY_MIN = self.rules["BORROW_MONEY_MIN"]  # noqa: N806
-        LOT = self.rules["LOT"]  # noqa: N806
+        SLIPPAGE = self.rules["SLIPPAGE"]
+        BORROW_MONEY_MIN = self.rules["BORROW_MONEY_MIN"]
+        LOT = self.rules["LOT"]
 
         unit_buy = price * (1 + SLIPPAGE) * LOT
         try_cash = self.capital[idx - 1] * abs(sig)
@@ -189,9 +189,9 @@ class SimpleBacktest:
         try_lot: Lots to buy or sell.
         borrowed: Capital of the stock borrowed to sell.
         """
-        SLIPPAGE = self.rules["SLIPPAGE"]  # noqa: N806
-        BORROW_STOCKS_LOT_MIN = self.rules["BORROW_STOCKS_LOT_MIN"]  # noqa: N806
-        LOT = self.rules["LOT"]  # noqa: N806
+        SLIPPAGE = self.rules["SLIPPAGE"]
+        BORROW_STOCKS_LOT_MIN = self.rules["BORROW_STOCKS_LOT_MIN"]
+        LOT = self.rules["LOT"]
 
         unit_sell = price * (1 - SLIPPAGE) * LOT
         unit_buy = price * (1 + SLIPPAGE) * LOT
@@ -222,14 +222,14 @@ class SimpleBacktest:
         borrowed: Value of borrowed cash or stock.
         cls_price: Close price of the day.
         """
-        SLIPPAGE = self.rules["SLIPPAGE"]  # noqa: N806
-        LOT = self.rules["LOT"]  # noqa: N806
-        BORROW_STOCKS_RATE = self.rules["BORROW_STOCKS_RATE"]  # noqa: N806
-        BORROW_MONEY_RATE = self.rules["BORROW_MONEY_RATE"]  # noqa: N806
-        COMMISION_BUY_RATE = self.rules["COMMISION_BUY_RATE"]  # noqa: N806
-        COMMISION_BUY_MIN = self.rules["COMMISION_BUY_MIN"]  # noqa: N806
-        COMMISION_SELL_RATE = self.rules["COMMISION_SELL_RATE"]  # noqa: N806
-        COMMISION_SELL_MIN = self.rules["COMMISION_SELL_MIN"]  # noqa: N806
+        SLIPPAGE = self.rules["SLIPPAGE"]
+        LOT = self.rules["LOT"]
+        BORROW_STOCKS_RATE = self.rules["BORROW_STOCKS_RATE"]
+        BORROW_MONEY_RATE = self.rules["BORROW_MONEY_RATE"]
+        COMMISION_BUY_RATE = self.rules["COMMISION_BUY_RATE"]
+        COMMISION_BUY_MIN = self.rules["COMMISION_BUY_MIN"]
+        COMMISION_SELL_RATE = self.rules["COMMISION_SELL_RATE"]
+        COMMISION_SELL_MIN = self.rules["COMMISION_SELL_MIN"]
 
         slipped_price = bs_price * (1 + SLIPPAGE * (lotn > 0))
         self.trades_prices[idx] = slipped_price
@@ -317,7 +317,7 @@ class SimpleBacktest:
 # %%
 def evaluate_return(initital_capital: float, capital: np.ndarray) -> dict:
     """Evaluate the return."""
-    NO_RISK_RETURN = 0.015  # noqa: N806
+    NO_RISK_RETURN = 0.015
 
     total_return = capital[-1] / initital_capital - 1
     daily_returns = capital[1:] / capital[:-1] - 1

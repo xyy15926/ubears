@@ -188,17 +188,17 @@ def rand_certno(
 def rand_mobile() -> str:
     """Generate random cell phone number."""
     # fmt: off
-    TELE = [133, 149, 153, 173, 177, 180, 181, 189, 190, 191, 193, 199]  # noqa: N806
-    UNICOM = [  # noqa: N806
+    TELE = [133, 149, 153, 173, 177, 180, 181, 189, 190, 191, 193, 199]
+    UNICOM = [
         130, 131, 132, 145, 155, 156, 166, 167, 171, 175, 176, 185, 186, 196
     ]
-    MOBILE = [  # noqa: N806
+    MOBILE = [
         134, 135, 136, 137, 138, 139, 1440, 147, 148, 150, 151, 152, 157, 158,
         159, 172, 178, 182, 183, 184, 187, 188, 195, 197, 198,
     ]
-    VTELE = [1700, 1701, 1702, 162]  # noqa: N806
-    VUNICOM = [1704, 1707, 1708, 1709, 171, 167]  # noqa: N806
-    VMOBILE = [1703, 1705, 1706, 165]  # noqa: N806
+    VTELE = [1700, 1701, 1702, 162]
+    VUNICOM = [1704, 1707, 1708, 1709, 171, 167]
+    VMOBILE = [1703, 1705, 1706, 165]
     # fmt: on
 
     f3s = TELE + UNICOM + MOBILE
@@ -261,7 +261,7 @@ def orgno_parity(orgno_p: str) -> str:
     """
     # Init value map.
     alts = list(string.digits + "ABCDEFGHJKLMNPQRTUWXY")
-    alts_M = {c: i for i, c in enumerate(alts)}  # noqa: N806
+    alts_M = {c: i for i, c in enumerate(alts)}
 
     wss = 0
     for w, b in zip(ORGNO_WS, orgno_p, strict=False):

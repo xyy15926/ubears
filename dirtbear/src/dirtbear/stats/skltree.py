@@ -34,7 +34,7 @@ logger.info("Logging Start.")
 # %%
 def biclf_select_nodes(
     tree: DecisionTreeClassifier,
-    Xs: list[np.ndarray] | None = None,  # noqa: N803
+    Xs: list[np.ndarray] | None = None,
     ys: list[np.ndarray] | None = None,
     lift_thresh: float = 2,
 ) -> list:
@@ -57,13 +57,13 @@ def biclf_select_nodes(
     1-D NDA storing node indices.
     """
     # Take tree's original capacities and frequencies into consideration.
-    Xs = [None] if Xs is None else [None, *Xs]  # noqa: N806
+    Xs = [None] if Xs is None else [None, *Xs]
     ys = [None] if ys is None else [None, *ys]
 
     node_map = np.ones(tree.tree_.node_count, dtype=np.bool_)
     # Traverse to get all capacities and frequencies of all the nodes.
     rfreqs, _freqs = [], []
-    for X, y in zip(Xs, ys, strict=False):  # noqa: N806
+    for X, y in zip(Xs, ys, strict=False):
         rfreqs, _freqs = tree_node_metric(tree, X, y, "freq")
         lift_41 = rfreqs[:, -1] / rfreqs[0, -1]
         node_map &= lift_41 > lift_thresh
@@ -160,7 +160,7 @@ def build_parent_from_children(*children: np.ndarray) -> np.ndarray:
 # %%
 def tree_node_metric(
     tree: DecisionTreeClassifier,
-    X: np.ndarray | None = None,  # noqa: N803
+    X: np.ndarray | None = None,
     y: np.ndarray | None = None,
     metric: str = "freq",
     weights: np.ndarray | None = None,

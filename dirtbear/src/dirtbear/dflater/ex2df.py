@@ -212,7 +212,7 @@ def compress_hierarchy(
     # Init EnvParser.
     envp = get_envp(env) if envp is None else envp
 
-    REC2DF_COL = None  # noqa: N806
+    REC2DF_COL = None
     range_index = False
     for step in confs:
         # Value rules.

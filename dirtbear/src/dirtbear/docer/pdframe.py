@@ -52,7 +52,7 @@ def extract_tables(
     ---------------------
     [DataFrame, with different widths, with RangeIndex as Index and Column].
     """
-    table_D = {}  # noqa: N806
+    table_D = {}
     with pdfplumber.open(file) as pdf:
         for page in pdf.pages:
             for table in page.find_tables():

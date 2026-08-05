@@ -30,7 +30,7 @@ logger.info("Logging Start.")
 
 
 # %%
-def AHP_solve(  # noqa: N802
+def AHP_solve(
     hmats: list[list[np.ndarray]],
     domi: bool = True,
 ) -> np.ndarray:
@@ -71,7 +71,7 @@ def AHP_solve(  # noqa: N802
     final_w = None
     for lv, mat_comps in enumerate(hmats):
         comp_ws = []
-        CIs = []  # noqa: N806
+        CIs = []
         domi_n = []
         for mat in mat_comps:
             fea_n = mat.shape[0]
@@ -88,7 +88,7 @@ def AHP_solve(  # noqa: N802
             logger.debug(f"Eigen vector: {eig_vec}.")
 
             # Rnadom Consistency Index Test.
-            CI = (eig_val - fea_n) / (fea_n - 1)  # noqa: N806
+            CI = (eig_val - fea_n) / (fea_n - 1)
             if CI / AHP_get_RCI()[domi - 1] > 0.1:
                 logger.warning(
                     f"AHP Random Consistency Index Test failed for {mat}."
@@ -117,9 +117,9 @@ def AHP_solve(  # noqa: N802
 
 # %%
 @lru_cache
-def AHP_get_RCI():  # noqa: N802
+def AHP_get_RCI():
     """Get the pre-caled RCI from 1 to 15."""
-    RI = [  # noqa: N806
+    RI = [
         0,
         0,
         0.52,
@@ -141,7 +141,7 @@ def AHP_get_RCI():  # noqa: N802
 
 
 @lru_cache
-def AHP_get_RCI_n(n: int) -> float:  # noqa: N802
+def AHP_get_RCI_n(n: int) -> float:
     """Calculate Random Consistency Index.
 
     Params:
