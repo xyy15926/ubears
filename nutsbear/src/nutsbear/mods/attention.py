@@ -27,6 +27,179 @@ logger = logging.getLogger(__name__)
 
 
 # %%
+def _infer_mask_shapes(
+    key_padding_mask: torch.Tensor | None,
+    attn_mask: torch.Tensor | None,
+    is_causal: bool,
+    query: torch.Tensor | None,
+    key: torch.Tensor | None,
+) -> tuple[int, int, int, torch.device | None]:
+    """Infer bsz, qslen, kslen and device from masks and tensors.
+
+    Params:
+    --------------------------
+    key_padding_mask: (bsz, kslen) or None.
+    attn_mask: ([bsz,] qslen, kslen) or None.
+    is_causal: Whether causal mask is requested.
+    query: (..., qslen, qksz) or None.
+    key: (..., kslen, kksz) or None.
+
+    Return:
+    --------------------------
+    Tuple of (bsz, qslen, kslen, device).
+    """
+    # bsz
+    bsz = 1
+    if key_padding_mask is not None:
+        bsz = key_padding_mask.size(0)
+    elif attn_mask is not None and attn_mask.dim() == 3:
+        bsz = attn_mask.size(0)
+
+    # qslen
+    if attn_mask is not None:
+        qslen = attn_mask.size(-2)
+    elif is_causal and query is not None:
+        qslen = query.size(-2)
+    else:
+        qslen = 1
+
+    # kslen
+    if key_padding_mask is not None:
+        kslen = key_padding_mask.size(-1)
+    elif attn_mask is not None:
+        kslen = attn_mask.size(-1)
+    elif is_causal and key is not None:
+        kslen = key.size(-2)
+    else:
+        kslen = qslen
+
+    # device
+    device = None
+    for tt in [query, key, attn_mask, key_padding_mask]:
+        if tt is not None:
+            device = tt.device
+            break
+
+    return bsz, qslen, kslen, device
+
+
+# %%
+def _merge_to_bias(
+    key_padding_mask: torch.Tensor | None,
+    attn_mask: torch.Tensor | None,
+    is_causal: bool,
+    shapes: tuple[int, int, int, torch.device | None],
+) -> torch.Tensor:
+    """Create and merge masks into a single bias mask.
+
+    Handles causal mask, key_padding_mask and attn_mask merging.
+
+    Params:
+    --------------------------
+    key_padding_mask: (bsz, kslen) or None.
+    attn_mask: ([bsz,] qslen, kslen) or None.
+    is_causal: Whether to apply causal (lower-triangular) mask.
+    shapes: Tuple of (bsz, qslen, kslen, device).
+
+    Return:
+    --------------------------
+    bias_mask: (bsz, qslen, kslen) tensor with -inf for masked positions.
+    """
+    bsz, qslen, kslen, device = shapes
+    bias_mask = torch.zeros(bsz, qslen, kslen, device=device)
+
+    # Causal mask.
+    if is_causal:
+        tril_mask = torch.ones(
+            qslen, kslen, dtype=torch.bool, device=device
+        ).tril(diagonal=0)
+        bias_mask.masked_fill_(tril_mask.logical_not(), float("-inf"))
+
+    # Merge key_padding_mask.
+    if key_padding_mask is not None:
+        if key_padding_mask.dtype == torch.bool:
+            bias_mask.masked_fill_(
+                key_padding_mask.view(bsz, 1, kslen), float("-inf")
+            )
+        else:
+            bias_mask += key_padding_mask.broadcast_to(bsz, qslen, kslen)
+
+    # Merge attn_mask.
+    if attn_mask is not None:
+        if attn_mask.dtype == torch.bool:
+            bias_mask.masked_fill_(
+                attn_mask.view(1, qslen, kslen), float("-inf")
+            )
+        else:
+            bias_mask += attn_mask.broadcast_to(bsz, qslen, kslen)
+
+    return bias_mask
+
+
+# %%
+def _init_sdpa_mask(
+    attn_mask: torch.Tensor | None,
+    is_causal: bool,
+    qslen: int,
+    kvslen: int,
+    dtype: torch.dtype,
+    device: torch.device,
+    query: torch.Tensor,
+) -> torch.Tensor:
+    """Initialize bias mask for scaled dot-product attention.
+
+    Handles the mask init logic: pass-through for non-bool attn_mask,
+    or create zeros + merge causal/attn_mask.
+
+    Params:
+    --------------------------
+    attn_mask: 2D or 3D attention mask, or None.
+    is_causal: Whether to apply causal masking.
+    qslen: Query sequence length.
+    kvslen: Key-value sequence length.
+    dtype: Result dtype.
+    device: Result device.
+    query: Query tensor for warning context.
+
+    Return:
+    --------------------------
+    bias_mask: (qslen, kvslen) or broadcastable tensor.
+    """
+    if (
+        attn_mask is not None
+        and attn_mask.dtype != torch.bool
+        and not is_causal
+    ):
+        return attn_mask
+
+    bias_mask = torch.zeros(qslen, kvslen, dtype=dtype, device=device)
+    # Causal mask.
+    if is_causal:
+        if attn_mask is not None:
+            logger.warning(
+                "Explicit attn_mask and is_causal are be set simultaneously."
+            )
+        tril_mask = torch.ones(
+            qslen, kvslen, dtype=torch.bool, device=device
+        ).tril(diagonal=0)
+        bias_mask.masked_fill_(tril_mask.logical_not(), float("-inf"))
+        bias_mask.to(query.dtype)
+    # Merge attn_mask.
+    if attn_mask is not None:
+        if attn_mask.dim() == 3:
+            tgt_shape = torch.broadcast_shapes(
+                (1, *(bias_mask.size())),
+                attn_mask.size(),
+            )
+            bias_mask = torch.broadcast_to(bias_mask, tgt_shape).clone()
+        if attn_mask.dtype == torch.bool:
+            bias_mask.masked_fill_(attn_mask, float("-inf"))
+        else:
+            bias_mask = attn_mask + bias_mask
+    return bias_mask
+
+
+# %%
 def scaled_dot_product_attention(
     query: torch.Tensor,
     key: torch.Tensor,
@@ -98,46 +271,9 @@ def scaled_dot_product_attention(
     dtype = query.dtype
     device = query.device
 
-    # Init mask with ninf.
-    if (
-        attn_mask is not None
-        and attn_mask.dtype != torch.bool
-        and not is_causal
-    ):
-        bias_mask = attn_mask
-    else:
-        bias_mask = torch.zeros(
-            qslen,
-            kvslen,
-            dtype=dtype,
-            device=device,
-        )
-        # Causal mask.
-        if is_causal:
-            if attn_mask is not None:
-                logger.warning(
-                    "Explicit attn_mask and is_causal are be set simultaneously."
-                )
-            tril_mask = torch.ones(
-                qslen, kvslen, dtype=torch.bool, device=device
-            ).tril(diagonal=0)
-            bias_mask.masked_fill_(tril_mask.logical_not(), float("-inf"))
-            bias_mask.to(query.dtype)
-        # Padding mask or attention mask.
-        # set_trace()
-        if attn_mask is not None:
-            # Broadcast to fit for 3D merged or padding mask.
-            if attn_mask.dim() == 3:
-                tgt_shape = torch.broadcast_shapes(
-                    (1, *(bias_mask.size())),
-                    attn_mask.size(),
-                )
-                bias_mask = torch.broadcast_to(bias_mask, tgt_shape).clone()
-            # Convert bool mask to float mask with ninf for softmax.
-            if attn_mask.dtype == torch.bool:
-                bias_mask.masked_fill_(attn_mask, float("-inf"))
-            else:
-                bias_mask = attn_mask + bias_mask
+    bias_mask = _init_sdpa_mask(
+        attn_mask, is_causal, qslen, kvslen, dtype, device, query
+    )
 
     # Fit mask for query and key.
     if bias_mask.dim() == 3:
@@ -494,37 +630,13 @@ class MultiheadAttention(nn.Module):
             "Only 2D key padding mask with shape(bsz, kvslen) is allowed."
         )
 
-        # Get mask sizes: bsz, qslen, kslen.
-        bsz = 1
-        if key_padding_mask is not None:
-            bsz = key_padding_mask.size(0)
-        elif attn_mask is not None and attn_mask.dim() == 3:
-            bsz = attn_mask.size(0)
+        # Infer shapes from masks and tensors.
+        shapes = _infer_mask_shapes(
+            key_padding_mask, attn_mask, is_causal, query, key
+        )
+        device = shapes[3]
 
-        if attn_mask is not None:
-            qslen = attn_mask.size(-2)
-        elif is_causal and query is not None:
-            qslen = query.size(-2)
-        else:
-            qslen = 1
-
-        if key_padding_mask is not None:
-            kslen = key_padding_mask.size(-1)
-        elif attn_mask is not None:
-            kslen = attn_mask.size(-1)
-        elif is_causal and key is not None:
-            kslen = key.size(-2)
-        else:
-            kslen = qslen
-
-        # Get device.
-        device = None
-        for tt in [query, key, attn_mask, key_padding_mask]:
-            if tt is not None:
-                device = tt.device
-                break
-
-        # Return attention mask directly.
+        # Return attention mask directly if no merging needed.
         if (
             attn_mask is not None
             and attn_mask.dtype != torch.bool
@@ -537,33 +649,8 @@ class MultiheadAttention(nn.Module):
                 # Add the first dimension for batch-size.
                 return attn_mask.unsqueeze(0).to(device)
 
-        # set_trace()
-        # Init bias mask.
-        bias_mask = torch.zeros(bsz, qslen, kslen, device=device)
-        if is_causal:
-            # set_trace()
-            tril_mask = torch.ones(
-                qslen, kslen, dtype=torch.bool, device=device
-            ).tril(diagonal=0)
-            bias_mask.masked_fill_(tril_mask.logical_not(), float("-inf"))
-
-        # Merge key_padding_mask and attention mask.
-        if key_padding_mask is not None:
-            if key_padding_mask.dtype == torch.bool:
-                bias_mask.masked_fill_(
-                    key_padding_mask.view(bsz, 1, kslen), float("-inf")
-                )
-            else:
-                bias_mask += key_padding_mask.broadcast_to(bsz, qslen, kslen)
-        if attn_mask is not None:
-            if attn_mask.dtype == torch.bool:
-                bias_mask.masked_fill_(
-                    attn_mask.view(1, qslen, kslen), float("-inf")
-                )
-            else:
-                bias_mask += attn_mask.broadcast_to(bsz, qslen, kslen)
-
-        return bias_mask
+        # Build and merge all masks into bias_mask.
+        return _merge_to_bias(key_padding_mask, attn_mask, is_causal, shapes)
 
 
 # %%

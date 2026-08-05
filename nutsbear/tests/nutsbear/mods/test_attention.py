@@ -550,3 +550,255 @@ def test_SimpleMHA_qkv_diffsz(torch_fkwargs):
     attn, attn_ws = mha(query, key, value)
     assert attn.size() == (bsz, slen, qksz)
     assert attn_ws.size() == (bsz, slen, mlen)
+
+
+# %%
+from nutsbear.mods.attention import (
+    _infer_mask_shapes,
+    _merge_to_bias,
+    _init_sdpa_mask,
+)
+
+
+# %%
+class TestInferMaskShapes:
+    """Tests for _infer_mask_shapes."""
+
+    def test_no_masks_no_causal(self):
+        """All inputs None, no causal -> default shapes."""
+        bsz, qslen, kslen, device = _infer_mask_shapes(
+            None, None, False, None, None
+        )
+        assert bsz == 1
+        assert qslen == 1
+        assert kslen == 1
+        assert device is None
+
+    def test_key_padding_mask_infer_bsz_kslen(self):
+        """key_padding_mask provides bsz and kslen."""
+        kpm = torch.zeros(5, 8, dtype=torch.bool)
+        bsz, qslen, kslen, device = _infer_mask_shapes(
+            kpm, None, False, None, None
+        )
+        assert bsz == 5
+        assert qslen == 1
+        assert kslen == 8
+
+    def test_3d_attn_mask_infer_all(self):
+        """3D attn_mask provides bsz, qslen, kslen."""
+        attn = torch.zeros(3, 4, 6)
+        bsz, qslen, kslen, device = _infer_mask_shapes(
+            None, attn, False, None, None
+        )
+        assert bsz == 3
+        assert qslen == 4
+        assert kslen == 6
+
+    def test_2d_attn_mask_qslen_kslen(self):
+        """2D attn_mask provides qslen, kslen but not bsz."""
+        attn = torch.zeros(4, 6)
+        bsz, qslen, kslen, device = _infer_mask_shapes(
+            None, attn, False, None, None
+        )
+        assert bsz == 1
+        assert qslen == 4
+        assert kslen == 6
+
+    def test_causal_with_query(self):
+        """is_causal=True, query provided -> qslen from query."""
+        query = torch.randn(2, 7, 5)
+        key = torch.randn(2, 9, 5)
+        bsz, qslen, kslen, device = _infer_mask_shapes(
+            None, None, True, query, key
+        )
+        assert bsz == 1
+        assert qslen == 7
+        assert kslen == 9
+
+    def test_device_from_query(self):
+        """Device is inferred from the first non-None tensor."""
+        query = torch.randn(2, 4, 5)
+        bsz, qslen, kslen, device = _infer_mask_shapes(
+            None, None, False, query, None
+        )
+        assert device == query.device
+
+    def test_key_padding_mask_priority(self):
+        """key_padding_mask takes priority over attn_mask for bsz."""
+        kpm = torch.zeros(7, 6, dtype=torch.bool)
+        attn = torch.zeros(3, 4, 6)
+        bsz, qslen, kslen, device = _infer_mask_shapes(
+            kpm, attn, False, None, None
+        )
+        assert bsz == 7
+        assert qslen == 4
+        assert kslen == 6
+
+
+# %%
+class TestMergeToBias:
+    """Tests for _merge_to_bias."""
+
+    def test_no_masks_no_causal(self):
+        """No masks, no causal -> all zeros."""
+        shapes = (2, 4, 6, torch.device("cpu"))
+        bias = _merge_to_bias(None, None, False, shapes)
+        assert bias.shape == (2, 4, 6)
+        assert (bias == 0).all()
+
+    def test_causal_mask(self):
+        """is_causal=True -> lower-triangular -inf."""
+        shapes = (1, 4, 4, torch.device("cpu"))
+        bias = _merge_to_bias(None, None, True, shapes)
+        assert bias.shape == (1, 4, 4)
+        # Upper triangle should be -inf.
+        assert bias[0, 0, 1] == float("-inf")
+        assert bias[0, 0, 3] == float("-inf")
+        assert bias[0, 1, 2] == float("-inf")
+        # Diagonal and below should be 0.
+        assert bias[0, 0, 0] == 0
+        assert bias[0, 1, 0] == 0
+        assert bias[0, 1, 1] == 0
+        assert bias[0, 3, 3] == 0
+
+    def test_bool_key_padding_mask(self):
+        """Bool key_padding_mask fills with -inf."""
+        shapes = (2, 4, 6, torch.device("cpu"))
+        kpm = torch.tensor([
+            [0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 1, 1, 1],
+        ], dtype=torch.bool)
+        bias = _merge_to_bias(kpm, None, False, shapes)
+        # Batch 0: no padding -> all zeros.
+        assert (bias[0] == 0).all()
+        # Batch 1: padded positions should be -inf.
+        assert bias[1, 0, 0] == float("-inf")
+        assert bias[1, 0, 1] == float("-inf")
+        assert bias[1, 0, 3] == float("-inf")
+        assert bias[1, 0, 4] == float("-inf")
+        assert bias[1, 0, 5] == float("-inf")
+        # Non-padded position should be 0.
+        assert bias[1, 0, 2] == 0
+
+    def test_bool_attn_mask(self):
+        """Bool attn_mask fills with -inf."""
+        shapes = (1, 3, 4, torch.device("cpu"))
+        attn = torch.tensor([
+            [0, 1, 0, 1],
+            [1, 0, 1, 0],
+            [0, 0, 0, 1],
+        ], dtype=torch.bool)
+        bias = _merge_to_bias(None, attn, False, shapes)
+        assert bias[0, 0, 1] == float("-inf")
+        assert bias[0, 0, 3] == float("-inf")
+        assert bias[0, 1, 0] == float("-inf")
+        assert bias[0, 1, 2] == float("-inf")
+        assert bias[0, 2, 3] == float("-inf")
+        # Non-masked positions.
+        assert bias[0, 0, 0] == 0
+        assert bias[0, 0, 2] == 0
+        assert bias[0, 2, 0] == 0
+
+    def test_float_attn_mask_additive(self):
+        """Float attn_mask is added to bias."""
+        shapes = (1, 2, 3, torch.device("cpu"))
+        attn = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+        bias = _merge_to_bias(None, attn, False, shapes)
+        assert torch.allclose(bias, attn.unsqueeze(0))
+
+    def test_combined_causal_and_padding(self):
+        """Causal + key_padding_mask both applied."""
+        shapes = (1, 4, 4, torch.device("cpu"))
+        kpm = torch.tensor([[0, 0, 1, 0]], dtype=torch.bool)
+        bias = _merge_to_bias(kpm, None, True, shapes)
+        # Causal: upper triangle -inf.
+        assert bias[0, 0, 1] == float("-inf")
+        assert bias[0, 0, 2] == float("-inf")
+        assert bias[0, 0, 3] == float("-inf")
+        assert bias[0, 1, 2] == float("-inf")
+        assert bias[0, 1, 3] == float("-inf")
+        assert bias[0, 2, 3] == float("-inf")
+        # Padding: column 2 is -inf for all rows.
+        assert bias[0, 0, 2] == float("-inf")
+        assert bias[0, 1, 2] == float("-inf")
+        assert bias[0, 2, 2] == float("-inf")
+        assert bias[0, 3, 2] == float("-inf")
+        # Diagonal (0,0), (1,1), (3,3) should be 0.
+        assert bias[0, 0, 0] == 0
+        assert bias[0, 1, 1] == 0
+        assert bias[0, 3, 3] == 0
+
+
+# %%
+class TestInitSdpaMask:
+    """Tests for _init_sdpa_mask."""
+
+    def test_pass_through_non_bool(self):
+        """Non-bool, non-causal attn_mask returned directly."""
+        attn = torch.randn(4, 6)
+        query = torch.randn(3, 4, 5)
+        result = _init_sdpa_mask(attn, False, 4, 6, torch.float32, query.device, query)
+        assert result is attn
+
+    def test_none_mask_no_causal(self):
+        """No mask, no causal -> all zeros."""
+        query = torch.randn(3, 4, 5)
+        result = _init_sdpa_mask(None, False, 4, 6, torch.float32, query.device, query)
+        assert result.shape == (4, 6)
+        assert (result == 0).all()
+
+    def test_causal_only(self):
+        """is_causal=True, no attn_mask -> lower-triangular -inf."""
+        query = torch.randn(3, 4, 4)
+        result = _init_sdpa_mask(None, True, 4, 4, torch.float32, query.device, query)
+        assert result.shape == (4, 4)
+        # Upper triangle should be -inf.
+        assert result[0, 1] == float("-inf")
+        assert result[0, 3] == float("-inf")
+        assert result[1, 2] == float("-inf")
+        # Diagonal should be 0.
+        assert result[0, 0] == 0
+        assert result[1, 1] == 0
+        assert result[3, 3] == 0
+
+    def test_bool_attn_mask(self):
+        """Bool attn_mask -> masked positions get -inf."""
+        query = torch.randn(3, 3, 4)
+        attn = torch.tensor([
+            [0, 1, 0, 1],
+            [1, 0, 1, 0],
+            [0, 0, 0, 1],
+        ], dtype=torch.bool)
+        result = _init_sdpa_mask(attn, False, 3, 4, torch.float32, query.device, query)
+        assert result[0, 1] == float("-inf")
+        assert result[0, 3] == float("-inf")
+        assert result[0, 0] == 0
+
+    def test_3d_attn_mask(self):
+        """3D attn_mask broadcast and merged."""
+        query = torch.randn(2, 4, 5)
+        attn = torch.randn(2, 4, 6)
+        result = _init_sdpa_mask(attn, False, 4, 6, torch.float32, query.device, query)
+        assert result.shape == (2, 4, 6)
+        assert torch.allclose(result, attn)
+
+    def test_causal_with_bool_attn_mask(self):
+        """Causal + bool attn_mask both applied."""
+        query = torch.randn(1, 3, 3)
+        attn = torch.tensor([
+            [0, 0, 1],
+            [0, 0, 0],
+            [1, 0, 0],
+        ], dtype=torch.bool)
+        result = _init_sdpa_mask(attn, True, 3, 3, torch.float32, query.device, query)
+        # Causal: upper triangle -inf.
+        assert result[0, 1] == float("-inf")
+        assert result[0, 2] == float("-inf")
+        assert result[1, 2] == float("-inf")
+        # attn_mask: (0,2) and (2,0) -inf.
+        assert result[0, 2] == float("-inf")
+        assert result[2, 0] == float("-inf")
+        # Diagonal should be 0 (not masked by attn_mask).
+        assert result[0, 0] == 0
+        assert result[1, 1] == 0
+        assert result[2, 2] == 0
