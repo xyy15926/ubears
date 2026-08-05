@@ -37,6 +37,9 @@ homepage = "https://github.com/xyy15926"
 requires = [ "hatchling" ]
 build-backend = "hatchling.build"
 
+[tool.hatch.metadata]
+allow-direct-references = true
+
 [tool.hatch.version]
 path = "src/flagbear/__init__.py"
 
@@ -162,7 +165,7 @@ known-first-party = [
     "flagbear",
     "statbear",
     "nutsbear",
-    "distbear",
+    "dirtbear",
 ]
 
 [tool.ruff.lint.pydocstyle]
