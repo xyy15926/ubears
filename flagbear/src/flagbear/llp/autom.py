@@ -43,6 +43,7 @@ class AutomState:
     desc: Str.
       Description for repr.
     """
+
     def __init__(self, core: Hashable, desc: str | None = None):
         """Init.
 
@@ -50,12 +51,15 @@ class AutomState:
         -----------------------
         cores: Hashable to identify the state in Automaton.
         """
+        # fmt: off
         self.core = core                # States with the same core are equal.
         self._hashval = hash(core)      # Hash value for hashable implementation.
         self.autom = None               # Automaton that the state belongs to.
         self._regid = None              # For repr and fast-comparion only.
-        self.desc = (f"Unregesiterd State {self._hashval}" if desc is None
-                     else desc)
+        # fmt: on
+        self.desc = (
+            f"Unregesiterd State {self._hashval}" if desc is None else desc
+        )
 
     def __repr__(self):
         """Representation."""
@@ -74,15 +78,13 @@ class AutomState:
         2. But for time-efficiency, registered states will be compared with their
           automaton and register-id first.
         """
-        return (
-            isinstance(rhs, self.__class__)
-            and (
-                (self.autom is not None
-                 and self.autom is rhs.autom
-                 and self._regid == rhs._regid)
-                or (self._hashval == rhs._hashval
-                    and self.core == self.core)
+        return isinstance(rhs, self.__class__) and (
+            (
+                self.autom is not None
+                and self.autom is rhs.autom
+                and self._regid == rhs._regid
             )
+            or (self._hashval == rhs._hashval and self.core == self.core)
         )
 
     def __hash__(self):
@@ -117,8 +119,10 @@ class Automaton:
     end_state: Set of AutomState.
       End states.
     """
+
     def __init__(self, state_type: type = AutomState):
         """Init."""
+        # fmt: off
         self.state_type = state_type        # Default state class to init implicitly.
         self.states_store = {}              # {AutomState: AutomState}
         self.states_list = []               # [AutomState]
@@ -126,6 +130,7 @@ class Automaton:
         self.cur = None                     # Current state.
         self.start_state = None             # Start state.
         self.end_states = None              # End state set.
+        # fmt: on
 
     def add_state(self, state: Hashable) -> AutomState:
         """Add state in the automaton.
@@ -192,9 +197,12 @@ class Automaton:
             return inner
         return self.add_state(state)
 
-    def add_transition(self, from_: AutomState,
-                       inp: Hashable,
-                       to_: AutomState) -> Self:
+    def add_transition(
+        self,
+        from_: AutomState,
+        inp: Hashable,
+        to_: AutomState,
+    ) -> Self:
         """Add transition in the automaton.
 
         Params:
@@ -209,9 +217,13 @@ class Automaton:
         """
         gotos = self.gotos
         if from_.autom is not self:
-            raise ValueError(f"State {from_} isn't registered in this automaton.")
+            raise ValueError(
+                f"State {from_} isn't registered in this automaton."
+            )
         if to_.autom is not self:
-            raise ValueError(f"State {to_} isn't registered in this automaton.")
+            raise ValueError(
+                f"State {to_} isn't registered in this automaton."
+            )
         if (from_, inp) in gotos:
             logger.warning(f"Update existing transition {from_} with {inp}.")
         gotos[from_, inp] = to_
@@ -292,6 +304,7 @@ class StatesPDA(Automaton):
     states_stack: List.
       History of the states of the automaton.
     """
+
     def __init__(self, state_type: type = AutomState):
         """Init."""
         super().__init__(state_type)
@@ -320,7 +333,7 @@ class StatesPDA(Automaton):
             raise ValueError("Automaton can't start without transitions.")
         if not states:
             self.cur = self.start_state
-            self.states_stack = [self.cur, ]
+            self.states_stack = [self.cur]
         else:
             self.states_stack = list(states)
             self.cur = self.states_stack[-1]

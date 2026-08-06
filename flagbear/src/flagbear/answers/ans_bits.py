@@ -43,6 +43,7 @@ def count_one_table(x: int) -> int:
     1. Init table of `1`s in unsigned bits from 0~255.
     2. Shift right to get `1`s for each 8bits group and then add up.
     """
+
     def init_one_table() -> list:
         one_tbl = [0] * 256
         for i in range(256):
@@ -50,10 +51,12 @@ def count_one_table(x: int) -> int:
         return one_tbl
 
     one_tbl = init_one_table()
-    return (one_tbl[x & 0xff]
-            + one_tbl[(x >> 8) & 0xff]
-            + one_tbl[(x >> 16) & 0xff]
-            + one_tbl[(x >> 24) & 0xff])
+    return (
+        one_tbl[x & 0xFF]
+        + one_tbl[(x >> 8) & 0xFF]
+        + one_tbl[(x >> 16) & 0xFF]
+        + one_tbl[(x >> 24) & 0xFF]
+    )
 
 
 def count_one_division(x: int) -> int:
@@ -64,9 +67,9 @@ def count_one_division(x: int) -> int:
     """
     x = (x & 0x55555555) + ((x >> 1) & 0x55555555)
     x = (x & 0x33333333) + ((x >> 2) & 0x33333333)
-    x = (x & 0x0f0f0f0f) + ((x >> 4) & 0x0f0f0f0f)
-    x = (x & 0x00ff00ff) + ((x >> 8) & 0x00ff00ff)
-    x = (x & 0x0000ffff) + ((x >> 16) & 0x0000ffff)
+    x = (x & 0x0F0F0F0F) + ((x >> 4) & 0x0F0F0F0F)
+    x = (x & 0x00FF00FF) + ((x >> 8) & 0x00FF00FF)
+    x = (x & 0x0000FFFF) + ((x >> 16) & 0x0000FFFF)
     return x
 
 
@@ -78,10 +81,10 @@ def count_one_division_v2(x: int) -> int:
     """
     x = x - ((x >> 1) & 0x55555555)
     x = (x & 0x33333333) + ((x >> 2) & 0x33333333)
-    x = (x + (x >> 4)) & 0x0f0f0f0f
+    x = (x + (x >> 4)) & 0x0F0F0F0F
     x = x + (x >> 8)
     x = x + (x >> 16)
-    return x & 0x3f
+    return x & 0x3F
 
 
 # %%
@@ -117,7 +120,7 @@ def count_one_odd_division_tbl(x: int) -> int:
     x = x ^ (x >> 4)
     x = x ^ (x >> 8)
     x = x ^ (x >> 16)
-    return (0x6996 >> (x & 0x0f)) & 0x01
+    return (0x6996 >> (x & 0x0F)) & 0x01
 
 
 # %%
@@ -150,7 +153,7 @@ def even_u8_mod(x: int) -> int:
     2. Bitwise and to get `d000 a000 e000 b000 f000 c000 gabc defg`.
     3. Mod with 1920 = 128 * 15 to get [X]abcdfg.
     """
-    return (((x * 0x10204081) & 0x888888ff) % 1920) & 0xff
+    return (((x * 0x10204081) & 0x888888FF) % 1920) & 0xFF
 
 
 def odd_u8_mod(x: int) -> int:
@@ -161,7 +164,7 @@ def odd_u8_mod(x: int) -> int:
     2. Bitwise or to get some `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`.
     3. Mod with 1152 = 128 * 9 to get [X]abcdfg.
     """
-    return (((x * 0x00204081) | 0x3db6db00) % 1152) & 0xff
+    return (((x * 0x00204081) | 0x3DB6DB00) % 1152) & 0xFF
 
 
 # %%
@@ -169,12 +172,12 @@ def odd_u8_mod(x: int) -> int:
 # Reverse bits for 6bits unsigned.
 def reverse_bits(x: int) -> int:
     """Reverse bits for 6bits unsigned."""
-    return int(''.join(reversed(f"{x:06b}")), base=2)
+    return int("".join(reversed(f"{x:06b}")), base=2)
 
 
 def reverse_bits_mod(x: int) -> int:
     """Reverse bits for 6bits unsinged."""
-    return ((x * 0x00082082) & 0x01122408) % 0xff
+    return ((x * 0x00082082) & 0x01122408) % 0xFF
 
 
 # %%
@@ -191,6 +194,7 @@ def count_prepending_zeros(x: int) -> int:
 
 def count_prepending_zeros_mod(x: int) -> int:
     """Count the number of prepending 0s for 32bits unsigned."""
+    # fmt: off
     tbl = [
         32, 31, 'u', 16, 'u', 30, 3, 'u', 15, 'u', 'u', 'u', 29,
         10, 2, 'u', 'u', 'u', 12, 14, 21, 'u', 19, 'u', 'u', 28,
@@ -198,12 +202,13 @@ def count_prepending_zeros_mod(x: int) -> int:
         'u', 13, 22, 20, 'u', 26, 'u', 'u', 18, 5, 'u', 'u', 23,
         'u', 27, 'u', 6, 'u', 24, 7, 'u', 8, 'u', 0, 'u'
     ]
+    # fmt: on
     x |= x >> 1
     x |= x >> 2
     x |= x >> 4
     x |= x >> 8
     x |= x >> 16
-    return tbl[((x * 0x06eb14f9) & 0xffffffff) >> 26]
+    return tbl[((x * 0x06EB14F9) & 0xFFFFFFFF) >> 26]
 
 
 # %%
@@ -217,7 +222,7 @@ def sqrt(x: float) -> float:
     """Compute inverse square root using fast inverse square root algorithm."""
     half = 0.5 * x
     i = struct.unpack("i", struct.pack("f", x))[0]
-    i = (0x5f375a86 - (i >> 1)) & 0xffffffff
+    i = (0x5F375A86 - (i >> 1)) & 0xFFFFFFFF
     x = struct.unpack("f", struct.pack("i", i))[0]
     x = x * (1.5 - half * x * x)
     return x

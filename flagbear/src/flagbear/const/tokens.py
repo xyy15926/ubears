@@ -9,6 +9,8 @@
 
 from flagbear.const.patterns import REGEXS
 
+# fmt: off
+
 # %%
 LEX_ENDFLAG = "$END"
 

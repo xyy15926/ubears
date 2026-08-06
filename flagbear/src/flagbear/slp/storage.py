@@ -21,18 +21,23 @@ logger = logging.getLogger(__name__)
 # %%
 class StorageBackend(Protocol):
     """Storage backend protocol."""
+
     def get(self, key: str) -> bytes | None:
         """Get data by key."""
         ...
+
     def set(self, key: str, data: bytes) -> None:
         """Set data by key."""
         ...
+
     def exists(self, key: str) -> bool:
         """Check if data exists."""
         ...
+
     def delete(self, key: str) -> None:
         """Delete data by key."""
         ...
+
     def list_keys(self, prefix: str = "") -> list[str]:
         """List keys with given prefix."""
         ...
@@ -45,6 +50,7 @@ class LocalFileStorage:
     1. Both meta and data are stored with file. But it may be better to
       store meta with some lite DB.
     """
+
     def __init__(
         self,
         base_dir: str = "./cache",

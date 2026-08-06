@@ -29,6 +29,7 @@ if __name__ == "__main__":
     from importlib import reload
 
     from flagbear.slp import finer, ser_exception, storage
+
     reload(finer)
     reload(storage)
     reload(ser_exception)
@@ -57,6 +58,7 @@ DF_FEATHER_MAX = 8 * 1024 * 1024
 # %%
 def checker(type_: str, priority: int = 50):
     """Decorator to regist checker function."""
+
     def decorator(fn: CheckerFn) -> CheckerFn:
         with _registration_lock:
             if type_ not in _strategy_map:
@@ -67,11 +69,13 @@ def checker(type_: str, priority: int = 50):
                 _, ser, deser = _strategy_map[type_]
                 _strategy_map[type_] = (fn, ser, deser)
         return fn
+
     return decorator
 
 
 def serializer(type_: str):
     """Decorator to regist serializer function."""
+
     def decorator(fn: SerializerFn) -> SerializerFn:
         with _registration_lock:
             if type_ not in _strategy_map:
@@ -80,11 +84,13 @@ def serializer(type_: str):
                 checker, _, deser = _strategy_map[type_]
                 _strategy_map[type_] = (checker, fn, deser)
         return fn
+
     return decorator
 
 
 def deserializer(type_: str):
     """Decorator to regist deserializer function."""
+
     def decorator(fn: DeserializerFn) -> DeserializerFn:
         with _registration_lock:
             if type_ not in _strategy_map:
@@ -93,6 +99,7 @@ def deserializer(type_: str):
                 checker, ser, _ = _strategy_map[type_]
                 _strategy_map[type_] = (checker, ser, fn)
         return fn
+
     return decorator
 
 
@@ -169,11 +176,13 @@ def deserialize(
 
 
 # %%
-@checker("json", priority = 99)
+@checker("json", priority=99)
 def is_json(obj: Any) -> bool:
     """Check if object is JSON-serializable."""
-    if (isinstance(obj, (dict, list, str, int, float, bool, type(None)))
-        and obj.__sizeof__() <= JSON_MAX):
+    if (
+        isinstance(obj, (dict, list, str, int, float, bool, type(None)))
+        and obj.__sizeof__() <= JSON_MAX
+    ):
         try:
             json.dumps(obj)
         except (TypeError, ValueError):
@@ -189,7 +198,9 @@ def json_serialize(
     addon: str | list[str] | None = None,
 ) -> bytes:
     """Serialize object to JSON bytes."""
-    return json.dumps(obj, separators=(",", ":"), ensure_ascii=False).encode("utf8")
+    return json.dumps(obj, separators=(",", ":"), ensure_ascii=False).encode(
+        "utf8"
+    )
 
 
 @deserializer("json")
@@ -205,7 +216,7 @@ def json_deserialize(
 
 
 # %%
-@checker("pickle", priority = 10)
+@checker("pickle", priority=10)
 def is_anything(obj: Any) -> bool:
     """Check if object is picklable."""
     return True
@@ -233,13 +244,14 @@ def pickle_deserialize(
 
 
 # %%
-@checker("numpy", priority = 95)
+@checker("numpy", priority=95)
 def is_numpy(obj: Any) -> bool:
     """Check if object is a NumPy array."""
     try:
         # Checker will be called first, so check if Numpy is installed here.
         # And it's clear that the object is not np.ndarray if import fails.
         import numpy as np
+
         return isinstance(obj, np.ndarray)
     except ImportError:
         return False
@@ -281,7 +293,7 @@ def numpy_deserialize(
 
 
 # %%
-@checker("pddf_csv", priority = 1)
+@checker("pddf_csv", priority=1)
 def is_pddf_csv(obj: Any) -> bool:
     """Check if object is a DataFrame serializable as CSV."""
     try:
@@ -289,7 +301,8 @@ def is_pddf_csv(obj: Any) -> bool:
         import pandas as pd
     except ImportError:
         return False
-    return (isinstance(obj, pd.DataFrame)
+    return (
+        isinstance(obj, pd.DataFrame)
         and obj.memory_usage().sum() <= DF_CSV_MAX
         and not np.any(obj.dtypes == np.dtype("O"))
     )
@@ -320,14 +333,11 @@ def pddf_csv_deserialize(
 
     import pandas as pd
 
-    return pd.read_csv(
-        io.StringIO(bytes_.decode("utf-8")),
-        index_col=0
-    )
+    return pd.read_csv(io.StringIO(bytes_.decode("utf-8")), index_col=0)
 
 
 # %%
-@checker("pddf_feather", priority = 85)
+@checker("pddf_feather", priority=85)
 def is_pddf_feather(obj: Any) -> bool:
     """Check if object is a DataFrame serializable as Feather."""
     try:
@@ -336,7 +346,8 @@ def is_pddf_feather(obj: Any) -> bool:
         import pyarrow  # noqa: F401
     except ImportError:
         return False
-    return (isinstance(obj, pd.DataFrame)
+    return (
+        isinstance(obj, pd.DataFrame)
         and obj.memory_usage().sum() <= DF_FEATHER_MAX
         and not np.any(obj.dtypes == np.dtype("O"))
     )
@@ -371,7 +382,7 @@ def pddf_feather_deserialize(
 
 
 # %%
-@checker("pddf_parquet", priority = 80)
+@checker("pddf_parquet", priority=80)
 def is_pddf_parquet(obj: Any) -> bool:
     """Check if object is a DataFrame serializable as Parquet."""
     try:
@@ -380,8 +391,8 @@ def is_pddf_parquet(obj: Any) -> bool:
         import pyarrow  # noqa: F401
     except ImportError:
         return False
-    return (isinstance(obj, pd.DataFrame)
-        and not np.any(obj.dtypes == np.dtype("O"))
+    return isinstance(obj, pd.DataFrame) and not np.any(
+        obj.dtypes == np.dtype("O")
     )
 
 
@@ -414,7 +425,7 @@ def pddf_parquet_deserialize(
 
 
 # %%
-@checker("exception", priority = 98)
+@checker("exception", priority=98)
 def is_exception(obj: Any):
     """Check if object is an exception."""
     return isinstance(obj, BaseException)

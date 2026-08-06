@@ -23,9 +23,11 @@ if __name__ == "__main__":
     from importlib import reload
 
     from flagbear.slp import cache, checkpoint
+
     reload(cache)
     reload(checkpoint)
     from flagbear.sched import flow, protocols, task
+
     reload(task)
     reload(flow)
     reload(protocols)
@@ -66,6 +68,7 @@ class TaskProxy(TaskProxyBase):
       attributes.
     is_async: If inner function is async.
     """
+
     def __call__(self, *args, **kwargs) -> Any:
         """Call `self.func`."""
         return self.run(*args, **kwargs)
@@ -106,16 +109,19 @@ def task(
     execution_policy: ExecutionPolicy | None = None,
 ) -> TaskProxy:
     """Create a TaskProxy from a callable."""
+
     def decorator(ffunc):
         nonlocal name, cache_policy, checkpoint_policy
         nonlocal retry_policy, execution_policy
         return TaskProxy(
-            ffunc, name,
+            ffunc,
+            name,
             cache_policy,
             checkpoint_policy,
             retry_policy,
             execution_policy,
         )
+
     if func is None:
         return decorator
     return decorator(func)
@@ -146,6 +152,7 @@ class TaskOnce:
     raw_kwargs: Raw arguments that may contain other `TaskOnce`s to be
       resolved.
     """
+
     def __init__(
         self,
         task: TaskProxy,
@@ -214,9 +221,11 @@ class TaskOnce:
         unresolved: list | dict,
         cache: Cache,
     ) -> tuple[dict, dict, dict]:
-        tasks = (enumerate(unresolved)
-                 if isinstance(unresolved, (tuple, list))
-                 else unresolved.items())
+        tasks = (
+            enumerate(unresolved)
+            if isinstance(unresolved, (tuple, list))
+            else unresolved.items()
+        )
         ready = {}
         failed = {}
         unready = []
@@ -253,7 +262,9 @@ class TaskOnce:
         raw_args = self.raw_args
         raw_kwargs = self.raw_kwargs
         pready, punready, pfailed = self._resolve_with_context(raw_args, cache)
-        kready, kunready, kfailed = self._resolve_with_context(raw_kwargs, cache)
+        kready, kunready, kfailed = self._resolve_with_context(
+            raw_kwargs, cache
+        )
         unready = list(set(punready + kunready))
         pfailed.update(kfailed)
         pready = list(pready.values())
@@ -279,8 +290,12 @@ class TaskOnce:
         """
         raw_args = self.raw_args
         raw_kwargs = self.raw_kwargs
-        _pready, punready, _pfailed = self._resolve_with_context(raw_args, cache)
-        _kready, kunready, _kfailed = self._resolve_with_context(raw_kwargs, cache)
+        _pready, punready, _pfailed = self._resolve_with_context(
+            raw_args, cache
+        )
+        _kready, kunready, _kfailed = self._resolve_with_context(
+            raw_kwargs, cache
+        )
         unready = list(set(punready + kunready))
         return unready
 
@@ -296,9 +311,7 @@ class TaskOnce:
             )
         result = ctx.get_result(self)
         if result is None:
-            raise RuntimeError(
-                f"Can't fetch the result of task {self.name}."
-            )
+            raise RuntimeError(f"Can't fetch the result of task {self.name}.")
 
         if result.is_successful():
             return result.value

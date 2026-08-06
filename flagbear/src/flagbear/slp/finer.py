@@ -31,8 +31,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 ROOT_FLAG = {
-    ".root", ".git", "makefile", ".svn", ".vscode",
-    "pyproject.toml", "setup.py", "pixi.toml",
+    ".root",
+    ".git",
+    "makefile",
+    ".svn",
+    ".vscode",
+    "pyproject.toml",
+    "setup.py",
+    "pixi.toml",
 }
 
 
@@ -188,10 +194,7 @@ def tmp_file(
     # Split basename and extname.
     basename, extname = os.path.splitext(tfname.name)
     tbname = date_order_mark(
-        basename,
-        (fd.name for fd in tfname.parent.iterdir()),
-        dmark,
-        incr
+        basename, (fd.name for fd in tfname.parent.iterdir()), dmark, incr
     )
     tfname = tfname.with_name(tbname + extname)
 

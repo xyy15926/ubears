@@ -36,7 +36,7 @@ def box_muller() -> Iterator:
 def metropolis(
     pdf: Callable,
     N: int = 10000,
-    start: float = 0
+    start: float = 0,
 ) -> list:
     """Metropolis Sampling.
 
@@ -59,8 +59,10 @@ def metropolis(
     ---------------------------
     List of samples.
     """
+
     def guass_pdf(x):
         return 1 / sqrt(2 * pi) * exp(-0.5 * x**2)
+
     rands = [0] * N
     # Init the first element of the sequence.
     last = start
@@ -81,7 +83,7 @@ def metropolis(
 def metropolis_hastings(
     pdf: Callable,
     N: int = 10000,
-    start: float = 0
+    start: float = 0,
 ) -> list:
     """Metropolis-Hastings Sampling.
 

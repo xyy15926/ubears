@@ -22,6 +22,7 @@ if __name__ == "__main__":
     from importlib import reload
 
     from flagbear.slp import finer, serializer, storage
+
     reload(finer)
     reload(storage)
     reload(serializer)
@@ -46,6 +47,7 @@ class CachePolicy:
     inline: If to store cache in memory.
       Only Valid for persistent cache only.
     """
+
     ttl: timedelta | None = None
     type_: str | None = None
     inline: bool | None = None
@@ -71,8 +73,9 @@ class CacheMeta:
     value: The exact value of the cache.
       Only set when `inline == True`
     """
+
     key: str | None = None
-    created_at: datetime = field(default_factory = datetime.now)
+    created_at: datetime = field(default_factory=datetime.now)
     expires_at: datetime | None = None
     last_accessed: datetime | None = None
     hits: int = 0
@@ -85,12 +88,21 @@ class CacheMeta:
         """Dump into json string."""
         metadict = {
             "key": self.key,
-            "created_at": (self.created_at.isoformat()
-                           if self.created_at is not None else None),
-            "expires_at": (self.expires_at.isoformat()
-                           if self.expires_at is not None else None),
-            "last_accessed": (self.last_accessed.isoformat()
-                           if self.last_accessed is not None else None),
+            "created_at": (
+                self.created_at.isoformat()
+                if self.created_at is not None
+                else None
+            ),
+            "expires_at": (
+                self.expires_at.isoformat()
+                if self.expires_at is not None
+                else None
+            ),
+            "last_accessed": (
+                self.last_accessed.isoformat()
+                if self.last_accessed is not None
+                else None
+            ),
             "hits": self.hits,
             "size": self.size,
             "type_": self.type_,
@@ -136,18 +148,23 @@ class CacheMeta:
 # %%
 class Cache(Protocol):
     """Cache protocol."""
+
     def get(self, key: str) -> Any:
         """Get data by key."""
         ...
+
     def set(self, key: str, data: Any, meta: CacheMetaDict) -> None:
         """Set data by key."""
         ...
+
     def exists(self, key: str) -> bool:
         """Check if cache exists."""
         ...
+
     def delete(self, key: str) -> None:
         """Delete cache by key."""
         ...
+
     def list_keys(self, prefix: str = "") -> list[str]:
         """List keys with given prefix."""
         ...
@@ -177,10 +194,10 @@ def meta_deserialize(bytes_: bytes) -> tuple[Any, CacheMeta]:
     """Deserialize bytes into data and metadata."""
     # Get metadata from data bytes.
     meta_size = int.from_bytes(bytes_[:4], "big")
-    meta = CacheMeta.from_json(bytes_[4: 4 + meta_size])
+    meta = CacheMeta.from_json(bytes_[4 : 4 + meta_size])
     if len(bytes_) > 4 + meta_size:
         data = deserialize(
-            bytes_[4 + meta_size:],
+            bytes_[4 + meta_size :],
             meta.type_,
         )
         return data, meta
@@ -200,6 +217,7 @@ class MemoryCache:
     _stats: Global stats of all the cache.
     _lock: Lock for updating the cache for multi-thread situation.
     """
+
     def __init__(
         self,
         # TODO: CachePolicy???
@@ -216,7 +234,7 @@ class MemoryCache:
         on_miss: Hook function to call when cache misses.
         """
         self.storage = {}
-        self.ttl = timedelta(days = 1e4) if ttl is None else ttl
+        self.ttl = timedelta(days=1e4) if ttl is None else ttl
         self.on_hit = on_hit
         self.on_miss = on_miss
         self._stats = {"hits": 0, "misses": 0, "errors": 0}
@@ -276,8 +294,7 @@ class MemoryCache:
 
     def list_keys(self, prefix: str = "") -> list[str]:
         """Delete keys starting with prefix."""
-        return [key for key in self.storage
-                if key.startswith(prefix)]
+        return [key for key in self.storage if key.startswith(prefix)]
 
 
 # %%
@@ -298,6 +315,7 @@ class PersistentCache:
     max_mem_size: The maximum length of bytes of the serialization result of
       the data to store inline, in memory, with metadata by default.
     """
+
     def __init__(
         self,
         storage: StorageBackend | None = None,
@@ -319,7 +337,7 @@ class PersistentCache:
         """
         self.storage = storage or LocalFileStorage("./cache")
         self.meta_storage = {}
-        self.ttl = timedelta(days = 1e4) if ttl is None else ttl
+        self.ttl = timedelta(days=1e4) if ttl is None else ttl
         self.on_hit = on_hit
         self.on_miss = on_miss
         self._stats = {"hits": 0, "misses": 0, "errors": 0}
@@ -376,8 +394,9 @@ class PersistentCache:
         """Recover metadata from persistent storage."""
         bytes_ = self.storage.get(key)
         if bytes_ is None:
-            raise RuntimeError(f"Fail to get data bytes of key {key} from "
-                               f"persistent storage.")
+            raise RuntimeError(
+                f"Fail to get data bytes of key {key} from persistent storage."
+            )
         data, meta = meta_deserialize(bytes_)
         # Store data in metadata(memory) too.
         if meta.inline is None:

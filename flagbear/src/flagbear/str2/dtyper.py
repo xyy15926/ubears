@@ -44,6 +44,7 @@ def stype_spec(
     """
     if extended:
         import numpy as np
+
         nan = np.nan
         nat = np.datetime64("NaT")
 
@@ -54,6 +55,7 @@ def stype_spec(
             return np.datetime64(x, "s")
     else:
         from datetime import datetime
+
         nan = float("nan")
         nat = None
 
@@ -113,7 +115,7 @@ def stype_spec(
             "default": None,
             "nptype": "object",
             "pdtype": "object",
-        }
+        },
     }
 
     dtype = dtype.upper()
@@ -155,9 +157,13 @@ def regex_caster(
     if lexer is None:
         # Keep the order for the master regex.
         token_types = ["DATETIME", "DATE", "FLOAT", "INT"]
-        token_specs = {tt: (stype_spec(tt, "regex", extended),
-                            stype_spec(tt, "caster", extended))
-                       for tt in token_types}
+        token_specs = {
+            tt: (
+                stype_spec(tt, "regex", extended),
+                stype_spec(tt, "caster", extended),
+            )
+            for tt in token_types
+        }
         lexer = Lexer(token_specs, {}, set(), LEX_ENDFLAG)
 
     words_len = len(words)

@@ -26,6 +26,7 @@ if __name__ == "__main__":
 
     from flagbear.sched import protocols, task
     from flagbear.slp import cache
+
     reload(cache)
     reload(task)
     reload(protocols)
@@ -109,9 +110,9 @@ class LocalExecutor:
             # 2. `daemon = True` will kill the loop-thread when the main
             #   thread die so to avoid hang the process up.
             t = threading.Thread(
-                target = loop_thread,
+                target=loop_thread,
                 args=(loop,),
-                daemon = True,
+                daemon=True,
             )
             t.start()
 
@@ -119,14 +120,18 @@ class LocalExecutor:
 
     def shutdown_event_loop(self):
         """Shutdown event loop."""
+
         # Cancel the pending tasks in event loop.
         async def wait_for_loop():
-            tasks = [t for t in asyncio.all_tasks()
-                     if t is not asyncio.current_task()]
+            tasks = [
+                t
+                for t in asyncio.all_tasks()
+                if t is not asyncio.current_task()
+            ]
             for task in tasks:
                 task.cancel()
             # Wait for the tasks to be cancelled.
-            await asyncio.gather(*tasks, return_exceptions = True)
+            await asyncio.gather(*tasks, return_exceptions=True)
 
         loop = self._event_loop
         if loop.is_running():
@@ -156,6 +161,7 @@ class LocalExecutor:
         *tasks: Task | tuple[Task, callable],
     ) -> list[Future] | None:
         """Submit tasks."""
+
         # Wrap nofity as `asyncio.Task` callback.
         def on_done(
             fut: asyncio.Future,
@@ -190,7 +196,7 @@ class LocalExecutor:
         def task_wrapper(task, notify):
             coro = self.execute_with_cache(task, task_results)
             atask = asyncio.create_task(coro)
-            callback = functools.partial(on_done, task = task, notify = notify)
+            callback = functools.partial(on_done, task=task, notify=notify)
             atask.add_done_callback(callback)
 
         futures = []
@@ -252,8 +258,9 @@ class LocalExecutor:
         value_cache_policy = task.cache_policy
 
         # Resolve arguments.
-        (resolved_args, resolved_kwargs,
-         unready_tasks, failed_tasks) = task.resolve_args(task_results)
+        (resolved_args, resolved_kwargs, unready_tasks, failed_tasks) = (
+            task.resolve_args(task_results)
+        )
         if len(failed_tasks) > 0:
             task_names = ",".join([f.name for f in failed_tasks])
             error = RuntimeError(
@@ -442,9 +449,9 @@ class LocalExecutor:
         --------------------------
         Return value of `func`.
         """
-        is_async = (inspect.iscoroutinefunction(func)
-                    if is_async is None
-                    else is_async)
+        is_async = (
+            inspect.iscoroutinefunction(func) if is_async is None else is_async
+        )
         execution_policy = execution_policy or ExecutionPolicy()
         timeout = execution_policy.timeout
         use_process = execution_policy.use_process
@@ -455,23 +462,26 @@ class LocalExecutor:
             if timeout is not None:
                 value = await asyncio.wait_for(
                     func(*resolved_args, **resolved_kwargs),
-                    timeout = timeout,
+                    timeout=timeout,
                 )
             else:
                 value = await func(*resolved_args, **resolved_kwargs)
         else:
-            pool = (self.thread_executor if not use_process
-                    else self.process_executor)
+            pool = (
+                self.thread_executor
+                if not use_process
+                else self.process_executor
+            )
             loop = asyncio.get_running_loop()
             # Copy context.
             if with_context:
                 func = with_copied_context(func)
             future = pool.submit(func, *resolved_args, **resolved_kwargs)
-            async_future = asyncio.wrap_future(future, loop = loop)
+            async_future = asyncio.wrap_future(future, loop=loop)
             if timeout is not None:
                 value = await asyncio.wait_for(
                     async_future,
-                    timeout = timeout,
+                    timeout=timeout,
                 )
             else:
                 value = await async_future
@@ -483,6 +493,7 @@ class LocalExecutor:
 def with_copied_context(func):
     """Copy context for function execution."""
     ctx = contextvars.copy_context()
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         return ctx.run(func, *args, **kwargs)

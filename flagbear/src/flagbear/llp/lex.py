@@ -3,7 +3,7 @@
 #   Name: lex.py
 #   Author: xyy15926
 #   Created: 2023-11-29 20:17:03
-#   Updated: 2025-01-14 20:10:09
+#   Updated: 2026-08-06 16:16:54
 #   Description:
 # ---------------------------------------------------------
 
@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 # %%
 class Token(NamedTuple):
     """Token type for lexical analysis."""
+
     type: str
     val: Any
     lineno: int = -1
@@ -71,8 +72,10 @@ class Lexer:
     end_flag: string
       Speical token type name to mark the end of a token stream.
     """
+
     def __init__(
-        self, token_specs: dict = LEX_TOKEN_SPECS,
+        self,
+        token_specs: dict = LEX_TOKEN_SPECS,
         reserveds: dict = LEX_RESERVEDS,
         skips: set = LEX_SKIPS,
         end_flag: str = LEX_ENDFLAG,
@@ -204,10 +207,12 @@ class Lexer:
         """
         LPAR = "LPAR"
         RPAR = "RPAR"
-        token_precs = {k: v[0] for k,v in self.token_precs.items()}
+        token_precs = {k: v[0] for k, v in self.token_precs.items()}
 
-        rpn = []                                        # List of postfix notion.
-        tok_st = [Token(LPAR, "(", -1, -1)]           # Temporary stack.
+        # fmt: off
+        rpn = []                                # List of postfix notion.
+        tok_st = [Token(LPAR, "(", -1, -1)]     # Temporary stack.
+        # fmt: on
         for tok in self.input(words):
             out_type, *_ele = tok
             # Break at the end of the tokens.
@@ -276,7 +281,7 @@ class Lexer:
         token_precs = self.token_precs
         env = self.env
 
-        val_st = []             # Stack storing values temporarily.
+        val_st = []  # Stack storing values temporarily.
         for tok_type, tok_val, *_ele in toks:
             if tok_type in token_precs:
                 _priority, arg_n, call = token_precs[tok_type]
@@ -289,8 +294,10 @@ class Lexer:
                     try:
                         tok_val = env[tok_val]
                     except KeyError:
-                        raise KeyError(f"Unrecognized variable {tok_val}"
-                                       f"in bound environment.") from None
+                        raise KeyError(
+                            f"Unrecognized variable {tok_val}"
+                            f"in bound environment."
+                        ) from None
                 val_st.append(tok_val)
 
         return val_st[-1]

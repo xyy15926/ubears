@@ -143,10 +143,10 @@ def floyd_steinberg(
             err = old - new
 
             # Disperse errors to surrounding pixels.
-            pixels[yidx][xidx+1] += err * 7 // 16
-            pixels[yidx+1][xidx-1] += err * 3 // 16
-            pixels[yidx+1][xidx] += err * 5 // 16
-            pixels[yidx+1][xidx+1] += err * 1 // 16
+            pixels[yidx][xidx + 1] += err * 7 // 16
+            pixels[yidx + 1][xidx - 1] += err * 3 // 16
+            pixels[yidx + 1][xidx] += err * 5 // 16
+            pixels[yidx + 1][xidx + 1] += err * 1 // 16
         else:
             xidx += 1
             old = pixels[yidx][xidx]

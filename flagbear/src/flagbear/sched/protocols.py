@@ -47,6 +47,7 @@ logger = logging.getLogger(__name__)
 # %%
 class TaskState(str, Enum):
     """Possible states of a task."""
+
     PENDING = "PENDING"
     RUNNING = "RUNNING"
     SUCCESS = "SUCCESS"
@@ -60,6 +61,7 @@ class TaskState(str, Enum):
 @dataclass
 class TaskResult:
     """Result of a task execution."""
+
     state: TaskState = TaskState.PENDING
     cache_key: str | None = None
     value: Any | None = None
@@ -67,9 +69,7 @@ class TaskResult:
     start_time: datetime | None = None
     end_time: datetime | None = None
     attempt: int = 1
-    _error_recs: ExceptionRecord | None = field(
-        default = None, repr = False
-    )
+    _error_recs: ExceptionRecord | None = field(default=None, repr=False)
 
     @property
     def duration(self) -> float:
@@ -94,7 +94,11 @@ class TaskResult:
 
     def is_failed(self) -> bool:
         """Check if the task failed."""
-        return self.state in (TaskState.FAILED, TaskState.SKIPPED, TaskState.CANCELLED)
+        return self.state in (
+            TaskState.FAILED,
+            TaskState.SKIPPED,
+            TaskState.CANCELLED,
+        )
 
     def to_json(self) -> bytes:
         """Serialize TaskResult into json bytes."""
@@ -105,13 +109,19 @@ class TaskResult:
             "state": self.state,
             "cache_key": self.cache_key,
             "error_recs": error_recs,
-            "start_time": (self.start_time.isoformat()
-                           if self.start_time is not None else None),
-            "end_time": (self.end_time.isoformat()
-                         if self.end_time is not None else None),
+            "start_time": (
+                self.start_time.isoformat()
+                if self.start_time is not None
+                else None
+            ),
+            "end_time": (
+                self.end_time.isoformat()
+                if self.end_time is not None
+                else None
+            ),
             "attempt": self.attempt,
         }
-        return json.dumps(metadict, ensure_ascii = False).encode("utf8")
+        return json.dumps(metadict, ensure_ascii=False).encode("utf8")
 
     @classmethod
     def from_json(cls, bytes_: bytes) -> Self:
@@ -120,20 +130,26 @@ class TaskResult:
         error_recs = None
         error = None
         if metadict["error_recs"] is not None:
-            error_recs = [ExceptionRecord(**rec) for rec in metadict["error_recs"]]
+            error_recs = [
+                ExceptionRecord(**rec) for rec in metadict["error_recs"]
+            ]
             error = restore_exception(metadict["error_recs"])
         meta = cls(
-            state = TaskState(metadict["state"]),
-            cache_key = metadict["cache_key"],
-            error = error,
-            start_time = (datetime.fromisoformat(metadict["start_time"])
-                          if metadict["start_time"] is not None
-                          else None),
-            end_time = (datetime.fromisoformat(metadict["end_time"])
-                          if metadict["end_time"] is not None
-                          else None),
-            attempt = metadict["attempt"],
-            _error_recs = error_recs,
+            state=TaskState(metadict["state"]),
+            cache_key=metadict["cache_key"],
+            error=error,
+            start_time=(
+                datetime.fromisoformat(metadict["start_time"])
+                if metadict["start_time"] is not None
+                else None
+            ),
+            end_time=(
+                datetime.fromisoformat(metadict["end_time"])
+                if metadict["end_time"] is not None
+                else None
+            ),
+            attempt=metadict["attempt"],
+            _error_recs=error_recs,
         )
         return meta
 
@@ -147,7 +163,7 @@ class TaskResult:
         CachePolicy for `TaskResult.value`.
         """
         if value_cache_policy is None:
-            return CachePolicy(type_ = "TaskResult")
+            return CachePolicy(type_="TaskResult")
         if self.value is None:
             cache_policy = CachePolicy(
                 None,
@@ -163,7 +179,7 @@ class TaskResult:
 
 
 # %%
-@checker("TaskResult", priority = 90)
+@checker("TaskResult", priority=90)
 def is_task_result(obj: Any):
     """If could serialize and deserialize with this."""
     return isinstance(obj, TaskResult)
@@ -191,12 +207,12 @@ def task_result_deserialize(
 ) -> TaskResult:
     """Deserialize bytes into TaskResult."""
     meta_size = int.from_bytes(bytes_[:4], "big")
-    data = TaskResult.from_json(bytes_[4: 4 + meta_size])
-    type_size = int.from_bytes(bytes_[4 + meta_size: 8 + meta_size])
-    val_type = bytes_[8 + meta_size: 8 + meta_size + type_size].decode("utf8")
+    data = TaskResult.from_json(bytes_[4 : 4 + meta_size])
+    type_size = int.from_bytes(bytes_[4 + meta_size : 8 + meta_size])
+    val_type = bytes_[8 + meta_size : 8 + meta_size + type_size].decode("utf8")
     if len(bytes_) > 8 + meta_size + type_size:
         value = deserialize(
-            bytes_[8 + meta_size + type_size:],
+            bytes_[8 + meta_size + type_size :],
             val_type,
         )
         data.value = value
@@ -207,6 +223,7 @@ def task_result_deserialize(
 @dataclass
 class RetryPolicy:
     """Policy for retrying failed tasks."""
+
     max_retries: int = 1
     delay_seconds: float = 1.0
     backoff_factor: float = 2.0
@@ -223,13 +240,15 @@ class RetryPolicy:
             self.retry_on = tuple(self.retry_on)
         if attempt >= self.max_retries:
             return False
-        return (self.retry_on is None
-                or error is None
-                or isinstance(error, self.retry_on))
+        return (
+            self.retry_on is None
+            or error is None
+            or isinstance(error, self.retry_on)
+        )
 
     def get_delay(self, attempt: int) -> float:
         """Get the delay duration for a given attempt."""
-        delay = self.delay_seconds * (self.backoff_factor ** attempt)
+        delay = self.delay_seconds * (self.backoff_factor**attempt)
         return min(delay, self.max_delay)
 
 
@@ -237,6 +256,7 @@ class RetryPolicy:
 @dataclass
 class ExecutionPolicy:
     """Policy for task execution settings."""
+
     timeout: float | None = None
     use_process: bool = False
     with_context: bool = False
@@ -263,6 +283,7 @@ class TaskProxyBase:
       attributes.
     is_async: If inner function is async.
     """
+
     def __init__(
         self,
         func: Callable,
@@ -298,16 +319,26 @@ class TaskProxyBase:
 
     def __getattr__(self, name: str) -> Any:
         """Get policy attributes from current policies."""
-        if name in ["name", "cache_policy", "checkpoint_policy",
-                    "retry_policy", "execution_policy"]:
+        if name in [
+            "name",
+            "cache_policy",
+            "checkpoint_policy",
+            "retry_policy",
+            "execution_policy",
+        ]:
             return self._current_policies[name]
         # Get attributes start from `super()`.
         return getattr(super(), name)
 
     def __setattr__(self, name: str, value: Any):
         """Set policy attributes in current policies."""
-        if name in ["name", "cache_policy", "checkpoint_policy",
-                    "retry_policy", "execution_policy"]:
+        if name in [
+            "name",
+            "cache_policy",
+            "checkpoint_policy",
+            "retry_policy",
+            "execution_policy",
+        ]:
             self._current_policies[name] = value
         else:
             # Use `super().__setattr__` to set attributes on self.
@@ -358,34 +389,42 @@ class TaskProxyBase:
 # %%
 class Task(Protocol):
     """Protocol defining a schedulable task."""
+
     id_: str
     name: str
+
     def resolve_args(
         self,
         ctx: Context | None,
     ) -> tuple[list[Self], dict[str, Self], list[Self], dict[Self, Exception]]:
         """Resolve task arguments from context."""
         ...
+
     def resolve_dependencies(self, ctx: Context | None) -> list[Self]:
         """Resolve task dependencies from context."""
         ...
+
     def result(self, ctx: Context | None) -> Any:
         """Get the result from context."""
         ...
 
 
 # %%
-_current_context: contextvars.ContextVar[Context | None] = contextvars.ContextVar(
-    "_context",
-    default = None,
+_current_context: contextvars.ContextVar[Context | None] = (
+    contextvars.ContextVar(
+        "_context",
+        default=None,
+    )
 )
 
 
 class Future(Protocol):
     """Protocol for asynchronous task results."""
+
     def result(self) -> Any:
         """Get the result of the future."""
         ...
+
     def add_done_callback(self, callback: callable):
         """Register a callback for when the future completes."""
         ...
@@ -393,26 +432,34 @@ class Future(Protocol):
 
 class Context(Protocol):
     """Protocol for task execution context."""
+
     scheduler: Scheduler
     task_results: Cache
+
     def __enter__(self) -> Self:
         """Enter the context."""
         ...
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Exit the context."""
         ...
+
     def shutdown(self):
         """Shutdown the context."""
         ...
+
     def get_result(self, task: str | Task) -> TaskResult | None:
         """Get the result for a given task."""
         ...
+
     def set_result(self, task: str | Task, result: TaskResult):
         """Set the result for a given task."""
         ...
+
     def submit(self, task: Task | list[Task]):
         """Submit a task or list of tasks."""
         ...
+
     def run(self, task: Task | list[Task]) -> Any | list[Any]:
         """Run a task or list of tasks synchronously."""
         ...
@@ -420,9 +467,13 @@ class Context(Protocol):
 
 class Executor(Protocol):
     """Protocol for task execution."""
-    def submit(self, task_results: Cache, *task: Task) -> Future | list[Future]:
+
+    def submit(
+        self, task_results: Cache, *task: Task
+    ) -> Future | list[Future]:
         """Submit tasks for execution."""
         ...
+
     def shutdown(self):
         """Shutdown the executor."""
         ...
@@ -430,12 +481,15 @@ class Executor(Protocol):
 
 class Scheduler(Protocol):
     """Protocol for task scheduling."""
+
     def add(self, *tasks: Task) -> list[TaskResult]:
         """Add tasks to the scheduler."""
         ...
+
     def wait(self, *tasks: Task) -> Future | list[Future]:
         """Wait for tasks to complete."""
         ...
+
     def shutdown(self):
         """Shutdown the scheduler."""
         ...

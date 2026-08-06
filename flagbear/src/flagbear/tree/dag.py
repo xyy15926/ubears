@@ -28,6 +28,7 @@ class Node:
     upstream: Set of nodes that are directing to current node.
     downstream: Set of nodes that are directed by current node.
     """
+
     def __init__(self, node_id: NID):
         self.id_ = node_id
         self.upstream: set[Self] = set()
@@ -156,6 +157,7 @@ class DirectedGraph:
     edge_count: Count of edges in graph.
     leaf_nodes: Nodes with no upstream nodes.
     """
+
     def __init__(self):
         self.nodes: dict[NID, Node] = {}
         self.edge_count: int = 0
@@ -176,9 +178,9 @@ class DirectedGraph:
         else:
             return self.has_edge(from_id, to_id)
 
-# ------------------------------------------------------------------------
-#                                   Node NID
-# ------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
+    #                                   Node NID
+    # ------------------------------------------------------------------------
     def add_node(self, node_id: NID):
         """Add node."""
         if node_id in self.nodes:
@@ -222,9 +224,9 @@ class DirectedGraph:
         """Node count."""
         return len(self.nodes)
 
-# ------------------------------------------------------------------------
-#                                   Edge
-# ------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
+    #                                   Edge
+    # ------------------------------------------------------------------------
     def add_edge(self, from_id: NID, to_id: NID) -> bool:
         """Add edge.
 
@@ -282,13 +284,15 @@ class DirectedGraph:
 
     def get_edges(self) -> list[tuple]:
         """Get all edges represented with tuple."""
-        return [(node.id, succ.id)
-                for node in self.nodes.values()
-                for succ in node.downstream]
+        return [
+            (node.id, succ.id)
+            for node in self.nodes.values()
+            for succ in node.downstream
+        ]
 
-# ------------------------------------------------------------------------
-#                                   Existed Nodes
-# ------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
+    #                                   Existed Nodes
+    # ------------------------------------------------------------------------
     def extend_with_nodes(self, *nodes: Node):
         """Extend graph with existing nodes.
 
@@ -320,9 +324,9 @@ class DirectedGraph:
         g.extend_with_nodes(*nodes)
         return g
 
-# ------------------------------------------------------------------------
-#                                   DAG
-# ------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
+    #                                   DAG
+    # ------------------------------------------------------------------------
     def topological_sort(
         self,
         *entry: NID,
@@ -354,9 +358,9 @@ class DirectedGraph:
         cycle_nids = [node.id_ for node in cyclenodes]
         return cycle_nids
 
-# ------------------------------------------------------------------------
-#                                   Traverse
-# ------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
+    #                                   Traverse
+    # ------------------------------------------------------------------------
     def bfs(self, start_id: NID) -> list[NID]:
         """Borad first search."""
         if start_id not in self.nodes:
@@ -397,9 +401,9 @@ class DirectedGraph:
         _dfs(start_id)
         return result
 
-# ------------------------------------------------------------------------
-#                                   Visualize
-# ------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
+    #                                   Visualize
+    # ------------------------------------------------------------------------
     def visualize(self) -> str:
         """DirectedGraph visualization."""
         return visualize(self.nodes.values())
@@ -414,7 +418,7 @@ class DirectedGraph:
 # ------------------------------------------------------------------------
 def visualize(nodes: list[Node]) -> str:
     """Nodes and edges visualization."""
-    lines = ["\n🕸️  DAG:\n", ]
+    lines = ["\n🕸️  DAG:\n"]
     levels = topological_sort(nodes)
     if levels is None:
         raise RuntimeError("Cyclic graph can't be visualize.")
@@ -432,8 +436,7 @@ def to_mermaid(nodes: list[Node]) -> str:
     """Render nodes and edges to mermaid."""
     lines = ["graph TD;"]
     lines.extend(
-        f"    {node.id_}({node.id_}) --> "
-        f"{down.id_}({down.id_});"
+        f"    {node.id_}({node.id_}) --> {down.id_}({down.id_});"
         for node in nodes
         for down in node.downstream
     )
@@ -513,7 +516,7 @@ def topological_sort_from_entry(
 ) -> list[list[Node]] | None:
     """Sort nodes linking to entry node topologically."""
 
-    def bfs_backward(entry: Node) -> dict[Node: int]:
+    def bfs_backward(entry: Node) -> dict[Node:int]:
         """Borad first search to collect nodes linking to entry node."""
         queue = deque(entry)
         visited = {}

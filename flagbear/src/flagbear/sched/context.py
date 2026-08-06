@@ -20,13 +20,16 @@ if __name__ == "__main__":
     from importlib import reload
 
     from flagbear.tree import dag
+
     reload(dag)
     from flagbear.slp import cache, finer, serializer, storage
+
     reload(finer)
     reload(storage)
     reload(serializer)
     reload(cache)
     from flagbear.sched import executor, protocols, scheduler
+
     reload(protocols)
     reload(executor)
     reload(scheduler)
@@ -60,6 +63,7 @@ class SimpleContext:
     name: Name to be distinct from other contexts.
     id_: ID to be distinct from other contexts.
     """
+
     def __init__(
         self,
         task_results: Cache | None = None,
@@ -134,7 +138,7 @@ class SimpleContext:
 
     def submit(self, *tasks: Task):
         """Submit tasks to scheduler."""
-        self.scheduler.add(*tasks, ctx_name = self.id_)
+        self.scheduler.add(*tasks, ctx_name=self.id_)
 
     def run(self, *tasks: Task):
         """Run tasks with scheduler."""

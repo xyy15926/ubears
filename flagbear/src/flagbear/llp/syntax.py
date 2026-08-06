@@ -41,6 +41,8 @@ Reduction = TypeVar("Reduction")
 # %%
 class Production(NamedTuple):
     """Production rule for syntax analysis."""
+
+    # fmt: off
     lp: str                 # Left part
     rp: tuple[str]          # Right part
     reduce: Callable[[list | tuple], Any] | None = None
@@ -48,6 +50,7 @@ class Production(NamedTuple):
     prec: int = 0           # Precedence, prefer the larger
     assoc: str = "R"        # Association, "L" or "R" for left or right first
                             # The order to compute items in `rp` when producing
+    # fmt: on
 
 
 class LRItem:
@@ -85,6 +88,7 @@ class LRItem:
       The index of current LRItem in `store`. And `start + cur == index`
       should always be true.
     """
+
     def __init__(self, production: Production, cur: int = 0):
         """Init LRItem with production.
 
@@ -222,7 +226,7 @@ class LRItem:
             return None
         return self.store[self.index + 1]
 
-    def __eq__(self, rhs:Self) -> bool:
+    def __eq__(self, rhs: Self) -> bool:
         """Equal comparison.
 
         There are two different comparison logics for LRItems registered and
@@ -232,13 +236,13 @@ class LRItem:
         2. For unregistered LRItems, comparing `production` and `cur` is
           necessary.
         """
-        return (
-            isinstance(rhs, self.__class__)
-            and ((self.store is not None
-                  and self.store is rhs.store
-                  and self.index == rhs.index)
-                 or (self.production == self.production
-                     and self.cur == self.cur))
+        return isinstance(rhs, self.__class__) and (
+            (
+                self.store is not None
+                and self.store is rhs.store
+                and self.index == rhs.index
+            )
+            or (self.production == self.production and self.cur == self.cur)
         )
 
     def __hash__(self):
@@ -272,7 +276,9 @@ class LRItem:
             return lhs
         # Reduction first when the preferences are the same and the production
         # after shift is left-associated.
-        elif prec2 > prec1 or (rhs.nsym is None and lhs.nsym is not None and assoc1 == "L"):
+        elif prec2 > prec1 or (
+            rhs.nsym is None and lhs.nsym is not None and assoc1 == "L"
+        ):
             return rhs
         else:
             return lhs
@@ -290,6 +296,7 @@ class LRState(AutomState):
     closure: List of LRItems.
       The LR(0) closure of the core.
     """
+
     def set_LR0_closure(self, ext_lris: dict[str, LRItem]):
         """Extend cores LRItems to a closure.
 
@@ -310,7 +317,7 @@ class LRState(AutomState):
         """
         closure = list(self.core)
         nsym_Q = deque([lri.nsym for lri in closure])
-        nsym_recs = set()               # Record handled symbols
+        nsym_recs = set()  # Record handled symbols
 
         while nsym_Q:
             next_sym = nsym_Q.popleft()
@@ -326,9 +333,13 @@ class LRState(AutomState):
 
 class LRStatesPDA(StatesPDA):
     """Pushdown automaton for LR states."""
-    def add_transition(self, from_: LRState,
-                       inp: Hashable,
-                       to_: LRState | LRItem) -> Self:
+
+    def add_transition(
+        self,
+        from_: LRState,
+        inp: Hashable,
+        to_: LRState | LRItem,
+    ) -> Self:
         """Add transition or reduction to the GOTOs.
 
         Params:
@@ -390,8 +401,10 @@ class Syntaxer:
       the conflicts in transitions between LRStates. Namely there are two or
       more transitions or reductions for given LRState and terminal.
     """
+
     def __init__(
-        self, productions: list[Production | tuple] = SYN_ARITH_PRODS,
+        self,
+        productions: list[Production | tuple] = SYN_ARITH_PRODS,
         start_sym: str = SYN_STARTSYM,
         end_flag: str = LEX_ENDFLAG,
     ):
@@ -410,6 +423,7 @@ class Syntaxer:
         end_flag: str
           End flag marking the end of input terminal stream.
         """
+        # fmt: off
         self.start = start_sym
         self.end = end_flag
         self.productions = None         # [Production, ]
@@ -426,7 +440,7 @@ class Syntaxer:
         self.firsts = None              # {symbol: [term, ]}
         self.follows = None             # {LRItem: [term, ]}
         self.conflicts = None           # {(LRState, term): [LRItem, ]}
-                                        # Both Reduce-Reduce and Reduce-shift conflicts.
+        # Both Reduce-Reduce and Reduce-shift conflicts.
         self.pda = None                 # Delegate the LR(0) automaton transition.
 
         # Init nullables, Firsts, Follows and GOTOs sequencely.
@@ -434,6 +448,7 @@ class Syntaxer:
         self.digraph_first()
         self.digraph_follow()
         self.LALR_states_and_gotos()
+        # fmt: on
 
     def init_productions(self, prods: list[Production | tuple]):
         """Parse productions.
@@ -450,11 +465,13 @@ class Syntaxer:
         productions: list[Production | tuple]
           List of productions.
         """
+        # fmt: off
         productions = []           # [Production, ]
         lr_items = []              # [LRItem, ]
         terminals = set()          # {terminal, }
         nonterms = {}              # {nonterm: [first LRItem of production, ]}
         symbols = {}               # {symbol: [LRItem containing symbol, ]}
+        # fmt: on
 
         for prod in prods:
             prod = Production(*prod)
@@ -486,7 +503,7 @@ class Syntaxer:
         1. Get the nullables defined directly by its null production.
         2. Loop to check whether symbol could be produced totally by nullables.
         """
-        nonterms = self.nonterms            # {nonterm: [first LRItem of production, ]}
+        nonterms = self.nonterms  # {nonterm: [first LRItem of production, ]}
         nullables = set()
 
         # Init direct-nullable non-terminals.
@@ -523,11 +540,13 @@ class Syntaxer:
         `backward_update_traverse` will be called to traverse the digraph to
         update the First of each symbol.
         """
+        # fmt: off
         terminals = self.terminals          # {terminal, }
         nonterms = self.nonterms            # {nonterm: [first LRItem of production, ]}
         symbols = self.symbols              # {symbol: [LRItem containing symbol, ]}
         nullables = self.nullables          # {nullable nonterm, }
         firsts = {}                         # {symbol: [term, ]}
+        # fmt: on
 
         def first_rel(sym):
             if sym in terminals:
@@ -550,7 +569,10 @@ class Syntaxer:
         for sym in sym_L:
             if mark_D.get(sym, MAXINT) == 0:
                 backward_update_traverse(
-                    sym, sym_L, sym_ST, mark_D,
+                    sym,
+                    sym_L,
+                    sym_ST,
+                    mark_D,
                     lambda x: {x} if x in terminals else set(),
                     first_rel,
                     lambda x, y: x.update(y),
@@ -581,11 +603,13 @@ class Syntaxer:
         will be merged together to LRItem granularity in LALR(1) for
         simplicity.
         """
+        # fmt: off
         symbols = self.symbols                  # {symbol: [LRItem containing symbol, ]}
         nullables = self.nullables              # {nullable nonterm, }
         lr_items = self.lr_items                # [LRItem, ]
         firsts = self.firsts                    # {symbol: [term, ]}
         follows = {}                            # {LRItem: [term, ]}
+        # fmt: on
 
         # Build Follows digraph.
         follow_next_D = {}
@@ -601,7 +625,7 @@ class Syntaxer:
             # nullable and put responsible LRItem to `follow_next_D[lri]` to
             # reduce the length of circle in digraph.
             elif nsym in nullables:
-                follow_next_D[lri] = [next(lri), ]
+                follow_next_D[lri] = [next(lri)]
 
         # LRItem's Read as its initial Follow.
         def follow_read(lri):
@@ -616,7 +640,10 @@ class Syntaxer:
         for lri in lr_items:
             if mark_D.get(lri, MAXINT) == 0:
                 backward_update_traverse(
-                    lri, lr_items, lri_ST, mark_D,
+                    lri,
+                    lr_items,
+                    lri_ST,
+                    mark_D,
                     follow_read,
                     lambda x: follow_next_D.get(x, []),
                     lambda x, y: x.update(y),
@@ -633,10 +660,12 @@ class Syntaxer:
           LRStates with the same cores if already inited.
         3. Set GOTOs along with LRStates' initialization with Follows.
         """
+        # fmt: off
         nonterms = self.nonterms        # {nonterm: [first LRItem of production, ]}
         follows = self.follows          # {LRItem: [term, ]}
         conflicts = {}                  # {(LRState, term): [LRItem, ]}
         pda = LRStatesPDA(LRState)      # Delegate the LR(0) automaton transition.
+        # fmt: on
 
         # Set the Pushdown-DFA up.
         start_state = LRState(tuple(nonterms[self.start]))
@@ -644,7 +673,7 @@ class Syntaxer:
         pda.add_state(start_state)
         pda.start_state = start_state
 
-        states_Q = deque([start_state,])
+        states_Q = deque([start_state])
         while states_Q:
             state = states_Q.popleft()
             closure = state.closure
@@ -680,9 +709,11 @@ class Syntaxer:
                 las = [nsym] if nsym is not None else follows[lri]
                 for term in las:
                     plri = prefered_lris.setdefault(term, lri)
-                    if (plri.nsym != lri.nsym
-                        or (plri.nsym is None and lri.nsym is None
-                            and plri is not lri)):
+                    if plri.nsym != lri.nsym or (
+                        plri.nsym is None
+                        and lri.nsym is None
+                        and plri is not lri
+                    ):
                         cf = conflicts.setdefault((state, term), set())
                         cf.update([plri, lri])
                         # Precedences are taken into consideration to choose
@@ -717,8 +748,11 @@ class Syntaxer:
 
     # TODO: Error handlers for invalid token stream.
     def reduce_tokens(
-        self, tokens: list[Token],
-        reduce_F: Callable[[Production | Token, Reduction | None], Reduction] = GeTNode,
+        self,
+        tokens: list[Token],
+        reduce_F: Callable[
+            [Production | Token, Reduction | None], Reduction
+        ] = GeTNode,
     ) -> Reduction:
         """Reduce tokens.
 
@@ -780,10 +814,10 @@ class Syntaxer:
         ------------------------
         Reduction result.
         """
-        return self.reduce_tokens(tokens,
-                                  lambda x, y: x.reduce(y)
-                                  if isinstance(x, Production)
-                                  else x.val)
+        return self.reduce_tokens(
+            tokens,
+            lambda x, y: x.reduce(y) if isinstance(x, Production) else x.val,
+        )
 
     def pprint(self):
         """Format GOTOs and conflicts into DataFrame.

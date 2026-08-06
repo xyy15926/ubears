@@ -23,9 +23,11 @@ if __name__ == "__main__":
     from importlib import reload
 
     from flagbear.slp import cache, checkpoint
+
     reload(cache)
     reload(checkpoint)
     from flagbear.sched import context, executor, protocols, scheduler
+
     reload(protocols)
     reload(executor)
     reload(scheduler)
@@ -69,6 +71,7 @@ class Flow(TaskProxyBase):
     tmp_retry_policy: Temperary retry policy.
     tmp_execution_policy: Temperary execution policy.
     """
+
     def __init__(
         self,
         name: str | None = None,
@@ -126,7 +129,7 @@ class Flow(TaskProxyBase):
                 self.task_results,
                 self.scheduler,
                 parent_ctx,
-                name = self.name,
+                name=self.name,
             )
             with ctx:
                 return self.func(*args, **kwargs)
@@ -137,14 +140,12 @@ class Flow(TaskProxyBase):
         """Wrap and submit flow as a task to current context."""
         parent_ctx = _current_context.get()
         if parent_ctx is None:
-            raise RuntimeError(
-                "Can's sumbit Flow as sub-flow within no Flow."
-            )
+            raise RuntimeError("Can's sumbit Flow as sub-flow within no Flow.")
         ctx = SimpleContext(
             self.task_results,
             self.scheduler,
             parent_ctx,
-            name = self.name,
+            name=self.name,
         )
         flow_once = self.as_task(args, kwargs, ctx)
         # Reset policy after `TaskOnce` has been constructed.
@@ -169,7 +170,9 @@ class Flow(TaskProxyBase):
                 ret = func(*args, **kwargs)
                 # Just in case.
                 if isinstance(ret, TaskOnce):
-                    logger.warning("No TaskOnce should be returned by a function.")
+                    logger.warning(
+                        "No TaskOnce should be returned by a function."
+                    )
                     return ret.result()
                 return ret
 
@@ -177,11 +180,11 @@ class Flow(TaskProxyBase):
             wrapper,
             args,
             kwargs,
-            name = self.name,
-            cache_policy = self.cache_policy,
-            checkpoint_policy = self.checkpoint_policy,
-            retry_policy = self.retry_policy,
-            execution_policy = self.execution_policy,
+            name=self.name,
+            cache_policy=self.cache_policy,
+            checkpoint_policy=self.checkpoint_policy,
+            retry_policy=self.retry_policy,
+            execution_policy=self.execution_policy,
         )
         flow_once.id_ = ctx.id_
 
@@ -196,7 +199,7 @@ class Flow(TaskProxyBase):
             self.task_results,
             self.scheduler,
             _current_context.get(),
-            name = self.name,
+            name=self.name,
         )
         self._ctx = ctx
         return ctx.__enter__()
@@ -235,6 +238,7 @@ def flow(
     ---------------------------
     Flow
     """
+
     def decorator(ffunc):
         # nonlocal name, retry_policy, cache_policy, execution_policy
         # nonlocal task_results, scheduler
@@ -248,6 +252,7 @@ def flow(
             task_results,
             scheduler,
         )
+
     if func is None:
         return decorator
     return decorator(func)

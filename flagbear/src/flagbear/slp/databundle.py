@@ -24,6 +24,7 @@ if __name__ == "__main__":
     from importlib import reload
 
     from flagbear.slp import finer
+
     reload(finer)
 from flagbear.slp.finer import use_file
 
@@ -49,6 +50,7 @@ class DataBundle(ABC):
     lineage: Dict with key as the stage name to record the infomation
       of the data-procedure stages.
     """
+
     data: Any
     metadata: dict[str, Any] = field(default_factory=dict)
     lineage: dict[str, dict] = field(default_factory=dict)
@@ -122,7 +124,9 @@ class DataBundle(ABC):
             with zipfile.ZipFile(fname, "r") as zipf:
                 metadata = json.loads(zipf.open("metadata.json", "r").read())
                 lineage = json.loads(zipf.open("lineage.json", "r").read())
-                data = cls.loads_data(zipf.open("data.bin", "r").read(), metadata)
+                data = cls.loads_data(
+                    zipf.open("data.bin", "r").read(), metadata
+                )
         except Exception:
             logger.exception(f"Fail to load data bundle at {fname}.")
             raise
@@ -140,19 +144,23 @@ class DataBundleFactory:
     ------------------------
     _registry: Registry of derived DataBundle.
     """
+
     _registry: ClassVar[dict[str, type[DataBundle]]] = {}
 
     @classmethod
     def register(cls, reg_name: str | None = None):
         """Register class derived from DataBundle."""
+
         def decorator(bundle_class: type[DataBundle]) -> type[DataBundle]:
             if not issubclass(bundle_class, DataBundle):
-                raise TypeError(f"{bundle_class.__name__} is not derived from "
-                                f"DataBundle.")
+                raise TypeError(
+                    f"{bundle_class.__name__} is not derived from DataBundle."
+                )
             reg_name_ = reg_name or bundle_class.__name__
             cls._registry[reg_name_] = bundle_class
             bundle_class.reg_name = reg_name_
             return bundle_class
+
         return decorator
 
     @classmethod
@@ -172,13 +180,16 @@ class DataBundleFactory:
           only the exact arguments.
         loads_data: Function to load data from bytes.
         """
+
         def dumps_data_method(self):
             return dumps_data(self.data)
 
-        def loads_data_method(bytes_, metadata = None):
+        def loads_data_method(bytes_, metadata=None):
             return loads_data(bytes_, metadata)
 
-        new_class = cls.from_callables(name, dumps_data_method, loads_data_method)
+        new_class = cls.from_callables(
+            name, dumps_data_method, loads_data_method
+        )
         # Update the attribute `__module__`.
         new_class.__module__ = dumps_data.__module__
         return new_class
@@ -214,7 +225,7 @@ class DataBundleFactory:
         }
         for method_name, method in methods.items():
             namespace[method_name] = cls._wrap_method(method)
-        new_class = type(name, (DataBundle, ), namespace)
+        new_class = type(name, (DataBundle,), namespace)
         cls._registry[name] = new_class
         return new_class
 
@@ -277,6 +288,7 @@ class DataBundleFactory:
 @DataBundleFactory.register()
 class PickableBundle(DataBundle):
     """DataBundle using pickle for serialization."""
+
     def dumps_data(self) -> bytes:
         """Serialize data with pickle."""
         return pickle.dumps(self.data)
@@ -318,14 +330,16 @@ def concat_params(
     -----------------------------
     Concated name registed in DataBundleFactory
     """
-    args_str = "_".join([
-        str(ele) for ele in args
-        if isinstance(ele, (int, float, str))
-    ])
-    kwargs_str = "_".join([
-        f"{k}_{v}" for k, v in kwargs.items()
-        if isinstance(v, (int, float, str))
-    ])
+    args_str = "_".join(
+        [str(ele) for ele in args if isinstance(ele, (int, float, str))]
+    )
+    kwargs_str = "_".join(
+        [
+            f"{k}_{v}"
+            for k, v in kwargs.items()
+            if isinstance(v, (int, float, str))
+        ]
+    )
     concated = "_".join([reg_name, args_str, kwargs_str])
 
     return concated
@@ -362,8 +376,9 @@ def check_params(
             same_flag = False
     for k, v in metadata["_func_params_kwargs"].items():
         if v != kwargs.get(k):
-            logger.error(f"Argument {k}:{v} is different "
-                         f"from {k}:{kwargs.get(k)}.")
+            logger.error(
+                f"Argument {k}:{v} is different from {k}:{kwargs.get(k)}."
+            )
             same_flag = False
 
     return same_flag
@@ -408,24 +423,26 @@ def bundle_cache(
     rollback: If to roll back to call the `func` to fetch the remote or
       expensive data when data cache exists but not valid.
     """
+
     def inner(func):
         @wraps(func)
         def decorator(*args, **kwargs):
             forced = kwargs.pop("forced", False)
             # The name of derived DataBundle will be like `XXXX.zip` which is
             # invalid when defined with `class` normally instead of `type`.
-            reg_name_ = concat_params(
-                reg_name or func.__name__,
-                args,
-                kwargs,
-            ) + ".zip"
+            reg_name_ = (
+                concat_params(
+                    reg_name or func.__name__,
+                    args,
+                    kwargs,
+                )
+                + ".zip"
+            )
 
             # Regist new DataBundle type.
             if reg_name_ not in DataBundleFactory._registry:
                 DataBundleFactory.from_slfunc(
-                    reg_name_,
-                    dumps_data,
-                    loads_data
+                    reg_name_, dumps_data, loads_data
                 )
                 logger.info(f"Regist new DataBundle {reg_name_}.")
 
@@ -434,16 +451,18 @@ def bundle_cache(
             if (not forced) and fname_all.is_file():
                 try:
                     bundle = DataBundleFactory.load_instance(
-                        reg_name_,
-                        fname_all
+                        reg_name_, fname_all
                     )
                     is_same = check_params(args, kwargs, bundle.metadata)
                     if (not is_same) and strict:
-                        raise ValueError("Arguments loaded are different "  # noqa: TRY301
-                                         "from the ones passed.")
+                        raise ValueError(
+                            "Arguments loaded are different "  # noqa: TRY301
+                            "from the ones passed."
+                        )
                 except Exception as e:
-                    logger.warning(f"Recover bundle from cache {fname_all} "
-                                   f"failed: {e}.")
+                    logger.warning(
+                        f"Recover bundle from cache {fname_all} failed: {e}."
+                    )
                 else:
                     return bundle
 
@@ -464,5 +483,7 @@ def bundle_cache(
 
                 return bundle
             return None
+
         return decorator
+
     return inner

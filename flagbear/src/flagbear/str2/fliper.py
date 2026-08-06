@@ -119,9 +119,15 @@ def extract_field(  # noqa: C901
             if step[0] == "{":
                 cur_obj = cur_obj.values()
             for obj_ in cur_obj:
-                ret = extract_field(obj_, steps[idx + 1:], envp, dtype,
-                                    extended=extended,
-                                    dforced=dforced, dfill=dfill)
+                ret = extract_field(
+                    obj_,
+                    steps[idx + 1 :],
+                    envp,
+                    dtype,
+                    extended=extended,
+                    dforced=dforced,
+                    dfill=dfill,
+                )
                 rets.append(ret)
             agg_expr = step[1:-1]
             if agg_expr:
@@ -135,8 +141,9 @@ def extract_field(  # noqa: C901
             dest, *conds = step.split("&&")
             if conds and not envp.bind_env(cur_obj).parse(conds[0]):
                 return None
-            cur_obj = (cur_obj.get(dest, None) if isinstance(cur_obj, dict)
-                       else None)
+            cur_obj = (
+                cur_obj.get(dest, None) if isinstance(cur_obj, dict) else None
+            )
 
     # Try type casting iff `dtype` is provided.
     # ATTENTION: Only str and None will be applied with dtyper conversion.
@@ -144,17 +151,23 @@ def extract_field(  # noqa: C901
         # Call `str_caster` to cast dtype from str.
         if isinstance(cur_obj, str):
             try:
-                cur_obj = str_caster(cur_obj,
-                                     dtype=dtype,
-                                     extended=extended,
-                                     dfill=dfill,
-                                     dforced=dforced)
+                cur_obj = str_caster(
+                    cur_obj,
+                    dtype=dtype,
+                    extended=extended,
+                    dfill=dfill,
+                    dforced=dforced,
+                )
             except ValueError:
                 logger.warning(f"Can't cast to target dtype {dtype}.")
         # Set with default value if dtype is specified and dtype unfication
         # is forced.
         elif cur_obj is None and dforced:
-            cur_obj = stype_spec(dtype, "default", extended) if dfill is None else dfill
+            cur_obj = (
+                stype_spec(dtype, "default", extended)
+                if dfill is None
+                else dfill
+            )
 
     return cur_obj
 
@@ -226,7 +239,7 @@ def reset_field(  # noqa: C901
             if step[0] == "{":
                 cur_obj = cur_obj.values()
             for obj_ in cur_obj:
-                reset_field(obj_, steps[idx + 1:], val, envp)
+                reset_field(obj_, steps[idx + 1 :], val, envp)
         else:
             # Split target and conditions.
             # 1. `*conds` ensures that it's always be successful to match the
@@ -235,8 +248,9 @@ def reset_field(  # noqa: C901
             dest, *conds = step.split("&&")
             if conds and not envp.bind_env(cur_obj).parse(conds[0]):
                 return obj
-            cur_obj = (cur_obj.get(dest, None) if isinstance(cur_obj, dict)
-                       else None)
+            cur_obj = (
+                cur_obj.get(dest, None) if isinstance(cur_obj, dict) else None
+            )
     else:
         # Set value.
         if isinstance(cur_obj, dict) and steps[-1] in cur_obj:
@@ -327,8 +341,8 @@ def rebuild_dict(
                 cur_obj = rets[from_]
 
         # Extract fields.
-        rets[key] = extract_field(cur_obj, steps, envp, dtype, extended,
-                                  dfill=dfill,
-                                  dforced=dforced)
+        rets[key] = extract_field(
+            cur_obj, steps, envp, dtype, extended, dfill=dfill, dforced=dforced
+        )
 
     return rets

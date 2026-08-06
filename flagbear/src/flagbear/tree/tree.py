@@ -36,8 +36,10 @@ class BiTNode:
     rc: Self
       Right child.
     """
+
     def __init__(
-        self, val: TreeVal,
+        self,
+        val: TreeVal,
         left: Self | None = None,
         right: Self | None = None,
     ):
@@ -87,8 +89,10 @@ class GeTNode:
     chs: list[Self]
       Children tree nodes.
     """
+
     def __init__(
-        self, val: TreeVal,
+        self,
+        val: TreeVal,
         children: list[Self] | None = None,
     ):
         self.val = val

@@ -21,13 +21,16 @@ if __name__ == "__main__":
     from importlib import reload
 
     from flagbear.tree import dag
+
     reload(dag)
     from flagbear.slp import cache, finer, serializer, storage
+
     reload(finer)
     reload(storage)
     reload(serializer)
     reload(cache)
     from flagbear.sched import executor, protocols
+
     reload(protocols)
     reload(executor)
 from flagbear.sched.executor import LocalExecutor
@@ -61,6 +64,7 @@ class DAGScheduler:
     ctx_dags: Dict of DAGs to records all tasks that has been added to current
       scheduler from different contexts.
     """
+
     def __init__(
         self,
         task_results: Cache | None = None,
@@ -79,10 +83,11 @@ class DAGScheduler:
     ) -> bool:
         """If the task has been submitted before."""
         tid = getattr(task, "id_", task)
-        return (not self.task_dag.has_node(tid)
-                and not self.task_results.exists(tid))
+        return not self.task_dag.has_node(
+            tid
+        ) and not self.task_results.exists(tid)
 
-    def shutdown(self, force = False):
+    def shutdown(self, force=False):
         """Shutdown.
 
         Params:

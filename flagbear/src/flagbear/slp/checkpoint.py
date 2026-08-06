@@ -21,6 +21,7 @@ if __name__ == "__main__":
     from importlib import reload
 
     from flagbear.slp import cache, finer, serializer, storage
+
     reload(finer)
     reload(serializer)
     reload(storage)
@@ -88,6 +89,7 @@ class CheckpointPolicy:
       before passed to the function.
     arg_func: Function to generate unique key with arguments.
     """
+
     mode: str | None = "cache"
     keyskip_args: list[int | str] | None = None
     keyonly_args: list[str] | None = None
@@ -100,9 +102,11 @@ class CheckpointPolicy:
         kwargs: dict[str, Any],
     ):
         """Generate cache key from function and arguments."""
-        key = (f"{func.__module__}.{func.__qualname__}"
-               if callable(func)
-               else func)
+        key = (
+            f"{func.__module__}.{func.__qualname__}"
+            if callable(func)
+            else func
+        )
         arg_str = self.arg_func(args, kwargs, self.keyskip_args)
         return f"{key}_{arg_str}"
 
@@ -121,6 +125,7 @@ class CheckpointManager:
     ttl: Time for checkpoint to be valid.
     cache: Inner cache.
     """
+
     def __init__(
         self,
         checkpoint_policy: CheckpointPolicy | None = None,
@@ -132,7 +137,7 @@ class CheckpointManager:
             self.cache = cache
         else:
             storage = LocalFileStorage(get_tmp_path("checkpoint"))
-            self.cache = PersistentCache(storage, ttl = ttl)
+            self.cache = PersistentCache(storage, ttl=ttl)
 
     def checkpoint(
         self,
@@ -151,10 +156,12 @@ class CheckpointManager:
           checkpoint.
         cache_policy: Cache policy to determine the behavior of inner cache.
         """
+
         def decorator(ffunc: Callable) -> Callable:
             nonlocal checkpoint_policy, cache_policy, self, name
             checkpoint_policy = checkpoint_policy or self.checkpoint_policy
             cache_policy = cache_policy or CachePolicy()
+
             @wraps(ffunc)
             def wrapper(*args, **kwargs) -> Any:
                 nonlocal ffunc, checkpoint_policy, cache_policy, name
@@ -172,9 +179,12 @@ class CheckpointManager:
                         return result
 
                 # Roll back to call `func` to get the result.
-                result = self.set(name, args, kwargs, checkpoint_policy, cache_policy)
+                result = self.set(
+                    name, args, kwargs, checkpoint_policy, cache_policy
+                )
 
                 return result
+
             return wrapper
 
         # `@checkpoint`: decorate the `func` directly with the default setting
@@ -256,9 +266,11 @@ class CheckpointManager:
 
     def clear_func_cache(self, func: Callable | str):
         """Clear function cache."""
-        prefix = (f"{func.__module__}.{func.__qualname__}"
-                  if callable(func)
-                  else func)
+        prefix = (
+            f"{func.__module__}.{func.__qualname__}"
+            if callable(func)
+            else func
+        )
         for key in self.cache.list_keys(prefix):
             self.cache.delete(key)
 

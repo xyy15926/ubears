@@ -19,6 +19,7 @@ from typing import Any
 @dataclass
 class ExceptionRecord:
     """Record of a single exception in the chain."""
+
     exc_type: str
     exc_module: str
     message: str
@@ -45,24 +46,24 @@ def exception_to_records(
             return
         visited.add(id(e))
 
-        records.append(ExceptionRecord(
-            exc_type = type(e).__name__,
-            exc_module = type(e).__module__,
-            message = str(e),
-            traceback_lines = traceback.format_exception(
-                type(e), e, e.__traceback__
-            ),
-            cause_type = (
-                type(e.__cause__).__name__
-                if e.__cause__ else None
-            ),
-            context_type = (
-                type(e.__context__).__name__
-                if e.__context__
-                and not e.__suppress_context__
-                else None
-            ),
-        ))
+        records.append(
+            ExceptionRecord(
+                exc_type=type(e).__name__,
+                exc_module=type(e).__module__,
+                message=str(e),
+                traceback_lines=traceback.format_exception(
+                    type(e), e, e.__traceback__
+                ),
+                cause_type=(
+                    type(e.__cause__).__name__ if e.__cause__ else None
+                ),
+                context_type=(
+                    type(e.__context__).__name__
+                    if e.__context__ and not e.__suppress_context__
+                    else None
+                ),
+            )
+        )
 
         if e.__cause__:
             _walk(e.__cause__)
@@ -76,6 +77,7 @@ def exception_to_records(
 # %%
 class UnrecoverableException(Exception):
     """Fallback exception if exception recorded can't be found."""
+
     pass
 
 
@@ -86,6 +88,7 @@ def resolve_exception_class(
     """Resolve the exception with module name and exception name."""
     try:
         import importlib
+
         mod = importlib.import_module(module)
         cls = getattr(mod, name)
         if not issubclass(cls, BaseException):

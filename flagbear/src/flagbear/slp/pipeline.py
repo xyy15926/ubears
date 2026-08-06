@@ -21,6 +21,7 @@ if __name__ == "__main__":
     from importlib import reload
 
     from flagbear.slp import databundle, finer
+
     reload(finer)
     reload(databundle)
 from flagbear.slp.databundle import DataBundle, DataBundleFactory
@@ -42,6 +43,7 @@ class Pipe(ABC):
     config: Process config.
     exec_count: Execution counts.
     """
+
     def __init__(self, name: str | None = None, config: dict | None = None):
         """Init Pipe."""
         self.config = config or {}
@@ -52,7 +54,9 @@ class Pipe(ABC):
         """Process DataBundle."""
         pass
 
-    def __call__(self, bundle: DataBundle, stage_key: str | None = None) -> DataBundle:
+    def __call__(
+        self, bundle: DataBundle, stage_key: str | None = None
+    ) -> DataBundle:
         """Call `process` and do some additional records."""
         start = time.time()
         try:
@@ -65,7 +69,7 @@ class Pipe(ABC):
                     "time_usage(ms)": time.time() - start,
                     "finished": datetime.datetime.now().isoformat(),
                     "exec_count": self.exec_count,
-                }
+                },
             )
         except Exception:
             logger.exception(f"Stage [{self.name}] failed.")
@@ -82,35 +86,41 @@ class PipeFactory:
     --------------------------
     _registry: Registry of derived pipes.
     """
+
     _registry: ClassVar[dict[str, type[Pipe]]] = {}
 
     @classmethod
     def register(cls, reg_name: str | None = None):
         """Register derived pipes."""
+
         def decorator(pipe_class: type[Pipe]) -> type[Pipe]:
             if not issubclass(pipe_class, Pipe):
-                raise TypeError(f"{pipe_class.__name__} is not derived from "
-                                f"Pipe.")
+                raise TypeError(
+                    f"{pipe_class.__name__} is not derived from Pipe."
+                )
             reg_name_ = reg_name or pipe_class.__name__
             cls._registry[reg_name_] = pipe_class
             pipe_class.reg_name = reg_name_
             return pipe_class
+
         return decorator
 
     @classmethod
     def from_func(cls, name: str, func: Callable) -> type[Pipe]:
         """Create a pipe class with process functions."""
+
         def process_method(self, bundle: DataBundle) -> Any:
             return func(bundle)
+
         new_class = type(
             name,
-            (Pipe, ),
+            (Pipe,),
             {
                 "process": process_method,
                 "__doc__": "Dynamic Pipe derived from {func.__name__}",
                 "__module__": func.__module__,
                 "reg_name": name,
-            }
+            },
         )
         cls._registry[name] = new_class
         return new_class
@@ -139,6 +149,7 @@ class Pipeline:
     stages: Dict of the pipe instances.
     checkpoint_dir: Directory to save the checkpoints.
     """
+
     def __init__(
         self,
         name: str,
@@ -159,7 +170,9 @@ class Pipeline:
         self.name = name
         self.stages: dict[str, type[Pipe]] = {}
         self.stage_counter = Counter()
-        self.checkpoint_dir = use_dir(checkpoint_dir or name, "today", 1, "tmp")
+        self.checkpoint_dir = use_dir(
+            checkpoint_dir or name, "today", 1, "tmp"
+        )
 
     def add_pipe(self, pipe: Pipe, stage_key: str | None = None) -> Self:
         """Add a pipe.
@@ -178,7 +191,7 @@ class Pipeline:
             reg_name = pipe.reg_name
             stage_key = f"{reg_name}_{self.stage_counter[reg_name]}"
         self.stages[stage_key] = pipe
-        self.stage_counter.update([pipe.reg_name, ])
+        self.stage_counter.update([pipe.reg_name])
         return self
 
     def load_checkpoint(self, stage_key: str) -> DataBundle:
