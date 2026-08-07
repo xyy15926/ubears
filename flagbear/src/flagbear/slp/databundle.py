@@ -455,8 +455,8 @@ def bundle_cache(
                     )
                     is_same = check_params(args, kwargs, bundle.metadata)
                     if (not is_same) and strict:
-                        raise ValueError(
-                            "Arguments loaded are different "  # noqa: TRY301
+                        raise ValueError(  # noqa: TRY301
+                            "Arguments loaded are different "
                             "from the ones passed."
                         )
                 except Exception as e:
