@@ -16,7 +16,7 @@ version = "0.1.1"
 authors = [
 	"UBeaRLy <ubearly@outlook.com>",
 ]
-description = "A project with some out-of-box utils for data analysis."
+description = "Data processing toolkit for expression parsing, backtesting, and visualization."
 license = "Apache-2.0"
 license-file = "license.txt"
 readme = "README.md"
@@ -48,7 +48,7 @@ libc = "2.28"
 # Pixi will always try to install the latest version of python and then
 # try to solve the dependencies without try to downgrade the version of
 # python(ABI).
-python				= ">=3.9"
+python				= ">=3.10"
 
 [feature.dev.pypi-dependencies]
 ipython				= "*"
@@ -141,8 +141,8 @@ env = {}
 # Dependencies for build environment when building.
 # 1. It seems that `setuptools` is not compatiable with the `pixi`.
 #   So `hatchling` is used to package.
-# 2. The build metadata for python package is in 'pyproject.toml`.
-python				= ">=3.9"
+# 2. The build metadata for python package is in 'pyproject.toml'.
+python				= ">=3.10"
 pip					= "*"
 hatchling			= "*"
 # setuptools			= ">=60.0"
@@ -151,12 +151,12 @@ hatchling			= "*"
 
 [package.host-dependencies]
 # Dependecies for host when building.
-python				= ">=3.9"
+python				= ">=3.10"
 hatchling			= "*"
 
 [package.run-dependencies]
-python				= ">=3.9"
-numpy				= ">=2.0, <=3.0"
+python				= ">=3.10"
+numpy				= ">=2.0, <3.0"
 pandas				= ">=2.0, <3.0"
 openpyxl			= ">=3.0"
 SQLAlchemy			= ">=2.0"

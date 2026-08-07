@@ -16,7 +16,7 @@ version = "0.1.1"
 authors = [
 	"UBeaRLy <ubearly@outlook.com>",
 ]
-description = "A project with some out-of-box utils for data analysis."
+description = "Utility toolkit for string parsing, type coercion, and data extraction."
 license = "Apache-2.0"
 license-file = "license.txt"
 readme = "README.md"

@@ -16,7 +16,7 @@ version = "0.1.1"
 authors = [
 	"UBeaRLy <ubearly@outlook.com>",
 ]
-description = "A project with some out-of-box utils for data analysis."
+description = "Neural network modules, demos, and training utilities."
 license = "Apache-2.0"
 license-file = "license.txt"
 readme = "README.md"
@@ -154,5 +154,4 @@ numpy				= ">=2.0, <3.0"
 torch				= "*"
 torchvision			= "*"
 tensorboard			= "*"
-torch-directml		= ">=0.2.5.dev"
 flagbear			= "*"
