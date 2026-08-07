@@ -31,7 +31,8 @@ MAXSIZE = sys.maxsize
 logging.basicConfig(
     format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
     level=logging.INFO,
-    force=(__name__ == "__main__"))
+    force=(__name__ == "__main__"),
+)
 logger = logging.getLogger()
 logger.info("Logging Start.")
 
@@ -143,7 +144,7 @@ def _enhanced_freqs_1D(
     mask[1:] = aux[1:] != aux[:-1]
     unis = aux[mask]
 
-    where = np.concatenate(np.nonzero(mask) + ([mask.size], ))
+    where = np.concatenate(np.nonzero(mask) + ([mask.size],))
     auxo = others[perm]
     ret = np.vstack([agg(auxo[s:e]) for s, e in zip(where[:-1], where[1:])])
 
@@ -217,11 +218,11 @@ def _enhanced_freqs_2D(
     # Set the aggregation result.
     auxo = others[perm]
     ret = np.full((unisr.size, unisc.size), np.nan)
-    where = np.concatenate(np.nonzero(mask) + ([mask.size], ))
+    where = np.concatenate(np.nonzero(mask) + ([mask.size],))
     for start, end in zip(where[:-1], where[1:]):
         r = np.searchsorted(unisr, aux[start, 0])
         c = np.searchsorted(unisc, aux[start, 1])
-        ret[r, c] = agg(auxo[start: end])
+        ret[r, c] = agg(auxo[start:end])
 
     return ret, unisr, unisc
 
@@ -340,21 +341,24 @@ def chi_pairwisely(
     chis: [chi,...]
     """
     if np.any(freqs == 0):
-        logger.warning("Invalid frequencies to calculate Chis. "
-                       "Columns or rows with zeros may be merged first.")
+        logger.warning(
+            "Invalid frequencies to calculate Chis. "
+            "Columns or rows with zeros may be merged first."
+        )
 
     # Check how to stagger `freqs`.
     if axis % 2 == 0:
         s_former = np.s_[:-1, :]
-        s_latter = np.s_[1: , :]
+        s_latter = np.s_[1:, :]
     else:
         s_former = np.s_[:, :-1]
-        s_latter = np.s_[:, 1 :]
+        s_latter = np.s_[:, 1:]
     chis = np.apply_along_axis(
         lambda x: contingency.chi2_contingency(x.reshape(2, -1))[:2],
         axis=(axis + 1) % 2,
-        arr=np.concatenate((freqs[s_former], freqs[s_latter]),
-                           axis=(axis + 1) % 2)
+        arr=np.concatenate(
+            (freqs[s_former], freqs[s_latter]), axis=(axis + 1) % 2
+        ),
     )
     # Another implementation with `map`, but much more slower.
     # chis = np.array(list(map(

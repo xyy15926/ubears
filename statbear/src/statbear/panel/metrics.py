@@ -66,7 +66,7 @@ def cal_lifts_from_ctab(
     # Kendall-tau test.
     corr_ken, pv = kendalltau(acc_lifts, np.arange(len(acc_lifts), 0, -1))
     acc_ctab_r = np.add.accumulate(ctab[::-1], axis=0)[::-1]
-    acc_lifts_r = (acc_ctab_r[:, 1] / acc_ctab_r.sum(axis=1) / cavg)
+    acc_lifts_r = acc_ctab_r[:, 1] / acc_ctab_r.sum(axis=1) / cavg
 
     return lifts, acc_lifts, acc_lifts_r, corr_ken, pv
 
@@ -232,12 +232,17 @@ def cal_lifts_weighted(
         arr = np.column_stack((x, y, weights * y))
     # Sort `arr` according to `x` for splitting, since `x` must be sortable.
     arr = arr[np.argsort(arr[:, 0])]
-    unis, indices, counts = np.unique(arr[:, 0], return_counts=True,
-                                      return_index=True)
+    unis, indices, counts = np.unique(
+        arr[:, 0], return_counts=True, return_index=True
+    )
     ones_ratio = np.sum(arr[:, 2]) / arr.shape[0]
     # `splited_weights`: [(1-ratio-per-group, len-per-group), ...]
-    splited_weights = np.array([(subarr[:, 2].sum(), subarr.shape[0])
-                                for subarr in np.split(arr, indices[1:])])
+    splited_weights = np.array(
+        [
+            (subarr[:, 2].sum(), subarr.shape[0])
+            for subarr in np.split(arr, indices[1:])
+        ]
+    )
     lifts = splited_weights[:, 0] / (splited_weights[:, 1] * ones_ratio)
 
     # Copy all unique factors as `acc_keys` in default.
@@ -260,10 +265,12 @@ def cal_lifts_weighted(
     if ascending:
         acc_keys, acc_pos = acc_keys[::-1], acc_pos[::-1]
         logger.info(
-            "`acc_keys` passed-in will be reversed to ensure descending lifts.")
+            "`acc_keys` passed-in will be reversed to ensure descending lifts."
+        )
     splited_weights = splited_weights[acc_pos]
-    acc_lifts = (np.add.accumulate(splited_weights[:, 0])
-                 / (np.add.accumulate(splited_weights[:, 1]) * ones_ratio))
+    acc_lifts = np.add.accumulate(splited_weights[:, 0]) / (
+        np.add.accumulate(splited_weights[:, 1]) * ones_ratio
+    )
 
     rets = [unis, lifts, acc_keys, acc_lifts, ascending]
     if return_cor:
@@ -309,9 +316,15 @@ def cal_woes_weighted(
     # `splited_weights` is formatted with
     # [(1-ratio-per-group, len-per-group), ...]
     one_ws, zero_ws = np.sum(arr[:, 2]), np.sum(arr[:, 3])
-    one_zero = np.array([
-        (subarr[:, 2].sum() / one_ws, subarr[:, 3].sum() / zero_ws,)
-        for subarr in np.split(arr, indices[1:])])
+    one_zero = np.array(
+        [
+            (
+                subarr[:, 2].sum() / one_ws,
+                subarr[:, 3].sum() / zero_ws,
+            )
+            for subarr in np.split(arr, indices[1:])
+        ]
+    )
 
     # Calculate woes and ives for each split.
     woes = np.log(one_zero[:, 0] / one_zero[:, 1])
@@ -325,7 +338,7 @@ def cal_woes_weighted(
 def cal_ivs_weighted(
     X: np.ndarray,
     y: np.ndarray,
-    weights: np.ndarray | None = None
+    weights: np.ndarray | None = None,
 ) -> float:
     """Calculate IVs for each column in 2-D NDA.
 

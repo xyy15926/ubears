@@ -10,13 +10,14 @@
 # %%
 from __future__ import annotations
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     import pandas as pd
 import logging
 
 import numpy as np
 from scipy.stats import contingency
-from sklearn.tree import (DecisionTreeClassifier, )
+from sklearn.tree import DecisionTreeClassifier
 # from IPython.core.debugger import set_trace
 
 from statbear.panel.freqs import chi_pairwisely
@@ -32,7 +33,8 @@ IMPURITY_DECREASE_MIN = 0.0001
 logging.basicConfig(
     format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
     level=logging.INFO,
-    force=(__name__ == "__main__"))
+    force=(__name__ == "__main__"),
+)
 logger = logging.getLogger()
 logger.info("Logging Start.")
 
@@ -91,15 +93,20 @@ def tree_cut(
     # `Tree.tree_.value` stores frequencies at scikit-learn 1.2 but ratio
     # of frequencies at scikit-learn 1.6.
     if np.any((value > 0) & (value < 1)):
-        value = ((value * tree.tree_.weighted_n_node_samples.reshape(-1, 1))
-                 .astype(np.int32))
+        value = (
+            value * tree.tree_.weighted_n_node_samples.reshape(-1, 1)
+        ).astype(np.int32)
 
     # Select leaf node by compare its children node with -1.
-    leaf_node_map = ((cl == -1) & (cr == -1))
+    leaf_node_map = (cl == -1) & (cr == -1)
     # Get thresholds directly.
-    threshs = np.concatenate([[np.min(x) - 1e-6],
-                              np.sort(tree.tree_.threshold[~leaf_node_map]),
-                              [np.max(x) + 1e-6]])
+    threshs = np.concatenate(
+        [
+            [np.min(x) - 1e-6],
+            np.sort(tree.tree_.threshold[~leaf_node_map]),
+            [np.max(x) + 1e-6],
+        ]
+    )
 
     def leaf_post_order(cl, cr, value):
         ctab = []
@@ -180,7 +187,7 @@ def chimerge_cut(
     bins_edges: List of bin edges for cutting.
     ctab: Cross table of final bins.
     """
-    assert(x.ndim == 1 and y.ndim == 1)
+    assert x.ndim == 1 and y.ndim == 1
     (unis_x, unis_y), ctab = contingency.crosstab(x, y)
     bin_edges = np.array([*unis_x, unis_x[-1]])
 
@@ -188,7 +195,7 @@ def chimerge_cut(
     # calculated.
     idx = 0
     while idx < ctab.shape[0] - 1:
-        if not np.all(np.any(ctab[idx:idx + 2], axis=0)):
+        if not np.all(np.any(ctab[idx : idx + 2], axis=0)):
             ctab, bin_edges = _merge_bins(ctab, bin_edges, idx)
         else:
             idx += 1
@@ -233,14 +240,14 @@ def chimerge_cut(
         # Update `bin_edges` and crosstab.
         ctab, bin_edges = _merge_bins(ctab, bin_edges, merge_idx)
 
-    bin_edges[1:-1] -= .000001
+    bin_edges[1:-1] -= 0.000001
     return bin_edges, ctab
 
 
 def _merge_bins(
     ctab: np.ndarray,
     bin_edges: np.ndarray,
-    merge_idx: int
+    merge_idx: int,
 ) -> tuple:
     """Merge adjacent bins in crosstab.
 
@@ -271,9 +278,14 @@ def _merge_bins(
     bin_edges: List of bin edges after bin merged.
     """
     bin_edges = np.concatenate(
-        (bin_edges[:merge_idx + 1], bin_edges[merge_idx + 2:]), axis=0)
-    ctab = np.concatenate((
-        ctab[:merge_idx],
-        ctab[merge_idx:merge_idx + 2].sum(axis=0, keepdims=True),
-        ctab[merge_idx + 2:]), axis=0)
+        (bin_edges[: merge_idx + 1], bin_edges[merge_idx + 2 :]), axis=0
+    )
+    ctab = np.concatenate(
+        (
+            ctab[:merge_idx],
+            ctab[merge_idx : merge_idx + 2].sum(axis=0, keepdims=True),
+            ctab[merge_idx + 2 :],
+        ),
+        axis=0,
+    )
     return ctab, bin_edges

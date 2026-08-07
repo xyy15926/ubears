@@ -1580,7 +1580,7 @@ packages:
 - pypi: ./
   name: statbear
   version: 0.1.1
-  sha256: 9620bbbbb5d269fa4d1df5c07187b865b214e3ca24f633723f9c73be5a8555a2
+  sha256: 6029c2eabc9c8224792da2cbc7cf1da5bfe815a6aeed03e13b6e1c6b32ab0d26
   requires_dist:
   - numpy-financial
   - numpy>=2.0,<3.0

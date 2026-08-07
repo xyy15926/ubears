@@ -17,15 +17,14 @@ from typing import TypeVar, Any
 import logging
 import numpy as np
 
-from statbear.talib.overlap import (
-    ema, ma, sma
-)
+from statbear.talib.overlap import ema, ma, sma
 
 # %%
 logging.basicConfig(
     format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
     level=logging.INFO,
-    force=(__name__ == "__main__"))
+    force=(__name__ == "__main__"),
+)
 logger = logging.getLogger()
 logger.info("Logging Start.")
 
@@ -33,9 +32,9 @@ logger.info("Logging Start.")
 # %%
 def macd(
     close: np.ndarray,
-    fastperiod:int = 12,
-    slowperiod:int = 26,
-    signalperiod:int = 9,
+    fastperiod: int = 12,
+    slowperiod: int = 26,
+    signalperiod: int = 9,
 ) -> tuple[np.ndarray]:
     """Exponential moving average convergence and divergence.
 
@@ -76,12 +75,12 @@ def macd(
 
     # Signal and hist.
     macdsignal = np.ndarray(len(close))
-    macdsignal[:slowperiod - 1] = np.nan
-    macdsignal[slowperiod - 1:] = ema(macd[slowperiod - 1:], signalperiod)
+    macdsignal[: slowperiod - 1] = np.nan
+    macdsignal[slowperiod - 1 :] = ema(macd[slowperiod - 1 :], signalperiod)
     macdhist = macd - macdsignal
 
     # Set `np.nan` to keep the pace with MACDSignal.
-    macd[:slowperiod + signalperiod - 2] = np.nan
+    macd[: slowperiod + signalperiod - 2] = np.nan
 
     return macd, macdsignal, macdhist
 
@@ -89,11 +88,11 @@ def macd(
 # %%
 def macd_ext(
     close: np.ndarray,
-    fastperiod:int = 12,
+    fastperiod: int = 12,
     fastmatype: int = 0,
-    slowperiod:int = 26,
+    slowperiod: int = 26,
     slowmatype: int = 0,
-    signalperiod:int = 9,
+    signalperiod: int = 9,
     signalmatype: int = 0,
 ) -> tuple[np.ndarray]:
     """Moving average convergence and divergence.
@@ -138,14 +137,14 @@ def macd_ext(
 
     # Signal and hist.
     macdsignal = np.ndarray(len(close))
-    macdsignal[:slowperiod - 1] = np.nan
-    macdsignal[slowperiod - 1:] = ma(macd[slowperiod - 1:],
-                                     signalperiod,
-                                     signalmatype)
+    macdsignal[: slowperiod - 1] = np.nan
+    macdsignal[slowperiod - 1 :] = ma(
+        macd[slowperiod - 1 :], signalperiod, signalmatype
+    )
     macdhist = macd - macdsignal
 
     # Set `np.nan` to keep the pace with MACDSignal.
-    macd[:slowperiod + signalperiod - 2] = np.nan
+    macd[: slowperiod + signalperiod - 2] = np.nan
 
     return macd, macdsignal, macdhist
 
@@ -155,7 +154,7 @@ def cci(
     high: np.ndarray,
     low: np.ndarray,
     close: np.ndarray,
-    timeperiod: int = 14
+    timeperiod: int = 14,
 ) -> np.ndarray:
     """Commodity Channel Index.
 
@@ -178,10 +177,11 @@ def cci(
     smav = sma(tp, timeperiod)
     mads = np.ndarray(len(close))
     # ATTENTION: MAD instead of STD.
-    mads[:timeperiod - 1] = np.nan
+    mads[: timeperiod - 1] = np.nan
     for i in range(timeperiod - 1, len(close)):
-        mads[i] = (np.abs(tp[i - timeperiod + 1: i + 1] - smav[i]).sum()
-                   / timeperiod)
+        mads[i] = (
+            np.abs(tp[i - timeperiod + 1 : i + 1] - smav[i]).sum() / timeperiod
+        )
 
     cci = (tp - smav) / mads / 0.015
 
@@ -191,7 +191,7 @@ def cci(
 # %%
 def trix(
     close: np.ndarray,
-    timeperiod: int = 30
+    timeperiod: int = 30,
 ) -> np.ndarray:
     """Triple Exponentially Smoothed Average.
 
@@ -205,11 +205,13 @@ def trix(
     TRIX: np.ndarray with preceding  `3 * timeperiod - 2` np.nan
     """
     emav = ema(close, timeperiod)
-    emavv = ema(emav[timeperiod - 1:], timeperiod)
-    emavvv = ema(emavv[timeperiod - 1:], timeperiod)
+    emavv = ema(emav[timeperiod - 1 :], timeperiod)
+    emavvv = ema(emavv[timeperiod - 1 :], timeperiod)
     trix = np.ndarray(len(close))
-    trix[:2 * timeperiod - 2 + 1] = np.nan
-    trix[2 * timeperiod - 2 + 1:] = (emavvv[1:] - emavvv[:-1]) / emavvv[:-1] * 100
+    trix[: 2 * timeperiod - 2 + 1] = np.nan
+    trix[2 * timeperiod - 2 + 1 :] = (
+        (emavvv[1:] - emavvv[:-1]) / emavvv[:-1] * 100
+    )
 
     return trix
 
@@ -219,7 +221,7 @@ def bop(
     open_: np.ndarray,
     high: np.ndarray,
     low: np.ndarray,
-    close: np.ndarray
+    close: np.ndarray,
 ) -> np.ndarray:
     """Balance of power.
 
@@ -240,7 +242,7 @@ def bop(
 # %%
 def rsi(
     close: np.ndarray,
-    timeperiod: int = 14
+    timeperiod: int = 14,
 ) -> np.ndarray:
     """Relative Strength Index.
 
@@ -271,12 +273,12 @@ def rsi(
 # %%
 def cmo(
     close: np.ndarray,
-    timeperiod: int = 14
+    timeperiod: int = 14,
 ) -> np.ndarray:
     """Chande Momentum Oscillator.
 
     CMO is a modified RSI with deviding total movement with net movment.
-    NOTE: The 
+    NOTE: The
 
     Params:
     --------------------------
@@ -408,9 +410,9 @@ def aroon(
     for i in range(timeperiod, len(high)):
         # Current price is included, namely `timeperiod + 1` items are
         # compared to get the maximum or minimum.
-        hpos = np.argmax(high[i - timeperiod: i + 1])
+        hpos = np.argmax(high[i - timeperiod : i + 1])
         aroon_up[i] = hpos / timeperiod * 100
-        lpos = np.argmin(low[i - timeperiod: i + 1])
+        lpos = np.argmin(low[i - timeperiod : i + 1])
         aroon_dn[i] = lpos / timeperiod * 100
 
     return aroon_dn, aroon_up
@@ -603,9 +605,10 @@ def adxr(
     """
     adxv = adx(high, low, close, timeperiod)
     adxrv = np.ndarray(len(close))
-    adxrv[:3 * timeperiod - 2] = np.nan
-    adxrv[3 * timeperiod - 2:] = (adxv[3 * timeperiod - 2:]
-                                  + adxv[2 * timeperiod - 1: -timeperiod + 1]) / 2
+    adxrv[: 3 * timeperiod - 2] = np.nan
+    adxrv[3 * timeperiod - 2 :] = (
+        adxv[3 * timeperiod - 2 :] + adxv[2 * timeperiod - 1 : -timeperiod + 1]
+    ) / 2
 
     return adxrv
 
@@ -613,7 +616,7 @@ def adxr(
 # %%
 def mom(
     close: np.ndarray,
-    timeperiod: int = 10
+    timeperiod: int = 10,
 ) -> np.ndarray:
     """Momentum.
 
@@ -658,10 +661,10 @@ def willr(
     WILLR: np.ndarray with preceding `timeperiod - 1` np.nan.
     """
     ret = np.ndarray(len(close))
-    ret[:timeperiod - 1] = np.nan
+    ret[: timeperiod - 1] = np.nan
     for i in range(timeperiod - 1, len(close)):
-        hhigh = high[i - timeperiod + 1: i + 1].max()
-        llow = low[i - timeperiod + 1: i + 1].min()
+        hhigh = high[i - timeperiod + 1 : i + 1].max()
+        llow = low[i - timeperiod + 1 : i + 1].min()
         ret[i] = (hhigh - close[i]) / (hhigh - llow) * 100
 
     return ret
@@ -694,22 +697,23 @@ def stochf(
     """
     # Raw K or Fast K or Unsmoothed K
     raw_k = np.ndarray(len(close))
-    raw_k[:fastk_period - 1] = np.nan
+    raw_k[: fastk_period - 1] = np.nan
     for i in range(fastk_period - 1, len(close)):
-        hhigh = high[i - fastk_period + 1: i + 1].max()
-        llow = low[i - fastk_period + 1: i + 1].min()
+        hhigh = high[i - fastk_period + 1 : i + 1].max()
+        llow = low[i - fastk_period + 1 : i + 1].min()
         raw_k[i] = (close[i] - llow) / (hhigh - llow) * 100
 
     # Fast D or smoothed K or Slow K(with more np.nan).
     fast_d = np.ndarray(len(close))
-    fast_d[fastk_period - 1:] = ma(raw_k[fastk_period - 1:],
-                                   fastd_period, fastd_matype)
-    fast_d[:fastk_period - 1] = np.nan
+    fast_d[fastk_period - 1 :] = ma(
+        raw_k[fastk_period - 1 :], fastd_period, fastd_matype
+    )
+    fast_d[: fastk_period - 1] = np.nan
 
     # Set the preceding items in FastK, SlowK with np.nan to keep alignment
     # with the FastD, SlowD.
     # Code here just to emphasize this.
-    raw_k[:fastk_period + fastd_period - 2] = np.nan
+    raw_k[: fastk_period + fastd_period - 2] = np.nan
 
     return raw_k, fast_d
 
@@ -723,7 +727,7 @@ def stoch(
     slowk_period: int = 3,
     slowk_matype: int = 0,
     slowd_period: int = 3,
-    slowd_matype: int = 0
+    slowd_matype: int = 0,
 ) -> np.ndarray:
     """Stochastic Oscillator with Slow K and D.
 
@@ -743,22 +747,22 @@ def stoch(
     SlowK: np.ndarray with preceding `fastk_period + slowk_period + slowd_period - 3` np.nan.
     SlowD: np.ndarray with preceding `fastk_period + slowk_period + slowd_period - 3` np.nan.
     """
-    fast_k, fast_d = stochf(high, low, close,
-                            fastk_period,
-                            slowk_period, slowk_matype)
+    fast_k, fast_d = stochf(
+        high, low, close, fastk_period, slowk_period, slowk_matype
+    )
 
     # Slow D or smoothed Slow K
     slow_d = np.ndarray(len(close))
-    slow_d[fastk_period + slowk_period - 2:] = (
-        ma(fast_d[fastk_period + slowk_period - 2:],
-           slowd_period, slowd_matype))
-    slow_d[:fastk_period + slowk_period - 2] = np.nan
+    slow_d[fastk_period + slowk_period - 2 :] = ma(
+        fast_d[fastk_period + slowk_period - 2 :], slowd_period, slowd_matype
+    )
+    slow_d[: fastk_period + slowk_period - 2] = np.nan
 
     # Set the preceding items in FastK, SlowK with np.nan to keep alignment
     # with the FastD, SlowD.
     # Code here just to emphasize this.
     slow_k = fast_d.copy()
-    slow_k[:fastk_period + slowk_period + slowd_period - 3] = np.nan
+    slow_k[: fastk_period + slowk_period + slowd_period - 3] = np.nan
 
     return slow_k, slow_d
 
@@ -769,7 +773,7 @@ def stoch_rsi(
     timeperiod: int = 14,
     fastk_period: int = 5,
     fastd_period: int = 3,
-    fastd_matype: int = 0
+    fastd_matype: int = 0,
 ) -> np.ndarray:
     """Stochastic RSI.
 
@@ -793,10 +797,12 @@ def stoch_rsi(
     fast_d = np.ndarray(len(close))
     fast_k[:timeperiod] = np.nan
     fast_d[:timeperiod] = np.nan
-    fast_k[timeperiod:], fast_d[timeperiod:] = stochf(rsiv[timeperiod:],
-                                                      rsiv[timeperiod:],
-                                                      rsiv[timeperiod:],
-                                                      fastk_period,
-                                                      fastd_period,
-                                                      fastd_matype)
+    fast_k[timeperiod:], fast_d[timeperiod:] = stochf(
+        rsiv[timeperiod:],
+        rsiv[timeperiod:],
+        rsiv[timeperiod:],
+        fastk_period,
+        fastd_period,
+        fastd_matype,
+    )
     return fast_k, fast_d

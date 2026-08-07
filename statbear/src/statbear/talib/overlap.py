@@ -21,7 +21,8 @@ import numpy as np
 logging.basicConfig(
     format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
     level=logging.INFO,
-    force=(__name__ == "__main__"))
+    force=(__name__ == "__main__"),
+)
 logger = logging.getLogger()
 logger.info("Logging Start.")
 
@@ -30,7 +31,7 @@ logger.info("Logging Start.")
 def ma(
     close: np.ndarray,
     timeperiod: int = 30,
-    matype: int = 0
+    matype: int = 0,
 ) -> np.ndarray:
     """General moving average.
 
@@ -59,8 +60,8 @@ def ma(
         3: tris,
     }
     ret = np.ndarray(len(close))
-    ret[:timeperiod - 1] = np.nan
-    ret[timeperiod - 1:] = np.convolve(close, ws[matype], "valid")
+    ret[: timeperiod - 1] = np.nan
+    ret[timeperiod - 1 :] = np.convolve(close, ws[matype], "valid")
 
     return ret
 
@@ -68,7 +69,7 @@ def ma(
 # %%
 def sma(
     close: np.ndarray,
-    timeperiod: int = 30
+    timeperiod: int = 30,
 ) -> np.ndarray:
     """Simple moving average.
 
@@ -82,15 +83,17 @@ def sma(
     NDA of the `close` shape with `np.nan` filling the preceding non-defined.
     """
     ret = np.ndarray(len(close))
-    ret[:timeperiod - 1] = np.nan
-    ret[timeperiod - 1:] = np.convolve(close, np.ones(timeperiod), "valid") / timeperiod
+    ret[: timeperiod - 1] = np.nan
+    ret[timeperiod - 1 :] = (
+        np.convolve(close, np.ones(timeperiod), "valid") / timeperiod
+    )
     return ret
 
 
 # %%
 def wma(
     close: np.ndarray,
-    timeperiod: int = 30
+    timeperiod: int = 30,
 ) -> np.ndarray:
     """Moving average with weights of descending range index, namely N - 1.
 
@@ -114,7 +117,7 @@ def wma(
 # %%
 def trima_yao(
     close: np.ndarray,
-    timeperiod: int = 30
+    timeperiod: int = 30,
 ) -> np.ndarray:
     """Moving average with weights of triangular distribution.
 
@@ -134,7 +137,7 @@ def trima_yao(
 
 def trima(
     close: np.ndarray,
-    timeperiod: int = 30
+    timeperiod: int = 30,
 ) -> np.ndarray:
     """Moving average with weights of triangular distribution.
 
@@ -156,8 +159,8 @@ def trima(
     ws = ops.sum()
 
     ret = np.ndarray(len(close))
-    ret[:timeperiod - 1] = np.nan
-    ret[timeperiod - 1:] = np.convolve(close, ops, "valid") / ws
+    ret[: timeperiod - 1] = np.nan
+    ret[timeperiod - 1 :] = np.convolve(close, ops, "valid") / ws
 
     return ret
 
@@ -168,7 +171,7 @@ def mavp(
     periods: np.ndarray,
     minperiod: int = 2,
     maxperiod: int = 30,
-    matype: int = 0
+    matype: int = 0,
 ) -> np.ndarray:
     """Moving average with veriable periods.
 
@@ -187,12 +190,12 @@ def mavp(
     NDA of the `close` shape with `np.nan` filling the preceding non-defined.
     """
     ret = np.ndarray(len(close))
-    ret[:maxperiod - 1] = np.nan
+    ret[: maxperiod - 1] = np.nan
     MA = np.mean
     for i in range(maxperiod - 1, len(close)):
         prd = max(minperiod, periods[i])
         prd = min(maxperiod, prd)
-        ret[i] = MA(close[i - prd + 1: i + 1])
+        ret[i] = MA(close[i - prd + 1 : i + 1])
     return ret
 
 
@@ -222,7 +225,7 @@ def ema(
     """
     # ws = np.power((1 - K), np.arange(timeperiod)) * ([K] * (timeperiod - 1) + [1])
     ret = np.ndarray(len(close))
-    ret[:timeperiod - 1] = np.nan
+    ret[: timeperiod - 1] = np.nan
     # Use SMA as the first element of EMA.
     ret[timeperiod - 1] = np.mean(close[:timeperiod])
     K = 2 / (timeperiod + 1) if K is None else K
@@ -235,7 +238,7 @@ def ema(
 # %%
 def dema(
     close: np.ndarray,
-    timeperiod: int = 30
+    timeperiod: int = 30,
 ) -> np.ndarray:
     """Double exponential moving average.
 
@@ -251,16 +254,16 @@ def dema(
     NDA of the `close` shape with `np.nan` filling the preceding non-defined.
     """
     emav = ema(close, timeperiod)
-    emavv = ema(emav[timeperiod - 1:], timeperiod)
+    emavv = ema(emav[timeperiod - 1 :], timeperiod)
     emav *= 2
-    emav[timeperiod - 1:] -= emavv
+    emav[timeperiod - 1 :] -= emavv
     return emav
 
 
 # %%
 def tema(
     close: np.ndarray,
-    timeperiod: int = 30
+    timeperiod: int = 30,
 ) -> np.ndarray:
     """Triple exponential moving average.
 
@@ -276,11 +279,11 @@ def tema(
     NDA of the `close` shape with `np.nan` filling the preceding non-defined.
     """
     emav = ema(close, timeperiod)
-    emavv = ema(emav[timeperiod - 1:], timeperiod)
-    emavvv = ema(emavv[timeperiod - 1:], timeperiod)
+    emavv = ema(emav[timeperiod - 1 :], timeperiod)
+    emavvv = ema(emavv[timeperiod - 1 :], timeperiod)
     emav *= 3
-    emav[timeperiod - 1:] -= 3 * emavv
-    emav[2 * timeperiod - 2:] += emavvv
+    emav[timeperiod - 1 :] -= 3 * emavv
+    emav[2 * timeperiod - 2 :] += emavvv
     return emav
 
 
@@ -288,7 +291,7 @@ def tema(
 def gd(
     close: np.ndarray,
     timeperiod: int = 5,
-    vfactor: int = 0
+    vfactor: int = 0,
 ) -> np.ndarray:
     """DEMA with variable coefficient of the `DOUBLE`.
 
@@ -305,16 +308,16 @@ def gd(
     NDA of the `close` shape with `np.nan` filling the preceding non-defined.
     """
     emav = ema(close, timeperiod)
-    emavv = ema(emav[timeperiod - 1:], timeperiod)
-    emav *= (1 + vfactor)
-    emav[timeperiod - 1:] -= emavv * vfactor
+    emavv = ema(emav[timeperiod - 1 :], timeperiod)
+    emav *= 1 + vfactor
+    emav[timeperiod - 1 :] -= emavv * vfactor
     return emav
 
 
 def t3(
     close: np.ndarray,
     timeperiod: int = 5,
-    vfactor: int = 0
+    vfactor: int = 0,
 ) -> np.ndarray:
     """Triple variable DEMA.
 
@@ -335,14 +338,14 @@ def t3(
     gdvvv = gd(gdvv[~np.isnan(gdvv)], timeperiod, vfactor)
     ret = np.ndarray(len(close))
     ret[: 4 * timeperiod - 4] = np.nan
-    ret[4 * timeperiod - 4:] = gdvvv
+    ret[4 * timeperiod - 4 :] = gdvvv
     return ret
 
 
 # %%
 def kama(
     close: np.ndarray,
-    timeperiod: int = 30
+    timeperiod: int = 30,
 ) -> np.ndarray:
     """Kaufman's adaptive moving average.
 
@@ -367,8 +370,9 @@ def kama(
 
     # Adaptive coefficients.
     diffs = np.abs(np.diff(close))
-    ers = (np.abs(close[timeperiod:] - close[:-timeperiod])
-           / np.convolve(diffs, np.ones(timeperiod), "valid"))
+    ers = np.abs(close[timeperiod:] - close[:-timeperiod]) / np.convolve(
+        diffs, np.ones(timeperiod), "valid"
+    )
     alphas = (ers * (afast - aslow) + aslow) ** 2
 
     ret = np.ndarray(len(close))
@@ -390,7 +394,7 @@ def kama(
 def midprice(
     high: np.ndarray,
     low: np.ndarray,
-    timeperiod: int = 14
+    timeperiod: int = 14,
 ) -> np.ndarray:
     """Mean of the maximum of high and minimum of low.
 
@@ -409,15 +413,17 @@ def midprice(
         if i < timeperiod - 1:
             ret[i] = np.nan
         else:
-            ret[i] = (np.max(high[i - timeperiod + 1: i + 1])
-                      + np.min(low[i - timeperiod + 1: i + 1])) / 2
+            ret[i] = (
+                np.max(high[i - timeperiod + 1 : i + 1])
+                + np.min(low[i - timeperiod + 1 : i + 1])
+            ) / 2
     return ret
 
 
 # %%
 def midpoint(
     close: np.ndarray,
-    timeperiod: int = 14
+    timeperiod: int = 14,
 ) -> np.ndarray:
     """Mean of the maximum and minimum.
 
@@ -435,8 +441,10 @@ def midpoint(
         if i < timeperiod - 1:
             ret[i] = np.nan
         else:
-            ret[i] = (np.max(close[i - timeperiod + 1: i + 1])
-                      + np.min(close[i - timeperiod + 1: i + 1])) / 2
+            ret[i] = (
+                np.max(close[i - timeperiod + 1 : i + 1])
+                + np.min(close[i - timeperiod + 1 : i + 1])
+            ) / 2
     return ret
 
 
@@ -466,9 +474,9 @@ def bbands(
     """
     mid = ma(close, timeperiod, matype)
     stds = np.ndarray(len(close))
-    stds[:timeperiod - 1] = np.nan
+    stds[: timeperiod - 1] = np.nan
     for i in range(timeperiod - 1, len(close)):
-        stds[i] = np.std(close[i - timeperiod + 1: i + 1])
+        stds[i] = np.std(close[i - timeperiod + 1 : i + 1])
     upperband = mid + nbdevup * stds
     lowerband = mid - nbdevdn * stds
 
@@ -480,9 +488,9 @@ def sar(
     high: np.ndarray,
     low: np.ndarray,
     acceleration: float = 0.02,
-    maximum: float = 0.2
+    maximum: float = 0.2,
 ) -> np.ndarray:
-    """ Stop and reverse.
+    """Stop and reverse.
 
     1. Accelarating trend if thresholds are exceeds.
     2. Or keep the trend's changing reate unchanged.
@@ -553,9 +561,9 @@ def sar_ext(
     accelerationmaxlong: float = 0,
     accelerationinitshort: float = 0,
     accelerationshort: float = 0,
-    accelerationmaxshort: float = 0
+    accelerationmaxshort: float = 0,
 ) -> np.ndarray:
-    """ Stop and reverse.
+    """Stop and reverse.
 
     1. Accelarating trend if thresholds are exceeds.
     2. Or keep the trend's changing rate unchanged.

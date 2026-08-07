@@ -17,13 +17,15 @@ import numpy as np
 logging.basicConfig(
     format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
     level=logging.INFO,
-    force=(__name__ == "__main__"))
+    force=(__name__ == "__main__"),
+)
 logger = logging.getLogger()
 logger.info("Logging Start.")
 
 
 POS_FLAG = 999999
 NEG_FLAG = -999999
+
 
 # %%
 def std_outlier(
@@ -81,8 +83,9 @@ def std_outlier(
                 outlier_map[arr == arr[idx]] = True
                 in_arr = arr[~outlier_map]
                 mean, std = np.nanmean(in_arr), np.nanstd(in_arr)
-                outlier_map[idx] = (np.abs(arr[arr == arr[idx]] - mean)
-                                    >= (sigma_n * std))
+                outlier_map[idx] = np.abs(arr[arr == arr[idx]] - mean) >= (
+                    sigma_n * std
+                )
 
     # Get the max lowiers and min highiers so to record lower and higher outliers.
     if (~outlier_map).sum() > 0:
@@ -187,7 +190,7 @@ def span_cut(
     # Calculate the spans and get the middles of the largest spans.
     spans = arr[1:] - arr[:-1]
     if cuts_n is not None:
-        edge_idx = np.argsort(spans)[-cuts_n + 1:]
+        edge_idx = np.argsort(spans)[-cuts_n + 1 :]
     else:
         highiers = std_outlier(spans, sigma_n)[1]
         edge_idx = np.where(spans >= highiers.min())[0]
@@ -234,7 +237,7 @@ def edge_encode(
     """
     if check_range:
         assert np.all(arr <= edges[-1]) and np.all(arr >= edges[0])
-    edges = edges[1: -1]
+    edges = edges[1:-1]
     labeled = np.apply_along_axis(lambda x: np.searchsorted(edges, x), 0, arr)
 
     return labeled

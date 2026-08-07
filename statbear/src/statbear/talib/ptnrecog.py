@@ -18,15 +18,14 @@ from typing import TypeVar, Any
 import logging
 import numpy as np
 
-from statbear.talib.overlap import (
-    ema, ma, sma
-)
+from statbear.talib.overlap import ema, ma, sma
 
 # %%
 logging.basicConfig(
     format="%(module)s: %(asctime)s: %(levelname)s: %(message)s",
     level=logging.INFO,
-    force=(__name__ == "__main__"))
+    force=(__name__ == "__main__"),
+)
 logger = logging.getLogger()
 logger.info("Logging Start.")
 
@@ -51,8 +50,9 @@ def sma_excur(
     """
     ret = np.ndarray(len(close))
     ret[:timeperiod] = np.nan
-    ret[timeperiod:] = (np.convolve(close, np.ones(timeperiod), "valid")[:-1]
-                        / timeperiod)
+    ret[timeperiod:] = (
+        np.convolve(close, np.ones(timeperiod), "valid")[:-1] / timeperiod
+    )
     return ret
 
 
@@ -148,7 +148,7 @@ def candle_spec(
         "shadowveryshort": ("highlow", 10, 0.1),
         "near": ("highlow", 5, 0.2),
         "far": ("highlow", 5, 0.6),
-        "equal": ("highlow", 5, 0.05)
+        "equal": ("highlow", 5, 0.05),
     }
 
     rg, man, ratio = settings[spec]
@@ -168,7 +168,7 @@ def belthold(
     open_: np.ndarray,
     high: np.ndarray,
     low: np.ndarray,
-    close: np.ndarray
+    close: np.ndarray,
 ) -> np.ndarray:
     """Candle Stick Belthold.
 
@@ -189,8 +189,10 @@ def belthold(
     BeltHold: np.ndarray filled with 0, 100, -100
     """
     if len(close) < 10:
-        logging.warning(f"The number of samples should be larger than {10}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {10}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     rb = np.abs(close - open_)
@@ -198,12 +200,12 @@ def belthold(
     bodylong = candle_spec(open_, high, low, close, "bodylong")
 
     ret = np.zeros_like(close, dtype=np.int_)
-    ret[(rb > bodylong)
-        & (close > open_)
-        & (open_ - low < shadowveryshort)] = 100
-    ret[(rb > bodylong)
-        & (close < open_)
-        & (high - open_ < shadowveryshort)] = -100
+    ret[
+        (rb > bodylong) & (close > open_) & (open_ - low < shadowveryshort)
+    ] = 100
+    ret[
+        (rb > bodylong) & (close < open_) & (high - open_ < shadowveryshort)
+    ] = -100
 
     return ret
 
@@ -213,7 +215,7 @@ def closing_marubozu(
     open_: np.ndarray,
     high: np.ndarray,
     low: np.ndarray,
-    close: np.ndarray
+    close: np.ndarray,
 ) -> np.ndarray:
     """Closing Marubozu.
 
@@ -234,8 +236,10 @@ def closing_marubozu(
     Closing Marubozu: np.ndarray filled with 0, 100, -100
     """
     if len(close) < 10:
-        logging.warning(f"The number of samples should be larger than {10}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {10}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     rb = np.abs(close - open_)
@@ -243,12 +247,12 @@ def closing_marubozu(
     bodylong = candle_spec(open_, high, low, close, "bodylong")
 
     ret = np.zeros_like(close, dtype=np.int_)
-    ret[(rb > bodylong)
-        & (close > open_)
-        & (high - close < shadowveryshort)] = 100
-    ret[(rb > bodylong)
-        & (close < open_)
-        & (close - low < shadowveryshort)] = -100
+    ret[
+        (rb > bodylong) & (close > open_) & (high - close < shadowveryshort)
+    ] = 100
+    ret[
+        (rb > bodylong) & (close < open_) & (close - low < shadowveryshort)
+    ] = -100
 
     return ret
 
@@ -258,7 +262,7 @@ def doji(
     open_: np.ndarray,
     high: np.ndarray,
     low: np.ndarray,
-    close: np.ndarray
+    close: np.ndarray,
 ) -> np.ndarray:
     """Doji.
 
@@ -278,8 +282,10 @@ def doji(
     Doji: np.ndarray filled with 0, 100
     """
     if len(close) < 10:
-        logging.warning(f"The number of samples should be larger than {10}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {10}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     rb = np.abs(close - open_)
@@ -295,7 +301,7 @@ def dragonfly_doji(
     open_: np.ndarray,
     high: np.ndarray,
     low: np.ndarray,
-    close: np.ndarray
+    close: np.ndarray,
 ) -> np.ndarray:
     """Dragonfly Doji.
 
@@ -317,16 +323,20 @@ def dragonfly_doji(
     Dragonfly Doji: np.ndarray filled with 0, 100
     """
     if len(close) < 10:
-        logging.warning(f"The number of samples should be larger than {10}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {10}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     shadowveryshort = candle_spec(open_, high, low, close, "shadowveryshort")
     rb = np.abs(close - open_)
     ret = np.zeros_like(close, dtype=np.int_)
-    ret[(rb < shadowveryshort)
+    ret[
+        (rb < shadowveryshort)
         & (high - np.maximum(close, open_) < shadowveryshort)
-        & (np.minimum(close, open_) - low > shadowveryshort)] = 100
+        & (np.minimum(close, open_) - low > shadowveryshort)
+    ] = 100
 
     return ret
 
@@ -336,7 +346,7 @@ def gravestone_doji(
     open_: np.ndarray,
     high: np.ndarray,
     low: np.ndarray,
-    close: np.ndarray
+    close: np.ndarray,
 ) -> np.ndarray:
     """Gravestone Doji.
 
@@ -358,16 +368,20 @@ def gravestone_doji(
     Gravestone Doji: np.ndarray filled with 0, 100, -100
     """
     if len(close) < 10:
-        logging.warning(f"The number of samples should be larger than {10}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {10}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     shadowveryshort = candle_spec(open_, high, low, close, "shadowveryshort")
     rb = np.abs(close - open_)
     ret = np.zeros_like(close, dtype=np.int_)
-    ret[(rb < shadowveryshort)
+    ret[
+        (rb < shadowveryshort)
         & (high - np.maximum(close, open_) > shadowveryshort)
-        & (np.minimum(close, open_) - low < shadowveryshort)] = 100
+        & (np.minimum(close, open_) - low < shadowveryshort)
+    ] = 100
 
     return ret
 
@@ -380,7 +394,7 @@ def counter_attack(
     open_: np.ndarray,
     high: np.ndarray,
     low: np.ndarray,
-    close: np.ndarray
+    close: np.ndarray,
 ) -> np.ndarray:
     """Counter Attack.
 
@@ -402,8 +416,10 @@ def counter_attack(
     Counter Attack: np.ndarray filled with 0, 100, -100
     """
     if len(close) < 11:
-        logging.warning(f"The number of samples should be larger than {11}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {11}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     rb = np.abs(close - open_)
@@ -413,17 +429,21 @@ def counter_attack(
     ret = np.zeros_like(close, dtype=np.int_)
     ret_ = ret[1:]
     # Downer bar and then upper bar.
-    ret_[(rb[:-1] > bodylong[:-1])
-         & (close[:-1] < open_[:-1])
-         & (rb[1:] > bodylong[1:])
-         & (close[1:] > open_[1:])
-         & (np.abs(close[1:] - close[:-1]) < equal[:-1])] = 100
+    ret_[
+        (rb[:-1] > bodylong[:-1])
+        & (close[:-1] < open_[:-1])
+        & (rb[1:] > bodylong[1:])
+        & (close[1:] > open_[1:])
+        & (np.abs(close[1:] - close[:-1]) < equal[:-1])
+    ] = 100
     # Upper bar and then donwer bar.
-    ret_[(rb[:-1] > bodylong[:-1])
-         & (close[:-1] > open_[:-1])
-         & (rb[1:] > bodylong[1:])
-         & (close[1:] < open_[1:])
-         & (np.abs(close[1:] - close[:-1]) < equal[:-1])] = -100
+    ret_[
+        (rb[:-1] > bodylong[:-1])
+        & (close[:-1] > open_[:-1])
+        & (rb[1:] > bodylong[1:])
+        & (close[1:] < open_[1:])
+        & (np.abs(close[1:] - close[:-1]) < equal[:-1])
+    ] = -100
 
     return ret
 
@@ -457,8 +477,10 @@ def darkcloud_cover(
     DarkCloud Cover: np.ndarray filled with 0, -100
     """
     if len(close) < 11:
-        logging.warning(f"The number of samples should be larger than {11}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {11}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     rb = np.abs(close - open_)
@@ -466,10 +488,12 @@ def darkcloud_cover(
 
     ret = np.zeros_like(close, dtype=np.int_)
     ret_ = ret[1:]
-    ret_[(rb[:-1] > bodylong[:-1])
-         & (open_[:-1] < close[1:])
-         & (close[1:] < close[:-1] - rb[:-1] * penetration)
-         & (high[:-1] < open_[1:])] = -100
+    ret_[
+        (rb[:-1] > bodylong[:-1])
+        & (open_[:-1] < close[1:])
+        & (close[1:] < close[:-1] - rb[:-1] * penetration)
+        & (high[:-1] < open_[1:])
+    ] = -100
 
     return ret
 
@@ -500,8 +524,10 @@ def doji_star(
     Doji Star: np.ndarray filled with 0, -100, 100
     """
     if len(close) < 11:
-        logging.warning(f"The number of samples should be larger than {11}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {11}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     rb = np.abs(close - open_)
@@ -511,15 +537,19 @@ def doji_star(
     ret = np.zeros_like(close, dtype=np.int_)
     ret_ = ret[1:]
     # Uptrend.
-    ret_[(rb[:-1] > bodylong[:-1])
-         & (rb[1:] < bodydoji[1:])
-         & (open_[:-1] < close[:-1])
-         & (close[:-1] < np.minimum(close[1:], open_[1:]))] = -100
+    ret_[
+        (rb[:-1] > bodylong[:-1])
+        & (rb[1:] < bodydoji[1:])
+        & (open_[:-1] < close[:-1])
+        & (close[:-1] < np.minimum(close[1:], open_[1:]))
+    ] = -100
     # Downtrend.
-    ret_[(rb[:-1] > bodylong[:-1])
-         & (rb[1:] < bodydoji[1:])
-         & (open_[:-1] > close[:-1])
-         & (close[:-1] > np.maximum(close[1:], open_[1:]))] = 100
+    ret_[
+        (rb[:-1] > bodylong[:-1])
+        & (rb[1:] < bodydoji[1:])
+        & (open_[:-1] > close[:-1])
+        & (close[:-1] > np.maximum(close[1:], open_[1:]))
+    ] = 100
 
     return ret
 
@@ -551,18 +581,24 @@ def engulfing(
     Engulfing: np.ndarray filled with 0, -100, 100
     """
     if len(close) < 2:
-        logging.warning(f"The number of samples should be larger than {2}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {2}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     ret = np.zeros_like(close, dtype=np.int_)
     ret_ = ret[1:]
-    ret_[(open_[1:] < close[:-1])
-         & (close[:-1] < open_[:-1])
-         & (open_[:-1] < close[1:])] = 100
-    ret_[(close[1:] < open_[:-1])
-         & (open_[:-1] < close[:-1])
-         & (close[:-1] < open_[1:])] = -100
+    ret_[
+        (open_[1:] < close[:-1])
+        & (close[:-1] < open_[:-1])
+        & (open_[:-1] < close[1:])
+    ] = 100
+    ret_[
+        (close[1:] < open_[:-1])
+        & (open_[:-1] < close[:-1])
+        & (close[:-1] < open_[1:])
+    ] = -100
     # The second element can't be set, but why?
     ret[:2] = 0
 
@@ -597,8 +633,10 @@ def hammer(
     Hammer: np.ndarray filled with 0, 100
     """
     if len(close) < 12:
-        logging.warning(f"The number of samples should be larger than {12}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {12}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     rb = np.abs(close - open_)
@@ -609,10 +647,12 @@ def hammer(
 
     ret = np.zeros_like(close, dtype=np.int_)
     ret_ = ret[1:]
-    ret_[(rb[1:] < bodyshort[1:])
-         & (np.minimum(close, open_)[1:] - low[1:] > shadowlong[1:])
-         & (high[1:] - np.maximum(close, open_)[1:] < shadowveryshort[1:])
-         & (np.minimum(close, open_)[1:] <= low[:-1] + near[:-1])] = 100
+    ret_[
+        (rb[1:] < bodyshort[1:])
+        & (np.minimum(close, open_)[1:] - low[1:] > shadowlong[1:])
+        & (high[1:] - np.maximum(close, open_)[1:] < shadowveryshort[1:])
+        & (np.minimum(close, open_)[1:] <= low[:-1] + near[:-1])
+    ] = 100
     # The 11th element can't be set, but why?
     ret[:11] = 0
 
@@ -647,8 +687,10 @@ def hangingman(
     Hangingman: np.ndarray filled with 0, -100
     """
     if len(close) < 12:
-        logging.warning(f"The number of samples should be larger than {12}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {12}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     rb = np.abs(close - open_)
@@ -659,10 +701,12 @@ def hangingman(
 
     ret = np.zeros_like(close, dtype=np.int_)
     ret_ = ret[1:]
-    ret_[(rb[1:] < bodyshort[1:])
-         & (np.minimum(close, open_)[1:] - low[1:] > shadowlong[1:])
-         & (high[1:] - np.maximum(close, open_)[1:] < shadowveryshort[1:])
-         & (np.minimum(close, open_)[1:] >= high[:-1] - near[:-1])] = -100
+    ret_[
+        (rb[1:] < bodyshort[1:])
+        & (np.minimum(close, open_)[1:] - low[1:] > shadowlong[1:])
+        & (high[1:] - np.maximum(close, open_)[1:] < shadowveryshort[1:])
+        & (np.minimum(close, open_)[1:] >= high[:-1] - near[:-1])
+    ] = -100
     # The 11th element can't be set, but why?
     ret[:11] = 0
 
@@ -697,8 +741,10 @@ def crows2(
     2Crows: np.ndarray filled with 0, -100
     """
     if len(close) < 12:
-        logging.warning(f"The number of samples should be larger than {12}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {12}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     bodylong = candle_spec(open_, high, low, close, "bodylong")
@@ -710,12 +756,16 @@ def crows2(
     #      & (close[1:-1] < open_[2:])
     #      & (open_[2:] < open_[1:-1])
     #      & (close[2:] < close[:-2]) & (close[2:] > open_[:-2])] = -100
-    ret_[(open_[:-2] + bodylong[:-2] < close[:-2])
-         & (open_[1:-1] > close[1:-1])
-         & (close[:-2] < close[1:-1])
-         # & (open_[2:] > close[2:])
-         & (open_[2:] < open_[1:-1]) & (open_[2:] > close[1:-1])
-         & (close[2:] < close[:-2]) & (close[2:] > open_[:-2])] = -100
+    ret_[
+        (open_[:-2] + bodylong[:-2] < close[:-2])
+        & (open_[1:-1] > close[1:-1])
+        & (close[:-2] < close[1:-1])
+        # & (open_[2:] > close[2:])
+        & (open_[2:] < open_[1:-1])
+        & (open_[2:] > close[1:-1])
+        & (close[2:] < close[:-2])
+        & (close[2:] > open_[:-2])
+    ] = -100
 
     return ret
 
@@ -748,8 +798,10 @@ def black_crows3(
     3 Black Crows: np.ndarray filled with 0, -100
     """
     if len(close) < 13:
-        logging.warning(f"The number of samples should be larger than {13}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {13}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     shadowveryshort = candle_spec(open_, high, low, close, "shadowveryshort")
@@ -757,21 +809,25 @@ def black_crows3(
     ret = np.zeros_like(close, dtype=np.int_)
     ret_ = ret[3:]
     # 1. First upper candle and 3 consecutive and declining downer candle.
-    ret_[(close[:-3] > open_[:-3])
-         & (close[1:-2] < open_[1:-2])
-         & (close[2:-1] < open_[2:-1])
-         & (close[3:] < open_[3:])
-         & (close[1:-2] > close[2:-1])
-         & (close[2:-1] > close[3:])
-         # 2. 2nd, 3rd, 4th must have no or very short lower shadow.
-         & (close[1:-2] - low[1:-2] < shadowveryshort[1:-2])
-         & (close[2:-1] - low[2:-1] < shadowveryshort[2:-1])
-         & (close[3:] - low[3:] < shadowveryshort[3:])
-         # 3. 3rd, 4th must open within the prior real body.
-         & (open_[2:-1] < open_[1:-2]) & (open_[2:-1] > close[1:-2])
-         & (open_[3:] < open_[2:-1]) & (open_[3:] > close[2:-1])
-         # 4. 2nd's close should be under the 1nd's high.
-         & (close[1:-2] < high[:-3])] = -100
+    ret_[
+        (close[:-3] > open_[:-3])
+        & (close[1:-2] < open_[1:-2])
+        & (close[2:-1] < open_[2:-1])
+        & (close[3:] < open_[3:])
+        & (close[1:-2] > close[2:-1])
+        & (close[2:-1] > close[3:])
+        # 2. 2nd, 3rd, 4th must have no or very short lower shadow.
+        & (close[1:-2] - low[1:-2] < shadowveryshort[1:-2])
+        & (close[2:-1] - low[2:-1] < shadowveryshort[2:-1])
+        & (close[3:] - low[3:] < shadowveryshort[3:])
+        # 3. 3rd, 4th must open within the prior real body.
+        & (open_[2:-1] < open_[1:-2])
+        & (open_[2:-1] > close[1:-2])
+        & (open_[3:] < open_[2:-1])
+        & (open_[3:] > close[2:-1])
+        # 4. 2nd's close should be under the 1nd's high.
+        & (close[1:-2] < high[:-3])
+    ] = -100
     # ????
     ret[:13] = 0
 
@@ -805,8 +861,10 @@ def inside3(
     3 Inside: np.ndarray filled with 0, -100
     """
     if len(close) < 13:
-        logging.warning(f"The number of samples should be larger than {13}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {13}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     rb = np.abs(close - open_)
@@ -815,18 +873,22 @@ def inside3(
 
     ret = np.zeros_like(close, dtype=np.int_)
     ret_ = ret[2:]
-    ret_[(open_[:-2] + bodylong[:-2] < close[:-2])
-         & (rb[1:-1] < bodyshort[1:-1])
-         & (np.maximum(open_[1:-1], close[1:-1]) < close[:-2])
-         & (np.minimum(open_[1:-1], close[1:-1]) > open_[:-2])
-         & (open_[2:] > close[2:])
-         & (close[2:] < open_[:-2])] = -100
-    ret_[(close[:-2] + bodylong[:-2] < open_[:-2])
-         & (rb[1:-1] < bodyshort[1:-1])
-         & (np.maximum(open_[1:-1], close[1:-1]) < open_[:-2])
-         & (np.minimum(open_[1:-1], close[1:-1]) > close[:-2])
-         & (open_[2:] < close[2:])
-         & (close[2:] > open_[:-2])] = 100
+    ret_[
+        (open_[:-2] + bodylong[:-2] < close[:-2])
+        & (rb[1:-1] < bodyshort[1:-1])
+        & (np.maximum(open_[1:-1], close[1:-1]) < close[:-2])
+        & (np.minimum(open_[1:-1], close[1:-1]) > open_[:-2])
+        & (open_[2:] > close[2:])
+        & (close[2:] < open_[:-2])
+    ] = -100
+    ret_[
+        (close[:-2] + bodylong[:-2] < open_[:-2])
+        & (rb[1:-1] < bodyshort[1:-1])
+        & (np.maximum(open_[1:-1], close[1:-1]) < open_[:-2])
+        & (np.minimum(open_[1:-1], close[1:-1]) > close[:-2])
+        & (open_[2:] < close[2:])
+        & (close[2:] > open_[:-2])
+    ] = 100
 
     return ret
 
@@ -858,20 +920,26 @@ def outside3(
     3 Outside: np.ndarray filled with 0, -100
     """
     if len(close) < 3:
-        logging.warning(f"The number of samples should be larger than {3}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {3}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     ret = np.zeros_like(close, dtype=np.int_)
     ret_ = ret[2:]
-    ret_[(open_[:-2] > close[:-2])
-         & (open_[1:-1] < close[:-2])
-         & (close[1:-1] > open_[:-2])
-         & (close[2:] > close[1:-1])] = 100
-    ret_[(open_[:-2] < close[:-2])
-         & (open_[1:-1] > close[:-2])
-         & (close[1:-1] < open_[:-2])
-         & (close[2:] < close[1:-1])] = -100
+    ret_[
+        (open_[:-2] > close[:-2])
+        & (open_[1:-1] < close[:-2])
+        & (close[1:-1] > open_[:-2])
+        & (close[2:] > close[1:-1])
+    ] = 100
+    ret_[
+        (open_[:-2] < close[:-2])
+        & (open_[1:-1] > close[:-2])
+        & (close[1:-1] < open_[:-2])
+        & (close[2:] < close[1:-1])
+    ] = -100
     # ????
     ret[:3] = 0
 
@@ -908,8 +976,10 @@ def stars_insouth3(
     3 Stars In South: np.ndarray filled with 0, -100
     """
     if len(close) < 3:
-        logging.warning(f"The number of samples should be larger than {3}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {3}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     rb = np.abs(close - open_)
@@ -921,26 +991,28 @@ def stars_insouth3(
     ret = np.zeros_like(close, dtype=np.int_)
     ret_ = ret[2:]
     # 1. 1st: Long black with long lower shadow.
-    ret_[(close[:-2] + bodylong[:-2] < open_[:-2])
-         & (close[:-2] - low[:-2] > shadowlong[:-2])
-         # 2. 2nd: Smaller black opens higher than prior close but within
-         # prior range(not body).
-         & (rb[1:-1] < rb[:-2])
-         & (open_[1:-1] > close[1:-1])
-         & (open_[1:-1] > close[:-2])
-         & (open_[1:-1] <= high[:-2])
-         # 3. 2nd: Trades lower than prior close but not lower than prior low.
-         & (low[1:-1] < close[:-2])
-         & (low[1:-1] >= low[:-2])
-         # 4. 2nd: Closes off its low(has lower shadow).
-         & (close[1:-1] - low[1:-1] > shadowveryshort[1:-1])
-         # 5. 3rd: Small black marubozu engulfed by prior range.
-         & (rb[2:] < bodyshort[2:])
-         & (close[2:] < open_[2:])
-         & (high[2:] - open_[2:] < shadowveryshort[2:])
-         & (close[2:] - low[2:] < shadowveryshort[2:])
-         & (low[2:] > low[1:-1])
-         & (high[2:] < high[1:-1])] = 100
+    ret_[
+        (close[:-2] + bodylong[:-2] < open_[:-2])
+        & (close[:-2] - low[:-2] > shadowlong[:-2])
+        # 2. 2nd: Smaller black opens higher than prior close but within
+        # prior range(not body).
+        & (rb[1:-1] < rb[:-2])
+        & (open_[1:-1] > close[1:-1])
+        & (open_[1:-1] > close[:-2])
+        & (open_[1:-1] <= high[:-2])
+        # 3. 2nd: Trades lower than prior close but not lower than prior low.
+        & (low[1:-1] < close[:-2])
+        & (low[1:-1] >= low[:-2])
+        # 4. 2nd: Closes off its low(has lower shadow).
+        & (close[1:-1] - low[1:-1] > shadowveryshort[1:-1])
+        # 5. 3rd: Small black marubozu engulfed by prior range.
+        & (rb[2:] < bodyshort[2:])
+        & (close[2:] < open_[2:])
+        & (high[2:] - open_[2:] < shadowveryshort[2:])
+        & (close[2:] - low[2:] < shadowveryshort[2:])
+        & (low[2:] > low[1:-1])
+        & (high[2:] < high[1:-1])
+    ] = 100
 
     return ret
 
@@ -976,8 +1048,10 @@ def white_soldiers3(
     3 White Soldiers: np.ndarray filled with 0, -100
     """
     if len(close) < 3:
-        logging.warning(f"The number of samples should be larger than {3}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {3}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     rb = np.abs(close - open_)
@@ -989,27 +1063,29 @@ def white_soldiers3(
     ret = np.zeros_like(close, dtype=np.int_)
     ret_ = ret[2:]
     # 1. 1st, 2nd, 3rd: White with consecutively higher closes.
-    ret_[(open_[:-2] < close[:-2])
-         & (open_[1:-1] < close[1:-1])
-         & (open_[2:] < close[2:])
-         & (close[:-2] < close[1:-1])
-         & (close[1:-1] < close[2:])
-         # 2. 1st, 2nd, 3rd: Not short.
-         # & (rb[:-2] > bodyshort[:-2])
-         # & (rb[1:-1] > bodyshort[1:-1])
-         & (rb[2:] > bodyshort[2:])
-         # 3. 1st, 2nd, 3rd: Opens within or near prior real body.
-         & (open_[1:-1] > open_[:-2])
-         & (open_[1:-1] <= close[:-2] + near[:-2])
-         & (open_[2:] > open_[1:-1])
-         & (open_[2:] <= close[1:-1] + near[1:-1])
-         # 4. 1st, 2nd, 3rd: No or very short upper shadow.
-         & (high[:-2] - close[:-2] < shadowveryshort[:-2])
-         & (high[1:-1] - close[1:-1] < shadowveryshort[1:-1])
-         & (high[2:] - close[2:] < shadowveryshort[2:])
-         # 5. 1st, 2nd, 3rd: Not far shorter than prior.
-         & (rb[1:-1] > rb[:-2] - far[:-2])
-         & (rb[2:] > rb[1:-1] - far[1:-1])] = 100
+    ret_[
+        (open_[:-2] < close[:-2])
+        & (open_[1:-1] < close[1:-1])
+        & (open_[2:] < close[2:])
+        & (close[:-2] < close[1:-1])
+        & (close[1:-1] < close[2:])
+        # 2. 1st, 2nd, 3rd: Not short.
+        # & (rb[:-2] > bodyshort[:-2])
+        # & (rb[1:-1] > bodyshort[1:-1])
+        & (rb[2:] > bodyshort[2:])
+        # 3. 1st, 2nd, 3rd: Opens within or near prior real body.
+        & (open_[1:-1] > open_[:-2])
+        & (open_[1:-1] <= close[:-2] + near[:-2])
+        & (open_[2:] > open_[1:-1])
+        & (open_[2:] <= close[1:-1] + near[1:-1])
+        # 4. 1st, 2nd, 3rd: No or very short upper shadow.
+        & (high[:-2] - close[:-2] < shadowveryshort[:-2])
+        & (high[1:-1] - close[1:-1] < shadowveryshort[1:-1])
+        & (high[2:] - close[2:] < shadowveryshort[2:])
+        # 5. 1st, 2nd, 3rd: Not far shorter than prior.
+        & (rb[1:-1] > rb[:-2] - far[:-2])
+        & (rb[2:] > rb[1:-1] - far[1:-1])
+    ] = 100
 
     return ret
 
@@ -1044,8 +1120,10 @@ def line_strike3(
     2 Line Strike: np.ndarray filled with 0, -100
     """
     if len(close) < 14:
-        logging.warning(f"The number of samples should be larger than {14}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {14}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     near = candle_spec(open_, high, low, close, "near")
@@ -1053,33 +1131,37 @@ def line_strike3(
     ret = np.zeros_like(close, dtype=np.int_)
     ret_ = ret[3:]
     # 1. 1st, 2nd, 3rd: Three white soldiers or three black crows.
-    ret_[(close[:-3] > open_[:-3])
-         & (close[1:-2] > open_[1:-2])
-         & (close[2:-1] > open_[2:-1])
-         & (close[:-3] < close[1:-2])
-         & (close[1:-2] < close[2:-1])
-         & (open_[1:-2] < np.maximum(close[:-3], open_[:-3]) + near[:-3])
-         & (open_[1:-2] > np.minimum(close[:-3], open_[:-3]) - near[:-3])
-         & (open_[2:-1] < np.maximum(close[1:-2], open_[1:-2]) + near[1:-2])
-         & (open_[2:-1] > np.minimum(close[1:-2], open_[1:-2]) - near[1:-2])
-         # 2. 4th: Black(white) opens above(below) prior close and closes
-         # below(above) 1st open.
-         & (open_[3:] > close[2:-1])
-         & (close[3:] < open_[:-3])] = 100
+    ret_[
+        (close[:-3] > open_[:-3])
+        & (close[1:-2] > open_[1:-2])
+        & (close[2:-1] > open_[2:-1])
+        & (close[:-3] < close[1:-2])
+        & (close[1:-2] < close[2:-1])
+        & (open_[1:-2] < np.maximum(close[:-3], open_[:-3]) + near[:-3])
+        & (open_[1:-2] > np.minimum(close[:-3], open_[:-3]) - near[:-3])
+        & (open_[2:-1] < np.maximum(close[1:-2], open_[1:-2]) + near[1:-2])
+        & (open_[2:-1] > np.minimum(close[1:-2], open_[1:-2]) - near[1:-2])
+        # 2. 4th: Black(white) opens above(below) prior close and closes
+        # below(above) 1st open.
+        & (open_[3:] > close[2:-1])
+        & (close[3:] < open_[:-3])
+    ] = 100
     # 1. 1st, 2nd, 3rd: Three white soldiers or three black crows.
-    ret_[(close[:-3] < open_[:-3])
-         & (close[1:-2] < open_[1:-2])
-         & (close[2:-1] < open_[2:-1])
-         & (close[:-3] > close[1:-2])
-         & (close[1:-2] > close[2:-1])
-         & (open_[1:-2] < np.maximum(close[:-3], open_[:-3]) + near[:-3])
-         & (open_[1:-2] > np.minimum(close[:-3], open_[:-3]) - near[:-3])
-         & (open_[2:-1] < np.maximum(close[1:-2], open_[1:-2]) + near[1:-2])
-         & (open_[2:-1] > np.minimum(close[1:-2], open_[1:-2]) - near[1:-2])
-         # 2. 4th: Black(white) opens above(below) prior close and closes
-         # below(above) 1st open.
-         & (open_[3:] < close[2:-1])
-         & (close[3:] > open_[:-3])] = -100
+    ret_[
+        (close[:-3] < open_[:-3])
+        & (close[1:-2] < open_[1:-2])
+        & (close[2:-1] < open_[2:-1])
+        & (close[:-3] > close[1:-2])
+        & (close[1:-2] > close[2:-1])
+        & (open_[1:-2] < np.maximum(close[:-3], open_[:-3]) + near[:-3])
+        & (open_[1:-2] > np.minimum(close[:-3], open_[:-3]) - near[:-3])
+        & (open_[2:-1] < np.maximum(close[1:-2], open_[1:-2]) + near[1:-2])
+        & (open_[2:-1] > np.minimum(close[1:-2], open_[1:-2]) - near[1:-2])
+        # 2. 4th: Black(white) opens above(below) prior close and closes
+        # below(above) 1st open.
+        & (open_[3:] < close[2:-1])
+        & (close[3:] > open_[:-3])
+    ] = -100
 
     return ret
 
@@ -1114,8 +1196,10 @@ def conceal_baby_swall(
     Conceal Baby swall: np.ndarray filled with 0, -100
     """
     if len(close) < 14:
-        logging.warning(f"The number of samples should be larger than {14}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {14}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     shadowveryshort = candle_spec(open_, high, low, close, "shadowveryshort")
@@ -1123,21 +1207,23 @@ def conceal_baby_swall(
     ret = np.zeros_like(close, dtype=np.int_)
     ret_ = ret[3:]
     # 1. 1st, 2nd: Black marubozu.
-    ret_[(close[:-3] < open_[:-3])
-         & (close[:-3] - low[:-3] < shadowveryshort[:-3])
-         & (high[:-3] - open_[:-3] < shadowveryshort[:-3])
-         & (close[1:-2] < open_[1:-2])
-         & (close[1:-2] - low[1:-2] < shadowveryshort[1:-2])
-         & (high[1:-2] - open_[1:-2] < shadowveryshort[1:-2])
-         # 2. 3rd: Black opens gapping down with upper shadow extends to
-         # prior real body.
-         & (close[2:-1] < open_[2:-1])
-         & (open_[2:-1] < close[1:-2])
-         & (high[2:-1] > close[1:-2])
-         # 3. 4th: Black engulf the range of 3rd.
-         & (close[3:] < open_[3:])
-         & (high[3:] > high[2:-1])
-         & (low[3:] < low[2:-1])] = 100
+    ret_[
+        (close[:-3] < open_[:-3])
+        & (close[:-3] - low[:-3] < shadowveryshort[:-3])
+        & (high[:-3] - open_[:-3] < shadowveryshort[:-3])
+        & (close[1:-2] < open_[1:-2])
+        & (close[1:-2] - low[1:-2] < shadowveryshort[1:-2])
+        & (high[1:-2] - open_[1:-2] < shadowveryshort[1:-2])
+        # 2. 3rd: Black opens gapping down with upper shadow extends to
+        # prior real body.
+        & (close[2:-1] < open_[2:-1])
+        & (open_[2:-1] < close[1:-2])
+        & (high[2:-1] > close[1:-2])
+        # 3. 4th: Black engulf the range of 3rd.
+        & (close[3:] < open_[3:])
+        & (high[3:] > high[2:-1])
+        & (low[3:] < low[2:-1])
+    ] = 100
 
     return ret
 
@@ -1173,8 +1259,10 @@ def abandoned_baby(
     Abandoned Baby: np.ndarray filled with 0, -100
     """
     if len(close) < 3:
-        logging.warning(f"The number of samples should be larger than {3}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {3}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     rb = np.abs(close - open_)
@@ -1185,27 +1273,31 @@ def abandoned_baby(
     ret = np.zeros_like(close, dtype=np.int_)
     ret_ = ret[2:]
     # 1. 1st: Long white.
-    ret_[(open_[:-2] + bodylong[:-2] < close[:-2])
-         # 2. 2nd: Doji.
-         & (rb[1:-1] <= bodydoji[1:-1])
-         # 3. 3rd: Not short black body move well within the 1st realbody.
-         & (open_[2:] > close[2:] + bodyshort[2:])
-         & (close[2:] < close[:-2] - rb[:-2] * penetration)
-         # 4. 2nd gap up from 1st.
-         & (low[1:-1] > high[:-2])
-         # 5. 2nd gap up from 3rd.
-         & (low[1:-1] > high[2:])] = -100
+    ret_[
+        (open_[:-2] + bodylong[:-2] < close[:-2])
+        # 2. 2nd: Doji.
+        & (rb[1:-1] <= bodydoji[1:-1])
+        # 3. 3rd: Not short black body move well within the 1st realbody.
+        & (open_[2:] > close[2:] + bodyshort[2:])
+        & (close[2:] < close[:-2] - rb[:-2] * penetration)
+        # 4. 2nd gap up from 1st.
+        & (low[1:-1] > high[:-2])
+        # 5. 2nd gap up from 3rd.
+        & (low[1:-1] > high[2:])
+    ] = -100
     # 1. 1st: Long black.
-    ret_[(close[:-2] + bodylong[:-2] < open_[:-2])
-         # 2. 2nd: Doji.
-         & (rb[1:-1] < bodydoji[1:-1])
-         # 3. 3rd: Not short white body move well within the 1st realbody.
-         & (close[2:] > open_[2:] + bodyshort[2:])
-         & (close[2:] > close[:-2] + rb[:-2] * penetration)
-         # 4. 2nd gap down from 1st.
-         & (high[1:-1] < low[:-2])
-         # 5. 2nd gap down from 3rd.
-         & (high[1:-1] < low[2:])] = 100
+    ret_[
+        (close[:-2] + bodylong[:-2] < open_[:-2])
+        # 2. 2nd: Doji.
+        & (rb[1:-1] < bodydoji[1:-1])
+        # 3. 3rd: Not short white body move well within the 1st realbody.
+        & (close[2:] > open_[2:] + bodyshort[2:])
+        & (close[2:] > close[:-2] + rb[:-2] * penetration)
+        # 4. 2nd gap down from 1st.
+        & (high[1:-1] < low[:-2])
+        # 5. 2nd gap down from 3rd.
+        & (high[1:-1] < low[2:])
+    ] = 100
 
     return ret
 
@@ -1239,8 +1331,10 @@ def evening_doji_star(
     Evening Doji Star: np.ndarray filled with 0, -100
     """
     if len(close) < 3:
-        logging.warning(f"The number of samples should be larger than {3}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {3}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     rb = np.abs(close - open_)
@@ -1251,14 +1345,19 @@ def evening_doji_star(
     ret = np.zeros_like(close, dtype=np.int_)
     ret_ = ret[2:]
     # 1. 1st: Long white real body.
-    ret_[(open_[:-2] + bodylong[:-2] < close[:-2])
-         # 2. 2nd: Doji real body gapping above prior real body.
-         & (rb[1:-1] < bodydoji[1:-1])
-         & (np.minimum(open_[1:-1], close[1:-1]) > np.maximum(open_[:-2], close[:-2]))
-         # 3. 3rd: Black not short real body moves well within the 1st's real body.
-         & (rb[2:] > bodyshort[2:])
-         & (open_[2:] > close[2:])
-         & (close[2:] < close[:-2] - rb[:-2] * penetration)] = -100
+    ret_[
+        (open_[:-2] + bodylong[:-2] < close[:-2])
+        # 2. 2nd: Doji real body gapping above prior real body.
+        & (rb[1:-1] < bodydoji[1:-1])
+        & (
+            np.minimum(open_[1:-1], close[1:-1])
+            > np.maximum(open_[:-2], close[:-2])
+        )
+        # 3. 3rd: Black not short real body moves well within the 1st's real body.
+        & (rb[2:] > bodyshort[2:])
+        & (open_[2:] > close[2:])
+        & (close[2:] < close[:-2] - rb[:-2] * penetration)
+    ] = -100
 
     return ret
 
@@ -1292,8 +1391,10 @@ def evening_star(
     Evening Star: np.ndarray filled with 0, -100
     """
     if len(close) < 3:
-        logging.warning(f"The number of samples should be larger than {3}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {3}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     rb = np.abs(close - open_)
@@ -1303,14 +1404,19 @@ def evening_star(
     ret = np.zeros_like(close, dtype=np.int_)
     ret_ = ret[2:]
     # 1. 1st: Long white real body.
-    ret_[(open_[:-2] + bodylong[:-2] < close[:-2])
-         # 2. 2nd: Doji real body gapping above prior real body.
-         & (rb[1:-1] < bodyshort[1:-1])
-         & (np.minimum(open_[1:-1], close[1:-1]) > np.maximum(open_[:-2], close[:-2]))
-         # 3. 3rd: Black not short real body moves well within the 1st's real body.
-         & (rb[2:] > bodyshort[2:])
-         & (open_[2:] > close[2:])
-         & (close[2:] < close[:-2] - rb[:-2] * penetration)] = -100
+    ret_[
+        (open_[:-2] + bodylong[:-2] < close[:-2])
+        # 2. 2nd: Doji real body gapping above prior real body.
+        & (rb[1:-1] < bodyshort[1:-1])
+        & (
+            np.minimum(open_[1:-1], close[1:-1])
+            > np.maximum(open_[:-2], close[:-2])
+        )
+        # 3. 3rd: Black not short real body moves well within the 1st's real body.
+        & (rb[2:] > bodyshort[2:])
+        & (open_[2:] > close[2:])
+        & (close[2:] < close[:-2] - rb[:-2] * penetration)
+    ] = -100
 
     return ret
 
@@ -1343,8 +1449,10 @@ def gap_side_side_white(
     Go Side Side White: np.ndarray filled with 0, -100
     """
     if len(close) < 7:
-        logging.warning(f"The number of samples should be larger than {7}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {7}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     rb = np.abs(close - open_)
@@ -1354,19 +1462,23 @@ def gap_side_side_white(
     ret = np.zeros_like(close, dtype=np.int_)
     ret_ = ret[2:]
     # 1. 2nd, 3rd: White of the near size and about the equal open.
-    ret_[(close[1:-1] > open_[1:-1])
-         & (close[2:] > open_[2:])
-         & (np.abs(rb[1:-1] - rb[2:]) < near[1:-1])
-         & (np.abs(open_[1:-1] - open_[2:]) < equal[1:-1])
-         # 2. 2nd, 3rd: Real body gap above or below the 1st real body.
-         & (open_[1:-1] > np.maximum(open_[:-2], close[:-2]))
-         & (open_[2:] > np.maximum(open_[:-2], close[:-2]))] = 100
-    ret_[(close[1:-1] > open_[1:-1])
-         & (close[2:] > open_[2:])
-         & (np.abs(rb[1:-1] - rb[2:]) < near[1:-1])
-         & (np.abs(open_[1:-1] - open_[2:]) < equal[1:-1])
-         & (close[1:-1] < np.minimum(open_[:-2], close[:-2]))
-         & (close[2:] < np.minimum(open_[:-2], close[:-2]))] = -100
+    ret_[
+        (close[1:-1] > open_[1:-1])
+        & (close[2:] > open_[2:])
+        & (np.abs(rb[1:-1] - rb[2:]) < near[1:-1])
+        & (np.abs(open_[1:-1] - open_[2:]) < equal[1:-1])
+        # 2. 2nd, 3rd: Real body gap above or below the 1st real body.
+        & (open_[1:-1] > np.maximum(open_[:-2], close[:-2]))
+        & (open_[2:] > np.maximum(open_[:-2], close[:-2]))
+    ] = 100
+    ret_[
+        (close[1:-1] > open_[1:-1])
+        & (close[2:] > open_[2:])
+        & (np.abs(rb[1:-1] - rb[2:]) < near[1:-1])
+        & (np.abs(open_[1:-1] - open_[2:]) < equal[1:-1])
+        & (close[1:-1] < np.minimum(open_[:-2], close[:-2]))
+        & (close[2:] < np.minimum(open_[:-2], close[:-2]))
+    ] = -100
     # ??????
     ret[:7] = 0
 
@@ -1402,8 +1514,10 @@ def break_away(
     Break Away: np.ndarray filled with 0, -100, 100
     """
     if len(close) < 3:
-        logging.warning(f"The number of samples should be larger than {3}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {3}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     bodylong = candle_spec(open_, high, low, close, "bodylong")
@@ -1411,39 +1525,43 @@ def break_away(
     ret = np.zeros_like(close, dtype=np.int_)
     ret_ = ret[4:]
     # 1. 1st: Long black.
-    ret_[(close[:-4] + bodylong[:-4] < open_[:-4])
-         # 2. 2nd: Black body gaps down.
-         & (close[1:-3] < open_[1:-3])
-         & (open_[1:-3] < close[:-4])
-         # 3. 3rd: Black or white(both fine) with lower high and lower low
-         # than 2nd.
-         & (low[2:-2] < low[1:-3])
-         & (high[2:-2] < high[1:-3])
-         # 4. 4th: Black with lower high and lower low than 3rd.
-         & (close[3:-1] < open_[3:-1])
-         & (low[3:-1] < low[2:-2])
-         & (high[3:-1] < high[2:-2])
-         # 4. 5th: White closes inside the gap of 1st and 2nd.
-         & (close[4:] > open_[4:])
-         & (close[4:] > open_[1:-3])
-         & (close[4:] < close[:-4])] = 100
+    ret_[
+        (close[:-4] + bodylong[:-4] < open_[:-4])
+        # 2. 2nd: Black body gaps down.
+        & (close[1:-3] < open_[1:-3])
+        & (open_[1:-3] < close[:-4])
+        # 3. 3rd: Black or white(both fine) with lower high and lower low
+        # than 2nd.
+        & (low[2:-2] < low[1:-3])
+        & (high[2:-2] < high[1:-3])
+        # 4. 4th: Black with lower high and lower low than 3rd.
+        & (close[3:-1] < open_[3:-1])
+        & (low[3:-1] < low[2:-2])
+        & (high[3:-1] < high[2:-2])
+        # 4. 5th: White closes inside the gap of 1st and 2nd.
+        & (close[4:] > open_[4:])
+        & (close[4:] > open_[1:-3])
+        & (close[4:] < close[:-4])
+    ] = 100
     # 1. 1st: Long White.
-    ret_[(open_[:-4] + bodylong[:-4] < close[:-4])
-         # 2. 2nd: White body gaps up.
-         & (close[1:-3] > open_[1:-3])
-         & (open_[1:-3] > close[:-4])
-         # 3. 3rd: Black or white(both fine) with lower high and lower low
-         # than 2nd.
-         & (low[2:-2] > low[1:-3])
-         & (high[2:-2] > high[1:-3])
-         # 4. 4th: White with higher high and higher low than 3rd.
-         & (close[3:-1] > open_[3:-1])
-         & (low[3:-1] > low[2:-2])
-         & (high[3:-1] > high[2:-2])
-         # 4. 5th: Black closes inside the gap of 1st and 2nd.
-         & (close[4:] < open_[4:])
-         & (close[4:] < open_[1:-3])
-         & (close[4:] > close[:-4])] = -100
+    ret_[
+        (open_[:-4] + bodylong[:-4] < close[:-4])
+        # 2. 2nd: White body gaps up.
+        & (close[1:-3] > open_[1:-3])
+        & (open_[1:-3] > close[:-4])
+        # 3. 3rd: Black or white(both fine) with lower high and lower low
+        # than 2nd.
+        & (low[2:-2] > low[1:-3])
+        & (high[2:-2] > high[1:-3])
+        # 4. 4th: White with higher high and higher low than 3rd.
+        & (close[3:-1] > open_[3:-1])
+        & (low[3:-1] > low[2:-2])
+        & (high[3:-1] > high[2:-2])
+        # 4. 5th: Black closes inside the gap of 1st and 2nd.
+        & (close[4:] < open_[4:])
+        & (close[4:] < open_[1:-3])
+        & (close[4:] > close[:-4])
+    ] = -100
 
     return ret
 
@@ -1479,8 +1597,10 @@ def advance_block(
     Advance Block: np.ndarray filled with 0, -100
     """
     if len(close) < 3:
-        logging.warning(f"The number of samples should be larger than {3}, "
-                        f"while only {len(close)} samples passed.")
+        logging.warning(
+            f"The number of samples should be larger than {3}, "
+            f"while only {len(close)} samples passed."
+        )
         return None
 
     rb = np.abs(close - open_)
@@ -1493,33 +1613,42 @@ def advance_block(
     ret = np.zeros_like(close, dtype=np.int_)
     ret_ = ret[2:]
     # 1. 1st, 2nd, 3rd: White with consecutively higher closes.
-    ret_[(close[:-2] > open_[:-2])
-         & (close[1:-1] > open_[1:-1])
-         & (close[2:] > open_[2:])
-         & (close[2:] > close[1:-1])
-         & (close[1:-1] > close[:-2])
-         # 2. 2nd, 3rd: Opens within or near(above) the prior white real body.
-         & (open_[1:-1] > open_[:-2])
-         & (open_[1:-1] <= close[:-2] + near[:-2])
-         & (open_[2:] > open_[1:-1])
-         & (open_[2:] <= close[1:-1] + near[1:-1])
-         # 3. 1st: Long white with no or short upper shadow.
-         & (rb[:-2] > bodylong[:-2])
-         & (high[:-2] - close[:-2] < shadowshort[:-2])
-         # 4. 2nd, 3rd: Sign of weakening.
-         # 4.1 2nd far smaller than 1st and 3rd not near longer than 2nd.
-         & (((rb[1:-1] < rb[:-2] - far[:-2])
-             & (rb[2:] < rb[1:-1] + near[1:-1]))
+    ret_[
+        (close[:-2] > open_[:-2])
+        & (close[1:-1] > open_[1:-1])
+        & (close[2:] > open_[2:])
+        & (close[2:] > close[1:-1])
+        & (close[1:-1] > close[:-2])
+        # 2. 2nd, 3rd: Opens within or near(above) the prior white real body.
+        & (open_[1:-1] > open_[:-2])
+        & (open_[1:-1] <= close[:-2] + near[:-2])
+        & (open_[2:] > open_[1:-1])
+        & (open_[2:] <= close[1:-1] + near[1:-1])
+        # 3. 1st: Long white with no or short upper shadow.
+        & (rb[:-2] > bodylong[:-2])
+        & (high[:-2] - close[:-2] < shadowshort[:-2])
+        # 4. 2nd, 3rd: Sign of weakening.
+        # 4.1 2nd far smaller than 1st and 3rd not near longer than 2nd.
+        & (
+            (
+                (rb[1:-1] < rb[:-2] - far[:-2])
+                & (rb[2:] < rb[1:-1] + near[1:-1])
+            )
             # 4.2 3rd far smaller than 2nd.
             | (rb[2:] < rb[1:-1] - far[1:-1])
             # 4.3 3rd smaller than 2nd, 2nd smaller than 1st and 3rd or 2nd
             #   with not short upper shadow.
-            | ((rb[2:] < rb[1:-1])
-               & (rb[1:-1] < rb[:-2])
-               & ((high[2:] - close[2:] > shadowshort[2:])
-                  | (high[1:-1] - close[1:-1] > shadowshort[1:-1])))
+            | (
+                (rb[2:] < rb[1:-1])
+                & (rb[1:-1] < rb[:-2])
+                & (
+                    (high[2:] - close[2:] > shadowshort[2:])
+                    | (high[1:-1] - close[1:-1] > shadowshort[1:-1])
+                )
+            )
             # 4.4 3rd smaller than 2nd and 3rd with long upper shadow.
-            | ((rb[2:] < rb[1:-1])
-               & (high[2:] - close[2:] > shadowlong[2:])))] = -100
+            | ((rb[2:] < rb[1:-1]) & (high[2:] - close[2:] > shadowlong[2:]))
+        )
+    ] = -100
 
     return ret

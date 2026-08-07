@@ -10,6 +10,7 @@
 # %%
 from __future__ import annotations
 from typing import Any, TypeVar, TYPE_CHECKING
+
 if TYPE_CHECKING:
     import pandas as pd
 import logging
@@ -114,13 +115,16 @@ def snap_ovd(
     dueds = np.asarray(due_date, dtype="M8[D]")
     if ob_date is None:
         obds = np.concatenate(
-            [dueds[1:], np.array(["2999-12-31"], dtype="M8[D]")])
+            [dueds[1:], np.array(["2999-12-31"], dtype="M8[D]")]
+        )
     else:
         obds = np.asarray(ob_date, dtype="M8[D]")
     if ovd_days is None:
         repds = np.asarray(rep_date, dtype="M8[D]")
         if np.isnan(repds).sum() > 0:
-            logger.warning("NaT will be replaced with today in repayment dates.")
+            logger.warning(
+                "NaT will be replaced with today in repayment dates."
+            )
             # Copy before modified.
             repds = repds.copy()
             repds[np.isnat(repds)] = np.datetime64("today", "D")
@@ -161,8 +165,8 @@ def snap_ovd(
     # `rep-date(former) == due-date == ob-date`, so to calculate the STOPs.
     # While `conti_recs` will drop those records except the last one, since
     # they can't be continuous with the following records.
-    conti_recs = deque()            # Excludes the edge records.
-    sconti_recs = deque()           # Includes the edge records.
+    conti_recs = deque()  # Excludes the edge records.
+    sconti_recs = deque()  # Includes the edge records.
     for obd in obds:
         # set_trace()
         # Set initial values.
@@ -231,7 +235,9 @@ def snap_ovd(
                 if len(ovdt) == 0:
                     logger.warning("Observe before all records.")
                 else:
-                    logger.warning("Adjacent obdates with no records cutting in.")
+                    logger.warning(
+                        "Adjacent obdates with no records cutting in."
+                    )
             ever_ovdd, ever_ovdp = 0, 0
             ever_ovda, ever_duea = np.zeros(amt_n), np.zeros(amt_n)
         else:
@@ -295,17 +301,29 @@ def snap_ovd(
 
         # set_trace()
         ovdt.append((ever_ovdd, ever_ovdp, stop_ovdd, stop_ovdp))
-        ovda.append(np.concatenate([ever_rema, ever_ovda, ever_duea,
-                                    stop_rema, stop_ovda, stop_duea]))
+        ovda.append(
+            np.concatenate(
+                [
+                    ever_rema,
+                    ever_ovda,
+                    ever_duea,
+                    stop_rema,
+                    stop_ovda,
+                    stop_duea,
+                ]
+            )
+        )
         stop_recs.append(list(sconti_recs))
         mob.append(duei - 1)
 
     # `dtype` is passed to `np.asarray` here because `TypeError` will be raised
     # for the `np.timedelta64` in `ovdt`.
-    return (np.asarray(ovdt).astype(np.int_),
-            np.asarray(ovda, dtype=np.float64),
-            np.asarray(mob, dtype=np.int_),
-            stop_recs)
+    return (
+        np.asarray(ovdt).astype(np.int_),
+        np.asarray(ovda, dtype=np.float64),
+        np.asarray(mob, dtype=np.int_),
+        stop_recs,
+    )
 
 
 # %%
@@ -449,7 +467,8 @@ def ovdd_from_duepay_records(
     dueds = np.asarray(due_date, dtype="datetime64[D]")
     if ob_date is None:
         obds = np.concatenate(
-            [dueds[1:], np.array(["2999-12-31"], dtype="datetime64[D]")])
+            [dueds[1:], np.array(["2999-12-31"], dtype="datetime64[D]")]
+        )
     else:
         obds = np.asarray(ob_date, dtype="datetime64[D]")
     ovdds = np.asarray(ovd_days, dtype="timedelta64[D]")
@@ -460,10 +479,11 @@ def ovdd_from_duepay_records(
     OTD = np.timedelta64(0, "D")
     rec_N = len(due_date)
 
-    ever_ovdd = [0] * rec_N     # Number of overdue days ever occuring during the period.
-    stop_ovdd = [0] * rec_N     # Number of overdue days at the end of the period.
-    ever_ovdp = [0] * rec_N     # Number of overdue periods ever occuring during the period.
-    stop_ovdp = [0] * rec_N     # Number of overdue periods at the end of the period.
+    # fmt: off
+    ever_ovdd = [0] * rec_N  # Number of overdue days ever occuring during the period.
+    stop_ovdd = [0] * rec_N  # Number of overdue days at the end of the period.
+    ever_ovdp = [0] * rec_N  # Number of overdue periods ever occuring during the period.
+    stop_ovdp = [0] * rec_N  # Number of overdue periods at the end of the period.
     ovd_Q = deque()
     ever_duea = [0] * rec_N
     stop_duea = [0] * rec_N
@@ -471,9 +491,11 @@ def ovdd_from_duepay_records(
     stop_rema = [0] * rec_N
     ever_ovda = [0] * rec_N
     stop_ovda = [0] * rec_N
+    # fmt: on
 
-    for idx, dued, ovdd, obd, duea, rema in zip(range(rec_N), dueds, ovdds,
-                                                obds, das, ras):
+    for idx, dued, ovdd, obd, duea, rema in zip(
+        range(rec_N), dueds, ovdds, obds, das, ras
+    ):
         if dued > obd:
             logger.warning(f"Invalid observation date in records at {dued}.")
 
@@ -579,7 +601,9 @@ def ovdd_from_duepay_records(
                         stop_duea[idx] = sum([ele[2] for ele in ovd_Q])
                         stop_rema[idx] = last_rema + last_duea
                         while len(ovd_Q) > 0 and last_repd <= obd:
-                            last_dued, last_repd, last_duea, last_rema = ovd_Q.popleft()
+                            last_dued, last_repd, last_duea, last_rema = (
+                                ovd_Q.popleft()
+                            )
                         break
                     elif last_repd > obd:
                         stop_ovdd[idx] = obd - last_dued
@@ -600,12 +624,18 @@ def ovdd_from_duepay_records(
                 if repd > obd and obd == dued:
                     ovd_Q.append((dued, repd, duea, rema))
 
-    return (np.asarray(ever_ovdd).astype(np.int_),
-            np.asarray(stop_ovdd).astype(np.int_),
-            np.asarray(ever_ovdp), np.asarray(stop_ovdp),
-            np.asarray(ever_ovda), np.asarray(stop_ovda),
-            np.asarray(ever_rema), np.asarray(stop_rema),
-            np.asarray(ever_duea), np.asarray(stop_duea))
+    return (
+        np.asarray(ever_ovdd).astype(np.int_),
+        np.asarray(stop_ovdd).astype(np.int_),
+        np.asarray(ever_ovdp),
+        np.asarray(stop_ovdp),
+        np.asarray(ever_ovda),
+        np.asarray(stop_ovda),
+        np.asarray(ever_rema),
+        np.asarray(stop_rema),
+        np.asarray(ever_duea),
+        np.asarray(stop_duea),
+    )
 
 
 # %%
@@ -645,25 +675,37 @@ def month_date(
     if rule == "nextdue":
         stop_date = due_date.max() + np.timedelta64(30, "D")
         ob_date = np.concatenate(
-            [due_date[1:], np.asarray([stop_date], dtype="M8[D]")])
+            [due_date[1:], np.asarray([stop_date], dtype="M8[D]")]
+        )
     elif rule == "nextdue_noend":
         ob_date = np.concatenate(
-            [due_date[1:], np.array(["2099-12-31"], dtype="M8[D]")])
+            [due_date[1:], np.array(["2099-12-31"], dtype="M8[D]")]
+        )
     elif rule == "monthend":
-        ob_date = (due_date.astype("M8[M]") + np.timedelta64(1, "M")
-                   - np.timedelta64(1, "D"))
-    elif isinstance(rule , int) and 1 <= rule <= 28:
+        ob_date = (
+            due_date.astype("M8[M]")
+            + np.timedelta64(1, "M")
+            - np.timedelta64(1, "D")
+        )
+    elif isinstance(rule, int) and 1 <= rule <= 28:
         ob_date = due_date.astype("M8[M]") + np.timedelta64(rule - 1, "D")
         if np.any(ob_date < due_date):
             if forced:
-                logger.info("Another month move forward to ensure the result "
-                            "succeed the given dates.")
-                ob_date = (due_date.astype("M8[M]") + np.timedelta64(1, "M")
-                           + np.timedelta64(rule - 1, "D"))
-    elif isinstance(rule , int) and 101 <= rule <= 128:
-        ob_date = (due_date.astype("M8[M]")
-                   + np.timedelta64(1, "M")
-                   + np.timedelta64(rule - 101, "D"))
+                logger.info(
+                    "Another month move forward to ensure the result "
+                    "succeed the given dates."
+                )
+                ob_date = (
+                    due_date.astype("M8[M]")
+                    + np.timedelta64(1, "M")
+                    + np.timedelta64(rule - 1, "D")
+                )
+    elif isinstance(rule, int) and 101 <= rule <= 128:
+        ob_date = (
+            due_date.astype("M8[M]")
+            + np.timedelta64(1, "M")
+            + np.timedelta64(rule - 101, "D")
+        )
     else:
         raise ValueError(f"Invalid observeration date setting: {rule}.")
 
