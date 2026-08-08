@@ -8,22 +8,25 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
 
 if __name__ == "__main__":
     from importlib import reload
-    from flagbear.slp import serializer
+
     from flagbear.sched import protocols
+    from flagbear.slp import serializer
+
     reload(serializer)
     reload(protocols)
 
 from datetime import datetime
+
 import numpy as np
-from flagbear.slp.serializer import serialize, deserialize
-from flagbear.sched.protocols import(
-    TaskState,
+
+from flagbear.sched.protocols import (
     TaskResult,
+    TaskState,
 )
+from flagbear.slp.serializer import deserialize, serialize
 
 
 # %%
@@ -37,16 +40,18 @@ def test_TaskResult_to_json():
         error = e
 
     ori = TaskResult(
-        state = TaskState.RUNNING,
-        value = {"a": 1,},
-        error = error,
-        start_time = datetime.now(),
-        end_time = datetime.now(),
-        attempt = 1,
+        state=TaskState.RUNNING,
+        value={
+            "a": 1,
+        },
+        error=error,
+        start_time=datetime.now(),
+        end_time=datetime.now(),
+        attempt=1,
     )
 
     # Unspecify `value` type.
-    bytes_, type_ = serialize(ori, "TaskResult")
+    bytes_, _ = serialize(ori, "TaskResult")
     assert b"json" in bytes_
     loaded = deserialize(bytes_, "TaskResult")
     assert loaded.state == ori.state
@@ -64,7 +69,7 @@ def test_TaskResult_to_json():
         error = error.__cause__
 
     # Specify `value` type.
-    bytes_, type_ = serialize(ori, "TaskResult:json")
+    bytes_, _ = serialize(ori, "TaskResult:json")
     assert b"json" in bytes_
     loaded = deserialize(bytes_, "TaskResult:json")
     assert loaded.state == ori.state
@@ -94,16 +99,16 @@ def test_TaskResult_to_json_with_serialize_value_with_numpy():
 
     value = np.random.rand(4, 4)
     ori = TaskResult(
-        state = TaskState.RUNNING,
-        value = value,
-        error = error,
-        start_time = datetime.now(),
-        end_time = datetime.now(),
-        attempt = 1,
+        state=TaskState.RUNNING,
+        value=value,
+        error=error,
+        start_time=datetime.now(),
+        end_time=datetime.now(),
+        attempt=1,
     )
 
     # Unspecify `value` type.
-    bytes_, type_ = serialize(ori, "TaskResult")
+    bytes_, _ = serialize(ori, "TaskResult")
     assert b"numpy" in bytes_
     loaded = deserialize(bytes_, "TaskResult")
     assert loaded.state == ori.state

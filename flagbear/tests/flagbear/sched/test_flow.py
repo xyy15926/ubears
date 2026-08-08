@@ -8,16 +8,27 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
-import time
 import asyncio
+import time
 from datetime import timedelta
+
+import pytest
 
 if __name__ == "__main__":
     from importlib import reload
+
     from flagbear.slp import cache
+
     reload(cache)
-    from flagbear.sched import protocols, task, executor, scheduler, context, flow
+    from flagbear.sched import (
+        context,
+        executor,
+        flow,
+        protocols,
+        scheduler,
+        task,
+    )
+
     reload(protocols)
     reload(task)
     reload(executor)
@@ -25,10 +36,11 @@ if __name__ == "__main__":
     reload(context)
     reload(flow)
 
-from flagbear.slp.cache import CachePolicy, MemoryCache
+from flagbear.sched.flow import Flow, flow
 from flagbear.sched.protocols import _current_context
 from flagbear.sched.task import task
-from flagbear.sched.flow import Flow, flow
+from flagbear.slp.cache import CachePolicy, MemoryCache
+
 # from IPython.core.debugger import set_trace
 
 
@@ -111,9 +123,9 @@ def test_flow_nested_flow_return_TaskOnce():
 
     @flow
     def inner(a, b):
-        once = add.with_policy(name = "inner_add").submit(1, 1, a, b)
+        once = add.with_policy(name="inner_add").submit(1, 1, a, b)
         async_once = async_add.with_policy(
-            name = "inner_async",
+            name="inner_async",
         ).submit(once, 1, 1, 1)
         # `TaskOnce` is return here, which should not be done.
         return async_once
@@ -121,14 +133,14 @@ def test_flow_nested_flow_return_TaskOnce():
     # Cache will miss for `once` and `once2` for different name.
     @flow
     def outer_immediate(a, b):
-        once = add.with_policy(name = "ka").run(1, 1, a, b)
-        once2 = add.with_policy(name = "ya").run(1, 1, a, b)
-        flow_once = inner.with_policy(name = "inner1").run(1, 1)
+        once = add.with_policy(name="ka").run(1, 1, a, b)
+        once2 = add.with_policy(name="ya").run(1, 1, a, b)
+        flow_once = inner.with_policy(name="inner1").run(1, 1)
         # But `Task`s in `inner` will share the same cache.
-        flow_once2 = inner.with_policy(name = "inner2").run(1, 1)
-        return async_add.with_policy(
-            name = "total"
-        ).run(once, flow_once, once2, flow_once2)
+        flow_once2 = inner.with_policy(name="inner2").run(1, 1)
+        return async_add.with_policy(name="total").run(
+            once, flow_once, once2, flow_once2
+        )
 
     start = time.time()
     result = outer_immediate(1, 2)
@@ -138,8 +150,6 @@ def test_flow_nested_flow_return_TaskOnce():
     assert end - start > 0.5
 
 
-
-
 # %%
 def test_flow_inner_task_with_policy_name_cache_policy():
     @task
@@ -147,15 +157,16 @@ def test_flow_inner_task_with_policy_name_cache_policy():
         time.sleep(0.1)
         return a + b + c + d
 
-    cache_policy = CachePolicy(ttl = timedelta(1))
+    cache_policy = CachePolicy(ttl=timedelta(1))
     mem_cache = MemoryCache()
-    @flow(task_results = mem_cache)
+
+    @flow(task_results=mem_cache)
     def outer_with_cache(a, b):
         once = add.with_policy(
-            name = "ka",
-            cache_policy = cache_policy,
+            name="ka",
+            cache_policy=cache_policy,
         ).run(1, 1, a, b)
-        once2 = add.with_policy(name = "ka").run(1, 1, a, b)
+        once2 = add.with_policy(name="ka").run(1, 1, a, b)
         return once + once2
 
     start = time.time()
@@ -167,13 +178,14 @@ def test_flow_inner_task_with_policy_name_cache_policy():
     assert end - start > 0.1
 
     # Different task name will lead cache to miss.
-    cache_policy = CachePolicy(ttl = timedelta(1))
+    cache_policy = CachePolicy(ttl=timedelta(1))
     mem_cache = MemoryCache()
-    @flow(task_results = mem_cache)
+
+    @flow(task_results=mem_cache)
     def outer_with_cache(a, b):
         once = add.with_policy(
-            name = "ka",
-            cache_policy = cache_policy,
+            name="ka",
+            cache_policy=cache_policy,
         ).run(1, 1, a, b)
         once2 = add.run(1, 1, a, b)
         return once + once2
@@ -187,15 +199,16 @@ def test_flow_inner_task_with_policy_name_cache_policy():
     assert end - start > 0.2
 
     # `cache_policy(ttl = 0)` will lead cache to expire.
-    cache_policy = CachePolicy(ttl = timedelta(0))
+    cache_policy = CachePolicy(ttl=timedelta(0))
     mem_cache = MemoryCache()
-    @flow(task_results = mem_cache)
+
+    @flow(task_results=mem_cache)
     def outer_without_cache(a, b):
         once = add.with_policy(
-            name = "ka",
-            cache_policy = cache_policy,
+            name="ka",
+            cache_policy=cache_policy,
         ).run(1, 1, a, b)
-        once2 = add.with_policy(name = "ka").run(1, 1, a, b)
+        once2 = add.with_policy(name="ka").run(1, 1, a, b)
         return once + once2
 
     start = time.time()
@@ -225,20 +238,21 @@ def test_flow_inner_flow_with_policy_name_with_zero_cache_policy():
         return async_add.submit(once, 1, 1, 1)
 
     # But `cache_policy(ttl = 0)` will lead cache to expire.
-    cache_policy = CachePolicy(ttl = timedelta(0))
+    cache_policy = CachePolicy(ttl=timedelta(0))
     mem_cache = MemoryCache()
-    @flow(task_results = mem_cache)
+
+    @flow(task_results=mem_cache)
     def outer_immediate_with_expired_cache(a, b):
         once = add.with_policy(
-            name = "ka",
-            cache_policy = cache_policy,
+            name="ka",
+            cache_policy=cache_policy,
         ).run(1, 1, a, b)
-        once2 = add.with_policy(name = "ka").run(1, 1, a, b)
+        once2 = add.with_policy(name="ka").run(1, 1, a, b)
         flow_once = inner.with_policy(
-            name = "inner",
-            cache_policy = cache_policy,
+            name="inner",
+            cache_policy=cache_policy,
         ).run(1, 1)
-        flow_once2 = inner.with_policy(name = "inner").run(1, 1)
+        flow_once2 = inner.with_policy(name="inner").run(1, 1)
         return async_add(once, flow_once, once2, flow_once2)
 
     start = time.time()

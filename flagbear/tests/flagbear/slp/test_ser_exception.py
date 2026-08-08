@@ -8,20 +8,22 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
 
 if __name__ == "__main__":
     from importlib import reload
+
     from flagbear.slp import ser_exception
+
     reload(ser_exception)
 
 from dataclasses import asdict
-from flagbear.slp.ser_exception import(
+
+from flagbear.slp.ser_exception import (
     ExceptionRecord,
+    destr_exception,
     exception_to_records,
     restore_exception,
     str_exception,
-    destr_exception,
 )
 
 

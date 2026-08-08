@@ -9,20 +9,25 @@
 
 # %%
 from __future__ import annotations
+
 import pytest
+
 if __name__ == "__main__":
     from importlib import reload
-    from flagbear.slp import finer, databundle, pipeline
+
+    from flagbear.slp import databundle, finer, pipeline
+
     reload(finer)
     reload(databundle)
     reload(pipeline)
 
-import numpy as np
 import pickle
-import json
 import shutil
-from flagbear.slp.finer import get_tmp_path
+
+import numpy as np
+
 from flagbear.slp.databundle import DataBundle, DataBundleFactory
+from flagbear.slp.finer import get_tmp_path
 from flagbear.slp.pipeline import (
     Pipe,
     PipeFactory,
@@ -49,7 +54,7 @@ class NDABundle(DataBundle):
     def dumps_data(self):
         return self.data.dumps()
 
-    def loads_data(bytes_, metadata = None):
+    def loads_data(bytes_, metadata=None):
         return pickle.loads(bytes_)
 
 
@@ -60,11 +65,13 @@ def test_PipeFactory_reigster():
     bundle = NDABundle(nda)
 
     pipe_name = "Add1Pipe"
+
     @PipeFactory.register()
     class Add1Pipe(Pipe):
         def process(self, bundle: NDABundle):
             bundle.data += 1
             return bundle
+
     pipe = Add1Pipe()
 
     stage_name = "Add1Stage"
@@ -81,9 +88,11 @@ def test_PipelineStage_from_func():
     bundle = NDABundle(nda)
 
     pipe_name = "Add1Pipe"
+
     def add1(bundle: DataBundle):
         bundle.data += 1
         return bundle
+
     Add1Pipe = PipeFactory.from_func(pipe_name, add1)
     pipe = Add1Pipe()
 
@@ -106,6 +115,7 @@ def test_PipeFactory_create_instance():
         def process(self, bundle: NDABundle):
             bundle.data += 1
             return bundle
+
     pipe_name = "Add1Pipe"
     pipe = Add1Pipe()
 
@@ -124,14 +134,12 @@ def test_Pipeline(tmpfile_fixture):
     nda_ori = nda.copy()
     bundle = NDABundle(nda)
 
-    pipe1_name = "Add1Pipe"
     @PipeFactory.register()
     class Add1Pipe(Pipe):
         def process(self, bundle: NDABundle):
             bundle.data += 1
             return bundle
 
-    pipe2_name = "Add2Pipe"
     @PipeFactory.register()
     class Add2Pipe(Pipe):
         def process(self, bundle: NDABundle):
@@ -148,7 +156,9 @@ def test_Pipeline(tmpfile_fixture):
 
     # Pipeline save and load.
     pipeline = Pipeline("add12", TMP_DIR)
-    pipeline.add_pipe(Add1Pipe(), "Add1Pipe2").add_pipe(Add2Pipe(), "Add2Pipe2")
+    pipeline.add_pipe(Add1Pipe(), "Add1Pipe2").add_pipe(
+        Add2Pipe(), "Add2Pipe2"
+    )
     pipeline.process(bundle, save_checkpoints=True)
     # The bundle has been proceeded by 2 pipelines.
     assert np.all(bundle.data == nda_ori + 6)
@@ -169,7 +179,9 @@ def test_Pipeline(tmpfile_fixture):
 
     # Continue process.
     pipeline = Pipeline("add12", TMP_DIR)
-    pipeline.add_pipe(Add1Pipe(), "Add1Pipe2").add_pipe(Add2Pipe(), "Add2Pipe2")
+    pipeline.add_pipe(Add1Pipe(), "Add1Pipe2").add_pipe(
+        Add2Pipe(), "Add2Pipe2"
+    )
     # Load bundle automatically.
     loaded = pipeline.process(None, start_from="Add1Pipe2")
     assert np.all(loaded.data == nda_ori + 6)
@@ -181,7 +193,9 @@ def test_Pipeline(tmpfile_fixture):
 
     # Skip some pipes.
     pipeline = Pipeline("otherpipeline", TMP_DIR)
-    pipeline.add_pipe(Add1Pipe(), "Add1Pipe2").add_pipe(Add2Pipe(), "Add2Pipe2")
+    pipeline.add_pipe(Add1Pipe(), "Add1Pipe2").add_pipe(
+        Add2Pipe(), "Add2Pipe2"
+    )
     # Skip the first pipe.
     loaded = pipeline.process(loaded, start_from="Add1Pipe2")
     assert np.all(loaded.data == nda_ori + 8)

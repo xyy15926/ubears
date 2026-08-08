@@ -8,21 +8,17 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
+
 if __name__ == "__main__":
     from importlib import reload
-    from flagbear.llp import lex, syntax, parser, graph
+
+    from flagbear.llp import graph, lex, parser, syntax
+
     reload(lex)
     reload(syntax)
     reload(parser)
     reload(graph)
 
-from flagbear.llp.lex import Lexer
-from flagbear.llp.syntax import Production, LRItem, Syntaxer
-from flagbear.const.prods import (
-    SYN_STARTSYM,
-    SYN_EXPR_PRODS,
-)
 from flagbear.llp.parser import EnvParser
 
 

@@ -8,16 +8,18 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
+
 if __name__ == "__main__":
     from importlib import reload
+
     from flagbear.const import tokens as tokenm
     from flagbear.llp import lex
+
     reload(tokenm)
     reload(lex)
 
-from flagbear.llp.lex import Token, Lexer
 from flagbear.const.tokens import LEX_ENDFLAG
+from flagbear.llp.lex import Lexer, Token
 
 
 # %%
@@ -43,7 +45,7 @@ def test_lexer():
     assert tokens[3] == Token("STRING", ",", 1, 3)
     assert tokens[5] == Token("STRING", ":", 1, 3)
 
-    tokens = list(lexer.input("[1, \",\", \":\"]"))
+    tokens = list(lexer.input('[1, ",", ":"]'))
     assert tokens[1] == Token("INT", 1, 1, 1)
     assert tokens[3] == Token("STRING", ",", 1, 3)
     assert tokens[5] == Token("STRING", ":", 1, 3)
@@ -62,7 +64,7 @@ def test_lexer_compile():
         "f": [4, 5],
     }
     assert lexer.bind_env(env).parse("a + 4") == 6
-    assert lexer.bind_env(env).parse("d + \"a\"") == "adfa"
+    assert lexer.bind_env(env).parse('d + "a"') == "adfa"
     assert len(lexer.parse("e")) == len(env["e"])
     assert lexer.parse("a @ e")
     assert not lexer.parse("a @ f")

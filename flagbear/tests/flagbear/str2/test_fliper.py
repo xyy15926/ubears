@@ -9,11 +9,14 @@
 
 # %%
 import pytest
+
 if __name__ == "__main__":
     from importlib import reload
-    from flagbear.tree import tree
-    from flagbear.llp import lex, syntax, parser, patterns, graph
+
+    from flagbear.llp import graph, lex, parser, patterns, syntax
     from flagbear.str2 import dtyper, fliper
+    from flagbear.tree import tree
+
     reload(tree)
     reload(graph)
     reload(patterns)
@@ -23,13 +26,12 @@ if __name__ == "__main__":
     reload(dtyper)
     reload(fliper)
 
+
 import numpy as np
-from datetime import date, time
-from flagbear.llp.lex import Lexer
+
 from flagbear.llp.parser import EnvParser
 from flagbear.str2.dtyper import stype_spec
-from flagbear.str2.fliper import extract_field, rebuild_dict
-from flagbear.str2.fliper import reset_field
+from flagbear.str2.fliper import extract_field, rebuild_dict, reset_field
 
 
 # %%
@@ -43,23 +45,44 @@ def test_extract_field():
             "cc": {
                 "cca": 1,
                 "ccb": [
-                    {"ccba": 1, "ccbb": 2, },
-                    {"ccba": 2, "ccbb": 4, },
-                    {"ccba": 1, "ccbb": 4, },
+                    {
+                        "ccba": 1,
+                        "ccbb": 2,
+                    },
+                    {
+                        "ccba": 2,
+                        "ccbb": 4,
+                    },
+                    {
+                        "ccba": 1,
+                        "ccbb": 4,
+                    },
                     {
                         "ccba": "2",
                         "ccbb": 2,
                         "ccbc": [
-                            {"ccbca": 1, "ccbcb": 2, },
-                            {"ccbca": 2, "ccbcb": 4, },
+                            {
+                                "ccbca": 1,
+                                "ccbcb": 2,
+                            },
+                            {
+                                "ccbca": 2,
+                                "ccbcb": 4,
+                            },
                         ],
                     },
                     {
                         "ccba": 1,
                         "ccbb": 1,
                         "ccbc": [
-                            {"ccbca": 1, "ccbcb": 2, },
-                            {"ccbca": 2, "ccbcb": 4, },
+                            {
+                                "ccbca": 1,
+                                "ccbcb": 2,
+                            },
+                            {
+                                "ccbca": 2,
+                                "ccbcb": 4,
+                            },
                         ],
                     },
                 ],
@@ -77,17 +100,39 @@ def test_extract_field():
     assert extract_field(env, "c:cc:cca") == 1
     assert extract_field(env, "c:cc:ccb:[len(_)]") == 5
     assert extract_field(env, "c:cc:ccb:[]:ccba") == [1, 2, 1, "2", 1]
-    assert extract_field(env, "c:cc:ccb:[]:ccba", dtype="INT") == [1, 2, 1, 2, 1]
-    assert extract_field(env, "c:cc:ccb:[]:ccba", dtype="AUTO") == [1, 2, 1, 2, 1]
+    assert extract_field(env, "c:cc:ccb:[]:ccba", dtype="INT") == [
+        1,
+        2,
+        1,
+        2,
+        1,
+    ]
+    assert extract_field(env, "c:cc:ccb:[]:ccba", dtype="AUTO") == [
+        1,
+        2,
+        1,
+        2,
+        1,
+    ]
 
     with pytest.raises(TypeError):
         assert extract_field(env, "c:cc:ccb:[max(_)]:ccba") == 2
     assert extract_field(env, "c:cc:ccb:[max(_)]:ccba", dtype="AUTO") == 2
-    assert extract_field(env, "c:cc:ccb:[]:ccbc:[]:ccbca") == [None, None, None,
-                                                               [1, 2], [1, 2]]
+    assert extract_field(env, "c:cc:ccb:[]:ccbc:[]:ccbca") == [
+        None,
+        None,
+        None,
+        [1, 2],
+        [1, 2],
+    ]
     envp = EnvParser()
-    assert extract_field(env, "c:cc:ccb:[]:ccbc:[]:ccbca", envp) == [None, None, None,
-                                                                     [1, 2], [1, 2]]
+    assert extract_field(env, "c:cc:ccb:[]:ccbc:[]:ccbca", envp) == [
+        None,
+        None,
+        None,
+        [1, 2],
+        [1, 2],
+    ]
 
 
 # %%
@@ -101,23 +146,44 @@ def test_extract_field_with_forced_dtype():
             "cc": {
                 "cca": 1,
                 "ccb": [
-                    {"ccba": 1, "ccbb": 2, },
-                    {"ccba": 2, "ccbb": 4, },
-                    {"ccba": 1, "ccbb": 4, },
+                    {
+                        "ccba": 1,
+                        "ccbb": 2,
+                    },
+                    {
+                        "ccba": 2,
+                        "ccbb": 4,
+                    },
+                    {
+                        "ccba": 1,
+                        "ccbb": 4,
+                    },
                     {
                         "ccba": "2",
                         "ccbb": 2,
                         "ccbc": [
-                            {"ccbca": 1, "ccbcb": 2, },
-                            {"ccbca": 2, "ccbcb": 4, },
+                            {
+                                "ccbca": 1,
+                                "ccbcb": 2,
+                            },
+                            {
+                                "ccbca": 2,
+                                "ccbcb": 4,
+                            },
                         ],
                     },
                     {
                         "ccba": 1,
                         "ccbb": 1,
                         "ccbc": [
-                            {"ccbca": 1, "ccbcb": 2, },
-                            {"ccbca": 2, "ccbcb": 4, },
+                            {
+                                "ccbca": 1,
+                                "ccbcb": 2,
+                            },
+                            {
+                                "ccbca": 2,
+                                "ccbcb": 4,
+                            },
                         ],
                     },
                 ],
@@ -129,14 +195,19 @@ def test_extract_field_with_forced_dtype():
     assert extract_field(env, "c:cb") == "2"
     assert extract_field(env, "c:cb", dtype="INT") == 2
     assert extract_field(env, "c:ca", dtype="INT") == "ca2"
-    assert extract_field(env, "c:ca", dtype="INT", dforced=True) == stype_spec("INT", "default")
-    assert extract_field(env, "c:ca", dtype="INT", dforced=True,
-                         dfill=1234) == 1234
+    assert extract_field(env, "c:ca", dtype="INT", dforced=True) == stype_spec(
+        "INT", "default"
+    )
+    assert (
+        extract_field(env, "c:ca", dtype="INT", dforced=True, dfill=1234)
+        == 1234
+    )
     assert extract_field(env, "c:ca", dtype="INT2", dforced=True) == "ca2"
 
-    assert extract_field(env, "c:ca", dtype="INT",
-                         dforced=True,
-                         dfill=1234) == 1234
+    assert (
+        extract_field(env, "c:ca", dtype="INT", dforced=True, dfill=1234)
+        == 1234
+    )
 
 
 # %%
@@ -150,29 +221,51 @@ def test_rebuild_dict():
             "cc": {
                 "cca": 1,
                 "ccb": [
-                    {"ccba": 1, "ccbb": 2, },
-                    {"ccba": 2, "ccbb": 4, },
-                    {"ccba": 1, "ccbb": 4, },
+                    {
+                        "ccba": 1,
+                        "ccbb": 2,
+                    },
+                    {
+                        "ccba": 2,
+                        "ccbb": 4,
+                    },
+                    {
+                        "ccba": 1,
+                        "ccbb": 4,
+                    },
                     {
                         "ccba": "2",
                         "ccbb": 2,
                         "ccbc": [
-                            {"ccbca": 1, "ccbcb": 2, },
-                            {"ccbca": 2, "ccbcb": 4, },
+                            {
+                                "ccbca": 1,
+                                "ccbcb": 2,
+                            },
+                            {
+                                "ccbca": 2,
+                                "ccbcb": 4,
+                            },
                         ],
                     },
                     {
                         "ccba": 1,
                         "ccbb": 1,
                         "ccbc": [
-                            {"ccbca": 1, "ccbcb": 2, },
-                            {"ccbca": 2, "ccbcb": 4, },
+                            {
+                                "ccbca": 1,
+                                "ccbcb": 2,
+                            },
+                            {
+                                "ccbca": 2,
+                                "ccbcb": 4,
+                            },
                         ],
                     },
                 ],
             },
         },
     }
+    # fmt: off
     rules = [
         ("a"            , None      , "a"                           , "INT"),
         ("ca"           , None      , "c:ca"                        , "INT"),
@@ -180,11 +273,13 @@ def test_rebuild_dict():
         ("ccba"         , None      , "c:cc:ccb:[]:ccba"            , "INT"),
         ("ccbca"        , None      , "c:cc:ccb:[]:ccbc:[]:ccbca"   , "INT"),
     ]
+    # fmt: on
     rets = rebuild_dict(env, rules, True)
     envp = EnvParser()
     rets_p = rebuild_dict(env, rules, envp=envp)
     assert rets == rets_p
 
+    # fmt: off
     rules = [
         ("a"            , None      , "[_]:a"                           , "INT"),
         ("ca"           , None      , "[_]:c:ca"                        , "INT"),
@@ -192,6 +287,7 @@ def test_rebuild_dict():
         ("ccba"         , None      , "[_]:c:cc:ccb:[]:ccba"            , "INT"),
         ("ccbca"        , None      , "[_]:c:cc:ccb:[]:ccbc:[]:ccbca"   , "INT"),
     ]
+    # fmt: on
     rets = rebuild_dict([env, env], rules, True)
     envp = EnvParser()
     rets_p = rebuild_dict([env, env], rules, envp=envp)
@@ -209,35 +305,58 @@ def test_rebuild_dict_with_forced_dtype():
             "cc": {
                 "cca": 1,
                 "ccb": [
-                    {"ccba": 1, "ccbb": 2, },
-                    {"ccba": 2, "ccbb": 4, },
-                    {"ccba": 1, "ccbb": 4, },
+                    {
+                        "ccba": 1,
+                        "ccbb": 2,
+                    },
+                    {
+                        "ccba": 2,
+                        "ccbb": 4,
+                    },
+                    {
+                        "ccba": 1,
+                        "ccbb": 4,
+                    },
                     {
                         "ccba": "2",
                         "ccbb": 2,
                         "ccbc": [
-                            {"ccbca": 1, "ccbcb": 2, },
-                            {"ccbca": 2, "ccbcb": 4, },
+                            {
+                                "ccbca": 1,
+                                "ccbcb": 2,
+                            },
+                            {
+                                "ccbca": 2,
+                                "ccbcb": 4,
+                            },
                         ],
                     },
                     {
                         "ccba": 1,
                         "ccbb": 1,
                         "ccbc": [
-                            {"ccbca": 1, "ccbcb": 2, },
-                            {"ccbca": 2, "ccbcb": 4, },
+                            {
+                                "ccbca": 1,
+                                "ccbcb": 2,
+                            },
+                            {
+                                "ccbca": 2,
+                                "ccbcb": 4,
+                            },
                         ],
                     },
                 ],
             },
         },
     }
+    # fmt: off
     rules = [
         ("a"    , None  , "a"       , "INT"),
         ("ca"   , None  , "c:ca"    , "INT"),
         ("ca_2" , None  , "c:ca"    , "INT" , np.nan, 1),
         ("caf"  , None  , "c:ca"    , "INT" , 0),
     ]
+    # fmt: on
     rets = rebuild_dict(env, rules)
     assert rets["a"] == 1
     assert rets["ca"] == "ca2"
@@ -250,7 +369,7 @@ def test_rebuild_dict_with_forced_dtype_element_wise():
     rec = {
         "int": ["", ""],
         "varchar": ["", ""],
-        "date": ["2024-05", "2024-06"]
+        "date": ["2024-05", "2024-06"],
     }
     rules = [
         ("int", None, "int", "INT", np.nan),
@@ -282,23 +401,44 @@ def test_reset_field():
             "cc": {
                 "cca": 1,
                 "ccb": [
-                    {"ccba": 1, "ccbb": 2, },
-                    {"ccba": 2, "ccbb": 4, },
-                    {"ccba": 1, "ccbb": 4, },
+                    {
+                        "ccba": 1,
+                        "ccbb": 2,
+                    },
+                    {
+                        "ccba": 2,
+                        "ccbb": 4,
+                    },
+                    {
+                        "ccba": 1,
+                        "ccbb": 4,
+                    },
                     {
                         "ccba": "2",
                         "ccbb": 2,
                         "ccbc": [
-                            {"ccbca": 1, "ccbcb": 2, },
-                            {"ccbca": 2, "ccbcb": 4, },
+                            {
+                                "ccbca": 1,
+                                "ccbcb": 2,
+                            },
+                            {
+                                "ccbca": 2,
+                                "ccbcb": 4,
+                            },
                         ],
                     },
                     {
                         "ccba": 1,
                         "ccbb": 1,
                         "ccbc": [
-                            {"ccbca": 1, "ccbcb": 2, },
-                            {"ccbca": 2, "ccbcb": 4, },
+                            {
+                                "ccbca": 1,
+                                "ccbcb": 2,
+                            },
+                            {
+                                "ccbca": 2,
+                                "ccbcb": 4,
+                            },
                         ],
                     },
                 ],
@@ -314,5 +454,6 @@ def test_reset_field():
 
     def val():
         return 2
+
     reset_field(env, "c:cc:ccb", val)
     assert env["c"]["cc"]["ccb"] == val()

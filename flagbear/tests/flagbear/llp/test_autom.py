@@ -8,17 +8,20 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
+
 if __name__ == "__main__":
     from importlib import reload
+
     from flagbear.llp import autom
+
     reload(autom)
 
 import logging
+
 import numpy as np
 import pandas as pd
-from flagbear.llp.autom import AutomState, Automaton
-from flagbear.llp.autom import StatesPDA
+
+from flagbear.llp.autom import Automaton, AutomState, StatesPDA
 
 
 # %%
@@ -67,8 +70,9 @@ def test_Automaton(caplog):
     assert at.done()
 
     tsdf = [[repr(sd[i]) for i in j] for j in tss]
-    gotos = pd.DataFrame(tsdf, index=[repr(ele) for ele in sd.values()],
-                         columns=list("abcd"))
+    gotos = pd.DataFrame(
+        tsdf, index=[repr(ele) for ele in sd.values()], columns=list("abcd")
+    )
     assert np.all(at.gotodf() == gotos)
 
 
@@ -105,6 +109,7 @@ def test_StatesPDA():
     assert pda.cur == tmp_state
 
     tsdf = [[repr(sd[i]) for i in j] for j in tss]
-    gotos = pd.DataFrame(tsdf, index=[repr(ele) for ele in sd.values()],
-                         columns=list("abcd"))
+    gotos = pd.DataFrame(
+        tsdf, index=[repr(ele) for ele in sd.values()], columns=list("abcd")
+    )
     assert np.all(pda.gotodf() == gotos)

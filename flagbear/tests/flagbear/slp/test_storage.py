@@ -9,20 +9,24 @@
 
 # %%
 import pytest
+
 if __name__ == "__main__":
     import logging
+
     logging.basicConfig(level=logging.INFO, force=True)
     from importlib import reload
+
     from flagbear.slp import storage
+
     reload(storage)
 
-import numpy as np
 import shutil
 import threading
 
+import numpy as np
+
 from flagbear.slp.finer import get_tmp_path
-from flagbear.slp.storage import(
-    StorageBackend,
+from flagbear.slp.storage import (
     LocalFileStorage,
 )
 
@@ -41,6 +45,7 @@ def tmpfile_fixture(request):
     shutil.rmtree(pytest_tmp, ignore_errors=True)
     if not any(get_tmp_path().iterdir()):
         get_tmp_path().rmdir()
+
 
 # %%
 def test_LocalFileStorage_single(tmpfile_fixture):
@@ -72,11 +77,12 @@ def test_LocalFileStorage_multi(tmpfile_fixture):
     assert lstorage.get("inline_key") == b"1"
 
     ready = threading.Event()
+
     def update():
         ready.wait()
         lstorage.set("inline_key", b"2")
 
-    t = threading.Thread(target = update)
+    t = threading.Thread(target=update)
     t.start()
     assert lstorage.get("inline_key") == b"1"
     ready.set()

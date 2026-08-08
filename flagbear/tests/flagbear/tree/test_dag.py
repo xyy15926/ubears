@@ -9,22 +9,29 @@
 
 # %%
 from __future__ import annotations
+
 import pytest
 
 if __name__ == "__main__":
     import logging
+
     logging.basicConfig(level=logging.INFO, force=True)
     from importlib import reload
+
     from flagbear.tree import dag
+
     reload(dag)
 
 from itertools import chain
-from flagbear.tree.dag import(
-    Node, DirectedGraph,
+
+from flagbear.tree.dag import (
+    DirectedGraph,
+    Node,
+    find_cycle,
+    to_mermaid,
     topological_sort,
     topological_sort_from_entry,
-    find_cycle,
-    visualize, to_mermaid
+    visualize,
 )
 
 
@@ -51,7 +58,7 @@ def test_Node_topo_cycle():
     topo_sort = topological_sort(nodes)
     assert topo_sort is None
     cycle = find_cycle(nodes)
-    assert set(cycle) == set([node_b, node_d, node_e, node_f])
+    assert set(cycle) == {node_b, node_d, node_e, node_f}
 
     # Topo from `node_e`.
     topo_sort_e = topological_sort_from_entry(node_e)
@@ -60,11 +67,11 @@ def test_Node_topo_cycle():
     # Remove edges.
     node_f.remove_downstream(node_b)
     topo_sort = list(chain(*topological_sort(nodes)))
-    assert topo_sort == nodes or topo_sort == nodes_2
+    assert topo_sort in (nodes, nodes_2)
 
     # Topo only for specific node.
     topo_sort_e = list(chain(*topological_sort_from_entry(node_e, node_b)))
-    assert topo_sort_e == nodes_nof or topo_sort_e == nodes_nof_2
+    assert topo_sort_e in (nodes_nof, nodes_nof_2)
     topo_sort_b = list(chain(*topological_sort_from_entry(node_b)))
     assert topo_sort_b == [node_a, node_b]
     topo_sort_c = list(chain(*topological_sort_from_entry(node_c)))
@@ -92,14 +99,14 @@ def test_directed_graph_and_node():
     assert g.edge_count == 5
     # Can't add existing edge.
     assert not g.add_edge("D", "E")
-    assert g.leaf_nodes == set(["A"])
+    assert g.leaf_nodes == {"A"}
 
     # Node info.
     node_b = g.get_node("B")
     assert node_b.in_degree == 1
     assert node_b.out_degree == 1
-    assert [n.id_ for n in node_b.predecessors] == ["A",]
-    assert [n.id_ for n in node_b.successors] == ["D", ]
+    assert [n.id_ for n in node_b.predecessors] == ["A"]
+    assert [n.id_ for n in node_b.successors] == ["D"]
 
     # DAG check on a DAG.
     topo_sort = list(chain(*g.topological_sort()))
@@ -135,7 +142,7 @@ def test_directed_graph_and_node():
 
     # Remove edge and check leaf nodes.
     g.remove_edge("A", "B")
-    assert g.leaf_nodes == set(["A", "B"])
+    assert g.leaf_nodes == {"A", "B"}
 
     # Visualization
     _vis = g.visualize()
@@ -169,7 +176,7 @@ def test_graph_from_nodes():
         assert node_b.out_degree == 1
         b_preds = [n.id_ for n in node_b.predecessors]
         assert b_preds == ["A", "F"] or b_preds == ["F", "A"]
-        assert [n.id_ for n in node_b.successors] == ["D", ]
+        assert [n.id_ for n in node_b.successors] == ["D"]
 
         # DAG check on a cyclic graph.
         topo_sort = g.topological_sort()

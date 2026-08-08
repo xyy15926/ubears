@@ -8,23 +8,27 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
 
 if __name__ == "__main__":
     from importlib import reload
+
     from flagbear.answers import ans_scalar
+
     reload(ans_scalar)
 
 from flagbear.answers.ans_scalar import (
-    qpower, euclid_gcd, euclid_lcm,
-    russian_mul, poly_eval,
+    euclid_gcd,
+    euclid_lcm,
     floyd_steinberg,
+    poly_eval,
+    qpower,
+    russian_mul,
 )
 
 
 # %%
 def test_qpower():
-    assert qpower(2323, 23423) == 2323 ** 23423
+    assert qpower(2323, 23423) == 2323**23423
 
 
 def test_eculid_gcd():
@@ -38,7 +42,7 @@ def test_poly_eval():
     x = 5
     ret = 0
     for idx, pp in enumerate(p):
-        ret += pp * (x ** idx)
+        ret += pp * (x**idx)
     assert poly_eval(p, x) == ret
 
 

@@ -9,21 +9,26 @@
 
 # %%
 from __future__ import annotations
+
 import pytest
+
 if __name__ == "__main__":
     from importlib import reload
+
     from flagbear.slp import finer
+
     reload(finer)
 
 import re
-from datetime import date
 import shutil
+from datetime import date
+
 from flagbear.slp.finer import (
     date_order_mark,
-    tmp_file,
     get_tmp_path,
-    use_file,
+    tmp_file,
     use_dir,
+    use_file,
 )
 
 TMP_DIR = "pytest_tmpdir"
@@ -38,34 +43,55 @@ def test_date_order_mark():
     today = date.today().isoformat().replace("-", "")
     kstr = "kstr"
     assert date_order_mark(kstr) == f"{kstr}_{today}_0001"
-    assert (date_order_mark(kstr, [f"{kstr}_{today}_0006"])
-            == f"{kstr}_{today}_0007")
-    assert (date_order_mark(kstr, [f"{kstr}_{today}_0006"], "20200101")
-            == f"{kstr}_20200101_0001")
-    assert (date_order_mark(kstr, [f"{kstr}_{today}_0006"], "20200101", 5)
-            == f"{kstr}_20200101_0005")
-    assert (date_order_mark(kstr, [f"{kstr}_{today}_0006"], None, 5)
-            == f"{kstr}_{today}_0011")
+    assert (
+        date_order_mark(kstr, [f"{kstr}_{today}_0006"])
+        == f"{kstr}_{today}_0007"
+    )
+    assert (
+        date_order_mark(kstr, [f"{kstr}_{today}_0006"], "20200101")
+        == f"{kstr}_20200101_0001"
+    )
+    assert (
+        date_order_mark(kstr, [f"{kstr}_{today}_0006"], "20200101", 5)
+        == f"{kstr}_20200101_0005"
+    )
+    assert (
+        date_order_mark(kstr, [f"{kstr}_{today}_0006"], None, 5)
+        == f"{kstr}_{today}_0011"
+    )
 
     # Regex key string.
     kstr_ptn = r"kstr_E\d{4}"
     kstr = r"kstr_E0001"
     assert date_order_mark(kstr_ptn) == f"{kstr_ptn}_{today}_0001"
-    assert (date_order_mark(kstr_ptn, [f"{kstr}_{today}_0006"])
-            == f"{kstr}_{today}_0007")
-    assert (date_order_mark(kstr_ptn, [f"{kstr}_{today}_0006"], "20200101")
-            == f"{kstr_ptn}_20200101_0001")
-    assert (date_order_mark(kstr_ptn, [f"{kstr}_{today}_0006"], "20200101", 5)
-            == f"{kstr_ptn}_20200101_0005")
-    assert (date_order_mark(kstr_ptn, [f"{kstr}_{today}_0006"], None, 5)
-            == f"{kstr}_{today}_0011")
+    assert (
+        date_order_mark(kstr_ptn, [f"{kstr}_{today}_0006"])
+        == f"{kstr}_{today}_0007"
+    )
+    assert (
+        date_order_mark(kstr_ptn, [f"{kstr}_{today}_0006"], "20200101")
+        == f"{kstr_ptn}_20200101_0001"
+    )
+    assert (
+        date_order_mark(kstr_ptn, [f"{kstr}_{today}_0006"], "20200101", 5)
+        == f"{kstr_ptn}_20200101_0005"
+    )
+    assert (
+        date_order_mark(kstr_ptn, [f"{kstr}_{today}_0006"], None, 5)
+        == f"{kstr}_{today}_0011"
+    )
 
     # Regex key string may lead to unpredictable result.
     kstr2 = r"kstr_E0002"
-    assert (date_order_mark(kstr_ptn,
-                            [f"{kstr}_{today}_0006", f"{kstr2}_{today}_0001"],
-                            None, 5)
-            == f"{kstr2}_{today}_0011")
+    assert (
+        date_order_mark(
+            kstr_ptn,
+            [f"{kstr}_{today}_0006", f"{kstr2}_{today}_0001"],
+            None,
+            5,
+        )
+        == f"{kstr2}_{today}_0011"
+    )
 
 
 # %%

@@ -9,26 +9,30 @@
 
 # %%
 from __future__ import annotations
+
 import pytest
+
 if __name__ == "__main__":
     from importlib import reload
-    from flagbear.slp import finer, databundle
+
+    from flagbear.slp import databundle, finer
+
     reload(finer)
     reload(databundle)
 
-import numpy as np
-import pickle
 import json
+import pickle
 import shutil
-from flagbear.slp.finer import get_tmp_path
+
+import numpy as np
+
 from flagbear.slp.databundle import (
-    DATABUNDLE_DIR,
-    DataBundle,
     DataBundleFactory,
     PickableBundle,
     bundle_cache,
     concat_params,
 )
+from flagbear.slp.finer import get_tmp_path
 
 PYTEST_DIR = "tmp/pytest_tmpdir"
 TMP_DIR = get_tmp_path(PYTEST_DIR)
@@ -52,7 +56,7 @@ def test_DataBundleFactory_ndarray(tmpfile_fixture):
     def dumps_ndarray(arr):
         return arr.dumps()
 
-    def loads_ndarray(bytes_, metadata: dict = None):
+    def loads_ndarray(bytes_, metadata: dict | None = None):
         return pickle.loads(bytes_)
 
     cls_name = "NDABundle"
@@ -79,7 +83,7 @@ def test_DataBundleFactory_dict(tmpfile_fixture):
     def dumps_json(content):
         return json.dumps(content)
 
-    def loads_json(bytes_, metadata: dict = None):
+    def loads_json(bytes_, metadata: dict | None = None):
         return json.loads(bytes_)
 
     cls_name = "JsonBundle"
@@ -124,12 +128,14 @@ def test_PiclableBundle_and_try_load(tmpfile_fixture):
 # %%
 def test_bundle_cache(tmpfile_fixture):
     from datetime import datetime
+
     today = datetime.now().isoformat().replace("-", "")[:8]
     bundle_dir = TMP_DIR
 
     bundle_type = "create_dict"
-    @bundle_cache(bundle_type, dest = PYTEST_DIR)
-    def create_dict(a = 1, b = 2):
+
+    @bundle_cache(bundle_type, dest=PYTEST_DIR)
+    def create_dict(a=1, b=2):
         return {"a": a, "b": b}
 
     ret1 = create_dict()
@@ -139,21 +145,25 @@ def test_bundle_cache(tmpfile_fixture):
 
     ret1_loaded = create_dict()
     assert ret1 == ret1_loaded
-    ret1_loaded = DataBundleFactory.load_instance(reg_name1 + ".zip", bundle_file)
+    ret1_loaded = DataBundleFactory.load_instance(
+        reg_name1 + ".zip", bundle_file
+    )
     assert ret1 == ret1_loaded
     ret1_loaded = DataBundleFactory.try_load_instance(bundle_file)
     assert ret1 == ret1_loaded
 
     # Function with different params will regist as different DataBundle.
-    ret2 = create_dict(1, b = 3)
+    ret2 = create_dict(1, b=3)
     reg_name2 = concat_params(bundle_type, (1,), {"b": 3})
     assert reg_name2 != reg_name1
     bundle_file2 = bundle_dir / f"{reg_name2}_{today}_0001.zip"
     assert bundle_file2.is_file()
 
-    ret2_loaded = create_dict(1, b = 3)
+    ret2_loaded = create_dict(1, b=3)
     assert ret2 == ret2_loaded
-    ret2_loaded = DataBundleFactory.load_instance(reg_name2 + ".zip", bundle_file2)
+    ret2_loaded = DataBundleFactory.load_instance(
+        reg_name2 + ".zip", bundle_file2
+    )
     assert ret2 == ret2_loaded
     ret2_loaded = DataBundleFactory.try_load_instance(bundle_file2)
     assert ret2 == ret2_loaded
@@ -163,6 +173,6 @@ def test_bundle_cache(tmpfile_fixture):
     assert ret1 == ret1_again
 
     # Force to fetch the remote or expensive data.
-    ret2_new = create_dict(1, b = 3, forced = True)
+    create_dict(1, b=3, forced=True)
     bundle_file2_new = bundle_dir / f"{reg_name2}_{today}_0002.zip"
     assert bundle_file2_new.is_file()

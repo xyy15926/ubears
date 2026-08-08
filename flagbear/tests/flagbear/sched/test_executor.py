@@ -8,37 +8,41 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
-import time
 import asyncio
-from datetime import timedelta
-import threading
-import os
 import concurrent
+import os
 import shutil
+import threading
+import time
+from datetime import timedelta
+
+import pytest
 
 if __name__ == "__main__":
     from importlib import reload
+
     from flagbear.slp import cache
+
     reload(cache)
-    from flagbear.sched import protocols, task, executor
+    from flagbear.sched import executor, protocols, task
+
     reload(protocols)
     reload(task)
     reload(executor)
 
+from flagbear.sched.executor import LocalExecutor
+from flagbear.sched.protocols import (
+    ExecutionPolicy,
+    RetryPolicy,
+    TaskState,
+)
+from flagbear.sched.task import (
+    TaskOnce,
+    task,
+)
+from flagbear.slp.cache import MemoryCache, PersistentCache
 from flagbear.slp.finer import get_tmp_path
 from flagbear.slp.storage import LocalFileStorage
-from flagbear.slp.cache import MemoryCache, PersistentCache
-from flagbear.sched.protocols import(
-    TaskState,
-    RetryPolicy,
-    ExecutionPolicy,
-)
-from flagbear.sched.task import(
-    task,
-    TaskOnce,
-)
-from flagbear.sched.executor import LocalExecutor
 
 PYTEST_DIR = "tmp/pytest_tmpdir"
 TMP_DIR = get_tmp_path(PYTEST_DIR)
@@ -72,7 +76,7 @@ def test_LocalExecutor_run_coro_shutdown_execute_func_once():
 
     coro = engine.execute_func_once(add, [1, 2, 3, 4], {})
     result, loop_tid, loop_pid = engine.run_coro(coro).result()
-    assert 10 == result
+    assert result == 10
     assert loop_tid != mtid
     assert loop_pid == mpid
     assert engine._event_loop is not None
@@ -85,7 +89,7 @@ def test_LocalExecutor_run_coro_shutdown_execute_func_once():
 
     coro = engine.execute_func_once(add, [1, 2, 3, 4], {})
     result, tp_tid, tp_pid = engine.run_coro(coro).result()
-    assert 10 == result
+    assert result == 10
     assert tp_tid != mtid
     assert tp_tid != loop_tid
     assert tp_pid == mpid
@@ -95,6 +99,7 @@ def test_LocalExecutor_run_coro_shutdown_execute_func_once():
 
     # Execution policy with timeout.
     execution_policy = ExecutionPolicy(0.1, False)
+
     async def add(a, b, c, d):
         await asyncio.sleep(0.2)
         return a + b + c + d
@@ -157,9 +162,11 @@ def test_LocalExecutor_run_process():
 
     # `_main_add` should not be nested in other function to be
     # executed in sub-process.
-    coro = engine.execute_func_once(_main_add, [1, 2, 3, 4], {}, execution_policy)
+    coro = engine.execute_func_once(
+        _main_add, [1, 2, 3, 4], {}, execution_policy
+    )
     result, pp_tid, pp_pid = engine.run_coro(coro).result()
-    assert 10 == result
+    assert result == 10
     assert pp_tid != mtid
     assert pp_pid != mpid
     assert engine._event_loop is not None
@@ -191,11 +198,19 @@ def test_LocalExecutor_execute_resolved():
 
     # Retry and failed.
     execution_policy = ExecutionPolicy(0.1, False)
-    retry_policy = RetryPolicy(4, 0.1, 2, 60, [TimeoutError, ])
+    retry_policy = RetryPolicy(
+        4,
+        0.1,
+        2,
+        60,
+        [
+            TimeoutError,
+        ],
+    )
 
     @task(
-        execution_policy = execution_policy,
-        retry_policy = retry_policy,
+        execution_policy=execution_policy,
+        retry_policy=retry_policy,
     )
     def error_add(a, b, c, d):
         time.sleep(0.3)
@@ -210,12 +225,22 @@ def test_LocalExecutor_execute_resolved():
 
     # Retry and succeed.
     execution_policy = ExecutionPolicy(0.1, False)
-    retry_policy = RetryPolicy(4, 0.1, 2, 60, [TimeoutError, RuntimeError, ])
+    retry_policy = RetryPolicy(
+        4,
+        0.1,
+        2,
+        60,
+        [
+            TimeoutError,
+            RuntimeError,
+        ],
+    )
 
     counter_flag = 3
+
     @task(
-        execution_policy = execution_policy,
-        retry_policy = retry_policy,
+        execution_policy=execution_policy,
+        retry_policy=retry_policy,
     )
     def error_add(a, b, c, d):
         # global counter_flag
@@ -265,7 +290,7 @@ def test_LocalExecutor_excecute_future():
 
     assert add_result.is_successful()
     assert add_result.value == 10
-    assert add_result.end_time - add_result.start_time > timedelta(seconds = 0.1)
+    assert add_result.end_time - add_result.start_time > timedelta(seconds=0.1)
     add_result_gotten = cache.get(add_fut.id_)
     assert add_result_gotten is add_result
 
@@ -275,7 +300,7 @@ def test_LocalExecutor_excecute_future():
     mul_result = engine.run_coro(mul_coro).result()
     assert mul_result.is_successful()
     assert mul_result.value == 300
-    assert mul_result.end_time - mul_result.start_time < timedelta(seconds = 0.1)
+    assert mul_result.end_time - mul_result.start_time < timedelta(seconds=0.1)
 
     # Skip for precedent error.
     @task
@@ -295,10 +320,11 @@ def test_LocalExecutor_excecute_future():
 
     engine.shutdown()
 
+
 # %%
 def test_LocalExecutor_excecute_future_with_persistent_cache(tmpfile_fixture):
     lstorage = LocalFileStorage(TMP_DIR)
-    pcache = PersistentCache(lstorage, max_mem_size = 1024)
+    pcache = PersistentCache(lstorage, max_mem_size=1024)
     engine = LocalExecutor()
 
     # Succeed.
@@ -327,7 +353,7 @@ def test_LocalExecutor_excecute_future_with_persistent_cache(tmpfile_fixture):
 
     # Restart engine and persistent cache.
     lstorage = LocalFileStorage(TMP_DIR)
-    pcache = PersistentCache(lstorage, max_mem_size = 1024)
+    pcache = PersistentCache(lstorage, max_mem_size=1024)
     engine = LocalExecutor()
 
     add_fut = TaskOnce(add, (1, 2, 3, 4), {})

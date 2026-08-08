@@ -9,31 +9,34 @@
 
 # %%
 import pytest
+
 if __name__ == "__main__":
     import logging
+
     logging.basicConfig(level=logging.INFO, force=True)
     from importlib import reload
-    from flagbear.slp import storage, cache
+
+    from flagbear.slp import cache, storage
+
     reload(storage)
     reload(cache)
 
-import numpy as np
 import shutil
-import dataclasses
-from datetime import datetime, timedelta
 import threading
+from datetime import datetime, timedelta
 
-from flagbear.slp.finer import get_tmp_path
-from flagbear.slp.storage import(
-    StorageBackend,
-    LocalFileStorage,
-)
-from flagbear.slp.cache import(
+import numpy as np
+
+from flagbear.slp.cache import (
     CacheMeta,
-    meta_serialize,
-    meta_deserialize,
     MemoryCache,
     PersistentCache,
+    meta_deserialize,
+    meta_serialize,
+)
+from flagbear.slp.finer import get_tmp_path
+from flagbear.slp.storage import (
+    LocalFileStorage,
 )
 
 PYTEST_DIR = "tmp/pytest_tmpdir"
@@ -63,7 +66,7 @@ def test_CacheMeta():
 
     # From dict, CacheMeta and None
     now = datetime.now()
-    meta = CacheMeta("somekey", created_at = now)
+    meta = CacheMeta("somekey", created_at=now)
     assert meta == CacheMeta.from_meta({"key": "somekey", "created_at": now})
     assert meta == CacheMeta.from_meta(meta)
 
@@ -78,7 +81,7 @@ def test_meta_serialize():
     assert meta == loaded_meta
 
     # Specify serialization type.
-    meta = CacheMeta(type_ = "pickle")
+    meta = CacheMeta(type_="pickle")
     bytes_, meta = meta_serialize(data, meta)
     assert b"pickle" in bytes_
     loaded_data, loaded_meta = meta_deserialize(bytes_)
@@ -97,24 +100,26 @@ def test_MemoryCache():
     assert mcache._stats["hits"] == 1
     assert mcache._stats["misses"] == 1
     assert mcache.exists("ok")
-    assert mcache.list_keys() == ["ok", ]
+    assert mcache.list_keys() == ["ok"]
     assert mcache.delete("nok") is None
     assert mcache.delete("ok") is None
-    assert mcache.list_keys() == [ ]
+    assert mcache.list_keys() == []
 
     # Time to live.
     ttl = timedelta(1)
-    mcache = MemoryCache(ttl,)
+    mcache = MemoryCache(
+        ttl,
+    )
     mcache.set("ok", 1)
     assert mcache.get("ok") == 1
     assert mcache.get("nok") is None
     assert mcache._stats["hits"] == 1
     assert mcache._stats["misses"] == 1
     assert mcache.exists("ok")
-    assert mcache.list_keys() == ["ok", ]
+    assert mcache.list_keys() == ["ok"]
     assert mcache.delete("nok") is None
     assert mcache.delete("ok") is None
-    assert mcache.list_keys() == [ ]
+    assert mcache.list_keys() == []
 
     # Hook function.
     def on_hit(key: str):
@@ -132,25 +137,27 @@ def test_MemoryCache():
 
     # Cache expired.
     ttl = timedelta(0)
-    mcache = MemoryCache(ttl,)
+    mcache = MemoryCache(
+        ttl,
+    )
     mcache.set("ok", 1)
     assert mcache.exists("ok")
     assert mcache.get("ok") is None
-    assert mcache.list_keys() == [ ]
+    assert mcache.list_keys() == []
 
 
 # %%
 def test_PersistetnCache_value_inline(tmpfile_fixture):
     lstorage = LocalFileStorage(TMP_DIR)
 
-    pcache = PersistentCache(lstorage, max_mem_size = 1024)
+    pcache = PersistentCache(lstorage, max_mem_size=1024)
     pcache.set("ok", 1)
     assert pcache.get("ok") == 1
     assert pcache.get("nok") is None
     assert pcache._stats["hits"] == 1
     assert pcache._stats["misses"] == 1
     assert pcache.exists("ok")
-    assert pcache.list_keys() == ["ok", ]
+    assert pcache.list_keys() == ["ok"]
 
     # Check inner meta-storage and local file storage.
     assert pcache.meta_storage["ok"].inline is True
@@ -158,7 +165,7 @@ def test_PersistetnCache_value_inline(tmpfile_fixture):
     assert lstorage._data_path("ok").is_file()
 
     # Reinit persistent cachde from local storage.
-    pcache = PersistentCache(lstorage, max_mem_size = 1024)
+    pcache = PersistentCache(lstorage, max_mem_size=1024)
     assert pcache.meta_storage["ok"].key is None
     assert pcache.meta_storage["ok"].inline is None
     assert pcache.get("ok") == 1
@@ -174,12 +181,12 @@ def test_PersistetnCache_value_inline(tmpfile_fixture):
     # Delete could still be done once again for non-existed key.
     assert pcache.delete("nok") is None
     assert pcache.delete("ok") is None
-    assert pcache.list_keys() == [ ]
+    assert pcache.list_keys() == []
     assert "ok" not in pcache.meta_storage
     assert not lstorage._data_path("ok").is_file()
 
     # Force not to save value inline.
-    meta = CacheMeta("nonmem", inline = False)
+    meta = CacheMeta("nonmem", inline=False)
     pcache.set("nonmem", 1, meta)
     assert not pcache.meta_storage["nonmem"].inline
     assert pcache.meta_storage["nonmem"].value is None
@@ -195,7 +202,7 @@ def test_PersistetnCache_value_not_inline(tmpfile_fixture):
     lstorage = LocalFileStorage(TMP_DIR)
     large_val = np.random.rand(40, 40).astype(np.float64)
 
-    pcache = PersistentCache(lstorage, max_mem_size = 1024)
+    pcache = PersistentCache(lstorage, max_mem_size=1024)
     pcache.set("ok", large_val)
     assert np.allclose(pcache.get("ok"), large_val)
     assert pcache._stats["hits"] == 1
@@ -209,14 +216,14 @@ def test_PersistetnCache_value_not_inline(tmpfile_fixture):
     # Recover from persistent storage.
     # But `._stats` and `.meta_storage` won't be recovered.
     new_lstorage = LocalFileStorage(TMP_DIR)
-    new_pcache = PersistentCache(new_lstorage, max_mem_size = 1024)
+    new_pcache = PersistentCache(new_lstorage, max_mem_size=1024)
     assert np.allclose(new_pcache.get("ok"), large_val)
     assert new_pcache._stats["hits"] == 1
     assert new_pcache.meta_storage["ok"].hits == 1
     assert new_pcache.meta_storage["ok"].inline is False
 
     # Force to save value inline.
-    meta = CacheMeta("inmem", inline = True)
+    meta = CacheMeta("inmem", inline=True)
     pcache.set("inmem", large_val, meta)
     assert lstorage._data_path("inmem").is_file()
     lstorage.delete("inmem")
@@ -228,30 +235,31 @@ def test_PersistetnCache_value_not_inline(tmpfile_fixture):
 def test_PersistetnCache_expire(tmpfile_fixture):
     lstorage = LocalFileStorage(TMP_DIR)
     ttl = timedelta(0)
-    pcache = PersistentCache(lstorage, ttl = ttl, max_mem_size = 1024)
+    pcache = PersistentCache(lstorage, ttl=ttl, max_mem_size=1024)
 
     large_val = np.random.rand(40, 40).astype(np.float64)
     pcache.set("ok", large_val)
     assert pcache.exists("ok")
     assert lstorage._data_path("ok").is_file()
     assert pcache.get("ok") is None
-    assert pcache.list_keys() == [ ]
+    assert pcache.list_keys() == []
     assert not lstorage._data_path("ok").is_file()
 
 
 # %%
 def test_PersistetnCache_multi(tmpfile_fixture):
     lstorage = LocalFileStorage(TMP_DIR)
-    pcache = PersistentCache(lstorage, max_mem_size = 1024)
+    pcache = PersistentCache(lstorage, max_mem_size=1024)
     large_val = np.random.rand(40, 40).astype(np.float64)
     pcache.set("ok", large_val)
 
     ready = threading.Event()
+
     def update():
         ready.wait()
         pcache.set("ok", "haha")
 
-    t = threading.Thread(target = update)
+    t = threading.Thread(target=update)
     t.start()
     assert np.allclose(pcache.get("ok"), large_val)
     ready.set()

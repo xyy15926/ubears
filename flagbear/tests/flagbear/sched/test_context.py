@@ -8,33 +8,39 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
-import time
 import asyncio
 import shutil
+import time
+
+import pytest
+
 # from IPython.core.debugger import set_trace
 
 if __name__ == "__main__":
     from importlib import reload
-    from flagbear.slp import finer, storage, cache
+
+    from flagbear.slp import cache, finer, storage
+
     reload(finer)
     reload(storage)
     reload(cache)
     from flagbear.tree import dag
+
     reload(dag)
-    from flagbear.sched import protocols, task, executor, scheduler, context
+    from flagbear.sched import context, executor, protocols, scheduler, task
+
     reload(protocols)
     reload(task)
     reload(executor)
     reload(scheduler)
     reload(context)
 
+from flagbear.sched.context import SimpleContext
+from flagbear.sched.protocols import _current_context
+from flagbear.sched.task import TaskOnce, task
+from flagbear.slp.cache import MemoryCache, PersistentCache
 from flagbear.slp.finer import get_tmp_path
 from flagbear.slp.storage import LocalFileStorage
-from flagbear.slp.cache import MemoryCache, PersistentCache
-from flagbear.sched.protocols import _current_context
-from flagbear.sched.task import task, TaskOnce
-from flagbear.sched.context import SimpleContext
 
 PYTEST_DIR = "tmp/pytest_tmpdir"
 TMP_DIR = get_tmp_path(PYTEST_DIR)
@@ -164,6 +170,7 @@ def test_SimpleContext_context_and_TaskProxy_submit():
         with pytest.raises(ValueError):
             add_ret, sync_ctx = ctx.run(add_task)
 
+
 # %%
 def test_SimpleContext_TaskOnce_call_and_submit_then_result():
     @task
@@ -176,7 +183,7 @@ def test_SimpleContext_TaskOnce_call_and_submit_then_result():
         await asyncio.sleep(0.1)
         return a + b + c + d, _current_context.get()
 
-    with SimpleContext() as ctx:
+    with SimpleContext():
         # `ctx.gather` to execute task simutaneously.
         start = time.time()
         add_task = add.submit(1, 2, 3, 4)
@@ -190,7 +197,7 @@ def test_SimpleContext_TaskOnce_call_and_submit_then_result():
         assert sync_ctx is None
         assert async_ctx is None
 
-    with SimpleContext() as ctx:
+    with SimpleContext():
         # Simple task but do calculation immediately.
         start = time.time()
         add_ret, sync_ctx = add(1, 2, 3, 4)
@@ -215,7 +222,7 @@ def test_SimpleContext_TaskOnce_with_dag_topo():
         await asyncio.sleep(0.1)
         return a + b + c + d
 
-    with SimpleContext() as ctx:
+    with SimpleContext():
         start = time.time()
         add_task1 = add.submit(1, 2, 3, 4)
         add_task2 = add.submit(1, 2, 3, 4)
@@ -239,13 +246,15 @@ def test_SimpleContext_TaskOnce_error():
         return a + b + c + d
 
     mem_cache = MemoryCache()
-    with SimpleContext(mem_cache) as ctx:
+    with SimpleContext(mem_cache):
         add_task1 = add.submit(1, 2, 3, 4)
         add_task2 = add.submit(1, 2, 3, 4)
         async_add_task1 = async_add.submit(add_task1, 2, 3, 4)
         async_add_task2 = async_add.submit(add_task1, 2, 3, 4)
         with pytest.raises(RuntimeError):
-            _total = add(add_task1, add_task2, async_add_task1, async_add_task2)
+            _total = add(
+                add_task1, add_task2, async_add_task1, async_add_task2
+            )
 
     for key in mem_cache.list_keys():
         add_ret = mem_cache.get(key)
@@ -254,13 +263,15 @@ def test_SimpleContext_TaskOnce_error():
         assert add_ret.value is None
 
     # Reuse the cache.
-    with SimpleContext(mem_cache) as ctx:
+    with SimpleContext(mem_cache):
         add_task1 = add.submit(1, 2, 3, 4)
         add_task2 = add.submit(1, 2, 3, 4)
         async_add_task1 = async_add.submit(add_task1, 2, 3, 4)
         async_add_task2 = async_add.submit(add_task1, 2, 3, 4)
         with pytest.raises(RuntimeError):
-            _total = add(add_task1, add_task2, async_add_task1, async_add_task2)
+            _total = add(
+                add_task1, add_task2, async_add_task1, async_add_task2
+            )
 
     for key in mem_cache.list_keys():
         add_ret = mem_cache.get(key)
@@ -281,14 +292,16 @@ def test_SimpleContext_TaskOnce_error_with_persistent_cache(tmpfile_fixture):
         return a + b + c + d
 
     lstorage = LocalFileStorage(TMP_DIR)
-    pcache = PersistentCache(lstorage, max_mem_size = 1024)
-    with SimpleContext(pcache) as ctx:
+    pcache = PersistentCache(lstorage, max_mem_size=1024)
+    with SimpleContext(pcache):
         add_task1 = add.submit(1, 2, 3, 4)
         add_task2 = add.submit(1, 2, 3, 4)
         async_add_task1 = async_add.submit(add_task1, 2, 3, 4)
         async_add_task2 = async_add.submit(add_task1, 2, 3, 4)
         with pytest.raises(RuntimeError):
-            _total = add(add_task1, add_task2, async_add_task1, async_add_task2)
+            _total = add(
+                add_task1, add_task2, async_add_task1, async_add_task2
+            )
 
     for key in pcache.list_keys():
         add_ret = pcache.get(key)
@@ -298,14 +311,16 @@ def test_SimpleContext_TaskOnce_error_with_persistent_cache(tmpfile_fixture):
 
     # Reuse the cache.
     lstorage = LocalFileStorage(TMP_DIR)
-    pcache = PersistentCache(lstorage, max_mem_size = 1024)
-    with SimpleContext(pcache) as ctx:
+    pcache = PersistentCache(lstorage, max_mem_size=1024)
+    with SimpleContext(pcache):
         add_task1 = add.submit(1, 2, 3, 4)
         add_task2 = add.submit(1, 2, 3, 4)
         async_add_task1 = async_add.submit(add_task1, 2, 3, 4)
         async_add_task2 = async_add.submit(add_task1, 2, 3, 4)
         with pytest.raises(RuntimeError):
-            _total = add(add_task1, add_task2, async_add_task1, async_add_task2)
+            _total = add(
+                add_task1, add_task2, async_add_task1, async_add_task2
+            )
 
     for key in pcache.list_keys():
         add_ret = pcache.get(key)
@@ -330,7 +345,7 @@ def test_SimpleContext_nested_sync_task():
     @task
     def mix_error(a, b):
         add_task = add.submit(a, b, 3, 4)
-        mul_task = mul.submit(1, add_task, c = 3, d = add_task)
+        mul_task = mul.submit(1, add_task, c=3, d=add_task)
         add_ret = add_task.result()
         mul_ret = mul_task.result()
         return add_ret + mul_ret
@@ -338,7 +353,7 @@ def test_SimpleContext_nested_sync_task():
     @task
     def mix(a, b):
         add_ret = add(a, b, 3, 4)
-        mul_ret = mul(1, add_ret, c = 3, d = add_ret)
+        mul_ret = mul(1, add_ret, c=3, d=add_ret)
         return add_ret + mul_ret
 
     with SimpleContext() as ctx:
@@ -422,7 +437,7 @@ def test_SimpleContext_nested_context_result_immediately():
         assert sync_ctx is None
         assert async_add_ret == 10
         assert async_ctx is None
-        with SimpleContext(parent_context = outer_ctx) as inner_ctx:
+        with SimpleContext(parent_context=outer_ctx) as inner_ctx:
             add_ret, sync_ctx = add(1, 2, 3, 4)
             async_add_ret, async_ctx = async_add(1, 2, 3, 4)
             assert add_ret == 10
@@ -451,10 +466,10 @@ def test_SimpleContext_nested_context_submit_and_waiting_shutdown():
 
     with SimpleContext() as outer_ctx:
         add_task = add.submit(1, 2, 3, 4)
-        async_task = async_add.submit(1, 2, 3, 4)
-        with SimpleContext(parent_context = outer_ctx) as inner_ctx:
+        _async_task = async_add.submit(1, 2, 3, 4)
+        with SimpleContext(parent_context=outer_ctx) as inner_ctx:
             add_task = add.submit(1, 2, 3, 4)
-            async_task = async_add.submit(1, 2, 3, 4)
+            _async_task = async_add.submit(1, 2, 3, 4)
             assert inner_ctx.scheduler is outer_ctx.scheduler
             assert inner_ctx._scheduler is None
             assert inner_ctx.task_results is outer_ctx.task_results
@@ -479,11 +494,11 @@ def test_SimpleContext_nested_context_submit_and_force_shutdown():
         return a + b + c + d, _current_context.get()
 
     with SimpleContext() as outer_ctx:
-        add_task = add.submit(1, 2, 3, 4)
-        async_task = async_add.submit(1, 2, 3, 4)
-        with SimpleContext(parent_context = outer_ctx) as inner_ctx:
-            add_task = add.submit(1, 2, 3, 4)
-            async_task = async_add.submit(1, 2, 3, 4)
+        _add_task = add.submit(1, 2, 3, 4)
+        _async_task = async_add.submit(1, 2, 3, 4)
+        with SimpleContext(parent_context=outer_ctx) as inner_ctx:
+            _add_task = add.submit(1, 2, 3, 4)
+            _async_task = async_add.submit(1, 2, 3, 4)
             assert inner_ctx.scheduler is outer_ctx.scheduler
             assert inner_ctx._scheduler is None
             assert inner_ctx.task_results is outer_ctx.task_results
@@ -496,4 +511,4 @@ def test_SimpleContext_nested_context_submit_and_force_shutdown():
         add_ret = task_results.get(key)
         assert add_ret.is_failed()
         assert add_ret.value is None
-    #TODO
+    # TODO

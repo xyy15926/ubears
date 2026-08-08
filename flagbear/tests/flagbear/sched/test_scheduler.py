@@ -8,33 +8,38 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
-import time
 import asyncio
 import shutil
+import time
+
+import pytest
 
 if __name__ == "__main__":
     from importlib import reload
+
     from flagbear.tree import dag
+
     reload(dag)
-    from flagbear.slp import finer, cache
+    from flagbear.slp import cache, finer
+
     reload(finer)
     reload(cache)
-    from flagbear.sched import protocols, task, executor, scheduler
+    from flagbear.sched import executor, protocols, scheduler, task
+
     reload(protocols)
     reload(task)
     reload(executor)
     reload(scheduler)
 
-from flagbear.slp.finer import get_tmp_path
-from flagbear.slp.storage import LocalFileStorage
-from flagbear.slp.cache import MemoryCache, PersistentCache
-from flagbear.sched.task import(
-    task,
-    TaskOnce,
-)
 from flagbear.sched.executor import LocalExecutor
 from flagbear.sched.scheduler import DAGScheduler
+from flagbear.sched.task import (
+    TaskOnce,
+    task,
+)
+from flagbear.slp.cache import MemoryCache, PersistentCache
+from flagbear.slp.finer import get_tmp_path
+from flagbear.slp.storage import LocalFileStorage
 
 PYTEST_DIR = "tmp/pytest_tmpdir"
 TMP_DIR = get_tmp_path(PYTEST_DIR)
@@ -168,7 +173,7 @@ def test_DAGScheduler_add_unordered_and_reuse_cache():
 # %%
 def test_DAGScheduler_with_persistent_cache(tmpfile_fixture):
     lstorage = LocalFileStorage(TMP_DIR)
-    pcache = PersistentCache(lstorage, max_mem_size = 1024)
+    pcache = PersistentCache(lstorage, max_mem_size=1024)
     local_exec = LocalExecutor()
     dag_sched = DAGScheduler(pcache, local_exec)
 
@@ -206,7 +211,7 @@ def test_DAGScheduler_with_persistent_cache(tmpfile_fixture):
 
     # Reinit cache, executor and scheduler.
     lstorage = LocalFileStorage(TMP_DIR)
-    pcache = PersistentCache(lstorage, max_mem_size = 1024)
+    pcache = PersistentCache(lstorage, max_mem_size=1024)
     local_exec = LocalExecutor()
     dag_sched = DAGScheduler(pcache, local_exec)
 

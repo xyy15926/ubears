@@ -9,11 +9,12 @@
 
 # %%
 import re
-import pytest
 
 if __name__ == "__main__":
     from importlib import reload
+
     from flagbear.const import patterns
+
     reload(patterns)
 
 from flagbear.const.patterns import REGEXS

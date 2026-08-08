@@ -9,34 +9,38 @@
 
 # %%
 from __future__ import annotations
+
 import pytest
+
 if __name__ == "__main__":
     import logging
+
     logging.basicConfig(level=logging.INFO, force=True)
     from importlib import reload
-    from flagbear.slp import storage, serializer, cache, checkpoint
+
+    from flagbear.slp import cache, checkpoint, serializer, storage
+
     reload(storage)
     reload(serializer)
     reload(cache)
     reload(checkpoint)
 
-import shutil
-import dataclasses
-from datetime import datetime, timedelta
-import threading
 import hashlib
 import json
+import shutil
+from datetime import timedelta
+
 import numpy as np
 
+from flagbear.slp.cache import MemoryCache, PersistentCache
+from flagbear.slp.checkpoint import (
+    CachePolicy,
+    CheckpointManager,
+    CheckpointPolicy,
+    json_args,
+)
 from flagbear.slp.finer import get_tmp_path
 from flagbear.slp.storage import LocalFileStorage
-from flagbear.slp.cache import MemoryCache, PersistentCache
-from flagbear.slp.checkpoint import(
-    json_args,
-    CachePolicy,
-    CheckpointPolicy,
-    CheckpointManager,
-)
 
 PYTEST_DIR = "tmp/pytest_tmpdir"
 TMP_DIR = get_tmp_path(PYTEST_DIR)
@@ -62,7 +66,7 @@ def test_json_args():
     kwargs = {"c": 2, "d": 1}
     key = json_args(args, kwargs, skip_args=[0, "d"])
     json_str = json.dumps(
-        ((2, ), {"c": 2}),
+        ((2,), {"c": 2}),
         sort_keys=True,
         default=str,
     ).encode("utf8")
@@ -91,9 +95,10 @@ def test_json_args():
 # %%
 def test_CheckpointManager_memory_cache():
     cache = MemoryCache()
-    ckpm = CheckpointManager(cache = cache)
+    ckpm = CheckpointManager(cache=cache)
 
     foo_once = False
+
     @ckpm.checkpoint
     def foo(a, b, c, d):
         # `nonlocal` only bind the varible on the exact upper level.
@@ -119,16 +124,17 @@ def test_CheckpointManager_memory_cache():
 # %%
 def test_CheckpointManager_memory_cache_cache_mode():
     cache = MemoryCache()
-    ckpm = CheckpointManager(cache = cache)
+    ckpm = CheckpointManager(cache=cache)
     checkpoint_policy = CheckpointPolicy("cache")
     cache_policy = CachePolicy(timedelta(1), None, None)
 
     @ckpm.checkpoint(
-        checkpoint_policy = checkpoint_policy,
-        cache_policy = cache_policy,
+        checkpoint_policy=checkpoint_policy,
+        cache_policy=cache_policy,
     )
     def foo(a, b, c, d):
         return [a, b, c, d]
+
     prefix = f"{foo.__module__}.{foo.__qualname__}"
 
     foo_ret1 = foo(1, 2, 3, 4)
@@ -144,16 +150,17 @@ def test_CheckpointManager_memory_cache_cache_mode():
 # %%
 def test_CheckpointManager_memory_cache_key_gen():
     cache = MemoryCache()
-    ckpm = CheckpointManager(cache = cache)
-    checkpoint_policy = CheckpointPolicy("cache", keyskip_args = [])
+    ckpm = CheckpointManager(cache=cache)
+    checkpoint_policy = CheckpointPolicy("cache", keyskip_args=[])
     cache_policy = CachePolicy(timedelta(1), None, None)
 
     @ckpm.checkpoint(
-        checkpoint_policy = checkpoint_policy,
-        cache_policy = cache_policy,
+        checkpoint_policy=checkpoint_policy,
+        cache_policy=cache_policy,
     )
     def foo(a, b, c, d):
         return [a, b, c, d]
+
     prefix = f"{foo.__module__}.{foo.__qualname__}"
 
     # Complex arguments.
@@ -175,16 +182,22 @@ def test_CheckpointManager_memory_cache_key_gen():
 
     # Skip some arguments.
     cache = MemoryCache()
-    ckpm = CheckpointManager(cache = cache)
-    checkpoint_policy = CheckpointPolicy("cache", keyskip_args = [3, ])
+    ckpm = CheckpointManager(cache=cache)
+    checkpoint_policy = CheckpointPolicy(
+        "cache",
+        keyskip_args=[
+            3,
+        ],
+    )
     cache_policy = CachePolicy(timedelta(1), None, None)
 
     @ckpm.checkpoint(
-        checkpoint_policy = checkpoint_policy,
-        cache_policy = cache_policy,
+        checkpoint_policy=checkpoint_policy,
+        cache_policy=cache_policy,
     )
     def foo(a, b, c, d):
         return [a, b, c, d]
+
     prefix = f"{foo.__module__}.{foo.__qualname__}"
 
     arr = np.random.rand(3, 4)
@@ -205,20 +218,20 @@ def test_CheckpointManager_memory_cache_key_gen():
     assert len(cache.list_keys(prefix)) == 1
 
 
-
 # %%
 def test_CheckpointManager_memory_cache_record_mode():
     cache = MemoryCache()
-    ckpm = CheckpointManager(cache = cache)
+    ckpm = CheckpointManager(cache=cache)
     checkpoint_policy = CheckpointPolicy("record")
     cache_policy = CachePolicy(timedelta(1), None, None)
 
     @ckpm.checkpoint(
-        checkpoint_policy = checkpoint_policy,
-        cache_policy = cache_policy,
+        checkpoint_policy=checkpoint_policy,
+        cache_policy=cache_policy,
     )
     def foo(a, b, c, d):
         return [a, b, c, d]
+
     prefix = f"{foo.__module__}.{foo.__qualname__}"
 
     foo_ret1 = foo(1, 2, 3, 4)
@@ -237,23 +250,24 @@ def test_CheckpointManager_memory_cache_record_mode():
 # %%
 def test_CheckpointManager_memory_cache_manual_mode():
     cache = MemoryCache()
-    ckpm = CheckpointManager(cache = cache)
+    ckpm = CheckpointManager(cache=cache)
     checkpoint_policy = CheckpointPolicy("manual")
     cache_policy = CachePolicy(timedelta(1), None, None)
 
     @ckpm.checkpoint(
-        checkpoint_policy = checkpoint_policy,
-        cache_policy = cache_policy,
+        checkpoint_policy=checkpoint_policy,
+        cache_policy=cache_policy,
     )
     def foo(a, b, c, d):
         return [a, b, c, d]
+
     prefix = f"{foo.__module__}.{foo.__qualname__}"
 
     foo_ret1 = foo(1, 2, 3, 4)
     foo_ret2 = foo(1, 2, 3, 4)
     assert foo_ret1 == foo_ret2
     assert len(cache.list_keys(prefix)) == 1
-    foo_ret2 = foo(1, 2, 3, 4, force = True)
+    foo_ret2 = foo(1, 2, 3, 4, force=True)
     assert len(cache.list_keys(prefix)) == 2
     assert ckpm.get(foo, (1, 2, 3, 4), {}) != [1, 2, 3, 4]
     assert ckpm.get(foo, (1, 2, 3, 4), {}, checkpoint_policy) == [1, 2, 3, 4]
@@ -270,16 +284,17 @@ def test_CheckpointManager_memory_cache_ttl():
     # Checkpoint in `record` mode won't check the expires, so no cache
     # will be deleted though expired.
     cache = MemoryCache()
-    ckpm = CheckpointManager(cache = cache)
+    ckpm = CheckpointManager(cache=cache)
     checkpoint_policy = CheckpointPolicy("record")
     cache_policy = CachePolicy(timedelta(0), None, None)
 
     @ckpm.checkpoint(
-        checkpoint_policy = checkpoint_policy,
-        cache_policy = cache_policy,
+        checkpoint_policy=checkpoint_policy,
+        cache_policy=cache_policy,
     )
     def foo(a, b, c, d):
         return [a, b, c, d]
+
     prefix = f"{foo.__module__}.{foo.__qualname__}"
 
     foo_ret1 = foo(1, 2, 3, 4)
@@ -290,16 +305,17 @@ def test_CheckpointManager_memory_cache_ttl():
 
     # And cache will be deleted for checkpoint in `manual` mode.
     cache = MemoryCache()
-    ckpm = CheckpointManager(cache = cache)
+    ckpm = CheckpointManager(cache=cache)
     checkpoint_policy = CheckpointPolicy("manual")
     cache_policy = CachePolicy(timedelta(0), None, None)
 
     @ckpm.checkpoint(
-        checkpoint_policy = checkpoint_policy,
-        cache_policy = cache_policy,
+        checkpoint_policy=checkpoint_policy,
+        cache_policy=cache_policy,
     )
     def foo(a, b, c, d):
         return [a, b, c, d]
+
     prefix = f"{foo.__module__}.{foo.__qualname__}"
 
     foo_ret1 = foo(1, 2, 3, 4)
@@ -313,19 +329,21 @@ def test_CheckpointManager_memory_cache_ttl():
 def test_CheckpointManager_persistent_cache(tmpfile_fixture):
     lstore = LocalFileStorage(TMP_DIR)
     cache = PersistentCache(lstore)
-    ckpm = CheckpointManager(cache = cache)
+    ckpm = CheckpointManager(cache=cache)
     checkpoint_policy = CheckpointPolicy("cache")
     cache_policy = CachePolicy(timedelta(1))
 
     count = 1
+
     @ckpm.checkpoint(
-        checkpoint_policy = checkpoint_policy,
-        cache_policy = cache_policy,
+        checkpoint_policy=checkpoint_policy,
+        cache_policy=cache_policy,
     )
     def foo(a, b, c, d):
         nonlocal count
         count += 1
         return [a, b, c, d]
+
     prefix = f"{foo.__module__}.{foo.__qualname__}"
 
     foo_ret1 = foo(1, 2, 3, 7)
@@ -339,13 +357,13 @@ def test_CheckpointManager_persistent_cache(tmpfile_fixture):
     # Persisent cache.
     lstore = LocalFileStorage(TMP_DIR)
     cache = PersistentCache(lstore)
-    ckpm = CheckpointManager(cache = cache)
+    ckpm = CheckpointManager(cache=cache)
     checkpoint_policy = CheckpointPolicy("cache")
     cache_policy = CachePolicy(timedelta(1))
 
     @ckpm.checkpoint(
-        checkpoint_policy = checkpoint_policy,
-        cache_policy = cache_policy,
+        checkpoint_policy=checkpoint_policy,
+        cache_policy=cache_policy,
     )
     def foo(a, b, c, d):
         nonlocal count
@@ -358,19 +376,22 @@ def test_CheckpointManager_persistent_cache(tmpfile_fixture):
 
 
 # %%
-def test_CheckpointManager_persistent_cache_serialization_type_(tmpfile_fixture):
+def test_CheckpointManager_persistent_cache_serialization_type_(
+    tmpfile_fixture,
+):
     lstore = LocalFileStorage(TMP_DIR)
     cache = PersistentCache(lstore)
-    ckpm = CheckpointManager(cache = cache)
+    ckpm = CheckpointManager(cache=cache)
     checkpoint_policy = CheckpointPolicy("cache")
     cache_policy = CachePolicy(timedelta(1), "pickle")
 
     @ckpm.checkpoint(
-        checkpoint_policy = checkpoint_policy,
-        cache_policy = cache_policy,
+        checkpoint_policy=checkpoint_policy,
+        cache_policy=cache_policy,
     )
     def foo(a, b, c, d):
         return [a, b, c, d]
+
     prefix = f"{foo.__module__}.{foo.__qualname__}"
 
     foo_ret1 = foo(1, 2, 3, 7)
@@ -387,16 +408,17 @@ def test_CheckpointManager_persistent_cache_serialization_type_(tmpfile_fixture)
 def test_CheckpointManager_persistent_cache_inline(tmpfile_fixture):
     lstore = LocalFileStorage(TMP_DIR)
     cache = PersistentCache(lstore)
-    ckpm = CheckpointManager(cache = cache)
+    ckpm = CheckpointManager(cache=cache)
     checkpoint_policy = CheckpointPolicy("cache")
     cache_policy = CachePolicy(timedelta(1), None, True)
 
     @ckpm.checkpoint(
-        checkpoint_policy = checkpoint_policy,
-        cache_policy = cache_policy,
+        checkpoint_policy=checkpoint_policy,
+        cache_policy=cache_policy,
     )
     def foo(a, b, c, d):
         return [a, b, c, d]
+
     prefix = f"{foo.__module__}.{foo.__qualname__}"
 
     foo_ret1 = foo(1, 2, 3, 7)

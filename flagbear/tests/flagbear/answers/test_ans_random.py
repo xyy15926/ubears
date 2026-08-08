@@ -8,12 +8,13 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
 import numpy as np
 
 if __name__ == "__main__":
     from importlib import reload
+
     from flagbear.answers import ans_random
+
     reload(ans_random)
 
 from flagbear.answers.ans_random import metropolis_hastings
@@ -24,7 +25,12 @@ def test_mcmc():
     def gauss_pdf(x):
         mu = 8
         sigma = 3
-        return 1 / sigma / np.sqrt(2 * np.pi) * np.exp(-0.5 * (x - mu)**2 / sigma ** 2)
+        return (
+            1
+            / sigma
+            / np.sqrt(2 * np.pi)
+            * np.exp(-0.5 * (x - mu) ** 2 / sigma**2)
+        )
 
     rands = metropolis_hastings(gauss_pdf, 20000)
     assert np.isclose(np.mean(rands), 8, atol=1)

@@ -8,28 +8,35 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
 
 if __name__ == "__main__":
     from importlib import reload
+
     from flagbear.answers import ans_bits
+
     reload(ans_bits)
 
 import math
 
 from flagbear.answers.ans_bits import (
-    count_one, count_one_iter1,
-    count_one_table, count_one_division,
+    count_one,
+    count_one_division,
     count_one_division_v2,
+    count_one_iter1,
     count_one_odd,
     count_one_odd_division,
     count_one_odd_division_tbl,
-    even_u8, odd_u8,
-    even_u8_mod, odd_u8_mod,
-    reverse_bits, reverse_bits_mod,
+    count_one_table,
     count_prepending_zeros,
     count_prepending_zeros_mod,
-    div3, sqrt
+    div3,
+    even_u8,
+    even_u8_mod,
+    odd_u8,
+    odd_u8_mod,
+    reverse_bits,
+    reverse_bits_mod,
+    sqrt,
 )
 
 
@@ -59,7 +66,7 @@ def test_even_one():
 
 
 def test_reverse_one():
-    for x in range(0x3f):
+    for x in range(0x3F):
         ans = reverse_bits(x)
         assert ans == reverse_bits_mod(x)
 
@@ -82,4 +89,3 @@ def test_sqrt():
     ans = 1 / math.sqrt(x)
     sqrt(x)
     assert math.isclose(ans, sqrt(x), abs_tol=0.001)
-

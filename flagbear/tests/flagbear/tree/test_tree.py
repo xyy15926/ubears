@@ -8,13 +8,15 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
+
 if __name__ == "__main__":
     from importlib import reload
+
     from flagbear.tree import tree
+
     reload(tree)
 
-from flagbear.tree.tree import BiTNode, GeTNode
+from flagbear.tree.tree import GeTNode
 
 
 # %%

@@ -8,10 +8,12 @@
 # ---------------------------------------------------------
 
 # %%
-from pytest import mark
+
 if __name__ == "__main__":
     from importlib import reload
-    from flagbear.llp import lex, autom, syntax, parser, graph
+
+    from flagbear.llp import autom, graph, lex, parser, syntax
+
     reload(autom)
     reload(lex)
     reload(syntax)
@@ -20,7 +22,7 @@ if __name__ == "__main__":
 
 from flagbear.const.prods import SYN_ARITH_PRODS, SYN_EXPR_PRODS
 from flagbear.llp.lex import Lexer
-from flagbear.llp.syntax import Production, LRItem, Syntaxer
+from flagbear.llp.syntax import LRItem, Production, Syntaxer
 
 
 # %%
@@ -41,7 +43,7 @@ def test_LRItem():
     ]
     lri = LRItem(productions[1])
     lri2 = LRItem(productions[2])
-    lris = list()
+    lris = []
     lri.register_all(lris)
     lri2.register_all(lris)
     assert lri.nsym == "expr"
@@ -80,8 +82,16 @@ def test_Syntaxer_arith():
     assert list(nonterms.keys()) == ["S", "expr"]
 
     terminals = syntaxer.terminals
-    assert terminals == {"INT", "FLOAT", "LPAR", "RPAR",
-                         "ADD", "SUB", "MUL", "DIV"}
+    assert terminals == {
+        "INT",
+        "FLOAT",
+        "LPAR",
+        "RPAR",
+        "ADD",
+        "SUB",
+        "MUL",
+        "DIV",
+    }
 
     syntaxer.find_nullables()
     nullables = syntaxer.nullables
@@ -117,6 +127,7 @@ def test_Syntaxer_arith():
 
 # %%
 def test_Syntaxer_nullable_arith():
+    # fmt: off
     productions = [
         ("S"        , ("expr", )                    , lambda x: x[0]            , 0     , "R"),
         ("expr"     , ("FLOAT", )                   , lambda x: x[0]            , 0     , "R"),
@@ -129,11 +140,12 @@ def test_Syntaxer_nullable_arith():
         ("expr"     , ("expr", "DIV", "expr")       , lambda x: x[0] / x[2]     , 2     , "L"),
         ("expr"     , ("LPAR", "expr", "RPAR")      , lambda x: x[1]            , 0     , "R"),
         ("eles"     , ()                            , lambda x: []              , 0     , "L"),
-        ("eles"     , ("expr", "COMMA")             , lambda x: [x[0], ]        , 0     , "L"),
+        ("eles"     , ("expr", "COMMA")             , lambda x: [x[0]]          , 0     , "L"),
         ("eles"     , ("expr", "COMMA", "expr")     , lambda x: [x[0], x[2]]    , 0     , "L"),
         ("eles"     , ("expr", "COMMA", "eles")     , lambda x: [x[0], *x[2]]   , 0     , "L"),
         ("expr"     , ("LBPAR", "eles", "RBPAR")    , lambda x: frozenset(x[1]) , 0     , "L"),
     ]
+    # fmt: on
     syntaxer = Syntaxer(productions)
     start, end = syntaxer.start, syntaxer.end
     lr_items = syntaxer.lr_items
@@ -142,9 +154,19 @@ def test_Syntaxer_nullable_arith():
     assert set(nonterms.keys()) == {"S", "expr", "eles"}
 
     terminals = syntaxer.terminals
-    assert terminals == {"INT", "FLOAT", "LPAR", "RPAR",
-                         "ADD", "SUB", "MUL", "DIV",
-                         "COMMA", "LBPAR", "RBPAR"}
+    assert terminals == {
+        "INT",
+        "FLOAT",
+        "LPAR",
+        "RPAR",
+        "ADD",
+        "SUB",
+        "MUL",
+        "DIV",
+        "COMMA",
+        "LBPAR",
+        "RBPAR",
+    }
 
     syntaxer.find_nullables()
     nullables = syntaxer.nullables
@@ -176,8 +198,10 @@ def test_Syntaxer_nullable_arith():
 def test_Syntaxer_expr():
     syntaxer = Syntaxer(SYN_EXPR_PRODS)
     exprs = [
-        ("{(2+4)*8+-1000*9+1-1.5, 9, {1, 3}, {}}",
-         "{(2+4)*8+-1000*9+1-1.5, 9, frozenset({1, 3}), frozenset({})}"),
+        (
+            "{(2+4)*8+-1000*9+1-1.5, 9, {1, 3}, {}}",
+            "{(2+4)*8+-1000*9+1-1.5, 9, frozenset({1, 3}), frozenset({})}",
+        ),
         "{(2+4)*8+-1000*9+1-1.5, 9}",
         "{(2+4)*8+-1000+9*22+-1000*9-22-1.5, 9}",
         "[1, 2, 3]",
@@ -187,8 +211,8 @@ def test_Syntaxer_expr():
         "1 in {1, 2}",
         "1+3 in {4, 5}",
         "[1, 2, 3][2]",
-        "\"abc\" + \"bc\"",
-        "\"1\" != 1",
+        '"abc" + "bc"',
+        '"1" != 1',
         "[1,]",
         "[1]",
         "--9",

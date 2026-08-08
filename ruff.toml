@@ -68,8 +68,12 @@ unfixable = []
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [lint.per-file-ignores]
-"tests/**/*.py" = [
+"**/tests/**/*.py" = [
     "S101",       # 允许 assert
+    "S108",       # 允许不安全的临时文件路径
+    "S301",       # 允许 pickle 反序列化
+    "S307",       # 允许 eval() 调用
+    "S324",       # 允许不安全的哈希函数（md5）
     "D",          # 测试文件不要求 docstring
     "ANN",        # 测试文件不要求类型标注
     "T20",        # 允许 print

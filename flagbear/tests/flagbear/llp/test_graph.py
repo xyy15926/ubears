@@ -8,42 +8,54 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
+
 if __name__ == "__main__":
     from importlib import reload
+
     from flagbear.llp import graph
+
     reload(graph)
-from flagbear.llp.graph import backward_update_traverse, backward_update_digraph
+from flagbear.llp.graph import (
+    backward_update_digraph,
+    backward_update_traverse,
+)
 
 
 # %%
 def gen_digraph():
     nodes = list(range(10))
-    links = ((0, (1, )),
-             (1, (2, 3)),
-             (2, (3, 4)),
-             (3, (5, 7, 8)),
-             (4, (6, )),
-             (6, (1, 2)),
-             (7, (1, 8)),
-             (8, (9, )))
+    links = (
+        (0, (1,)),
+        (1, (2, 3)),
+        (2, (3, 4)),
+        (3, (5, 7, 8)),
+        (4, (6,)),
+        (6, (1, 2)),
+        (7, (1, 8)),
+        (8, (9,)),
+    )
     return nodes, links
 
 
 # %%
 def test_backward_update_traverse():
     nodes, links = gen_digraph()
-    links = {i: j for i,j in links}
+    links = dict(links)
     initials = [{i} for i in nodes]
     node_ST = []
     mark_D = dict.fromkeys(nodes, 0)
     result_D = {}
     # Error
-    backward_update_traverse(0, nodes, node_ST, mark_D,
-                             lambda x: initials[x],
-                             lambda x: links.get(x, []),
-                             lambda x, y: x.update(y),
-                             result_D)
+    backward_update_traverse(
+        0,
+        nodes,
+        node_ST,
+        mark_D,
+        lambda x: initials[x],
+        lambda x: links.get(x, []),
+        lambda x, y: x.update(y),
+        result_D,
+    )
     assert result_D[0] == set(range(10))
     assert result_D[1] == set(range(1, 10))
     assert result_D[5] == {5}
@@ -58,7 +70,7 @@ def test_backward_update_traverse():
 
 def test_backward_update_traverse_max():
     nodes, links = gen_digraph()
-    links = {i: j for i,j in links}
+    links = dict(links)
     initials = [[i] for i in nodes]
     node_ST = []
     mark_D = dict.fromkeys(nodes, 0)
@@ -67,11 +79,16 @@ def test_backward_update_traverse_max():
     def update_F(x, y):
         x[0] = max(x[0], y[0])
 
-    backward_update_traverse(0, nodes, node_ST, mark_D,
-                             lambda x: initials[x],
-                             lambda x: links.get(x, []),
-                             update_F,
-                             result_D)
+    backward_update_traverse(
+        0,
+        nodes,
+        node_ST,
+        mark_D,
+        lambda x: initials[x],
+        lambda x: links.get(x, []),
+        update_F,
+        result_D,
+    )
 
     assert result_D[0] == [9]
     assert result_D[1] == [9]
@@ -90,12 +107,14 @@ def test_backward_update_traverse_max():
 
 def test_backward_update_digraph():
     nodes, links = gen_digraph()
-    links = {i: j for i,j in links}
+    links = dict(links)
     initials = [{i} for i in nodes]
-    result_D = backward_update_digraph(nodes,
-                                       lambda x: initials[x],
-                                       lambda x: links.get(x, []),
-                                       lambda x, y: x.update(y))
+    result_D = backward_update_digraph(
+        nodes,
+        lambda x: initials[x],
+        lambda x: links.get(x, []),
+        lambda x, y: x.update(y),
+    )
     assert result_D[0] == set(range(10))
     assert result_D[1] == set(range(1, 10))
     assert result_D[5] == {5}
@@ -106,7 +125,3 @@ def test_backward_update_digraph():
     assert result_D[3] is result_D[4]
     assert result_D[4] is result_D[6]
     assert result_D[6] is result_D[7]
-
-
-
-

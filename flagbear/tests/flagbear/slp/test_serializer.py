@@ -9,27 +9,32 @@
 
 # %%
 from __future__ import annotations
-import pytest
-import json
+
 import io
+import json
+
 import numpy as np
 import pandas as pd
+import pytest
 
 if __name__ == "__main__":
     import logging
+
     logging.basicConfig(level=logging.INFO, force=True)
     from importlib import reload
+
     from flagbear.slp import serializer
+
     reload(serializer)
 
 from flagbear.slp import serializer
-from flagbear.slp.serializer import serialize, deserialize
+from flagbear.slp.serializer import deserialize, serialize
 
 
 # %%
 def test_serializer_None_zero_bytes():
     for type_ in ["numpy", "pddf_csv", "pddf_feather", "pddf_parquet"]:
-        bytes_, type = serialize(None, type_)
+        bytes_, _ = serialize(None, type_)
         assert bytes_ == b""
         data = deserialize(b"", type_)
         assert data is None
@@ -48,18 +53,14 @@ def test_serialize_json():
     bytes_, type_ = serialize(dict_)
     assert type_ == "json"
     assert bytes_ == json.dumps(
-        dict_,
-        separators=(",", ":"),
-        ensure_ascii=False
+        dict_, separators=(",", ":"), ensure_ascii=False
     ).encode("utf8")
     assert dict_ == deserialize(bytes_, type_)
 
     list_ = [1, 2, "编译", 2.9]
     bytes_, type_ = serialize(list_)
     assert bytes_ == json.dumps(
-        list_,
-        separators=(",", ":"),
-        ensure_ascii=False
+        list_, separators=(",", ":"), ensure_ascii=False
     ).encode("utf8")
     assert list_ == deserialize(bytes_, type_)
 
@@ -90,23 +91,27 @@ def test_serialize_numpy_with_zlib():
 
 # %%
 def test_serialize_pddf_csv_and_pickle():
-    df = pd.DataFrame({
-        "a": [1, 2, 3],
-        "b": [1, 2.0, 3.0],
-        "c": ["c", "编译", "c"],
-        "d": [1, np.nan, 2],
-    })
+    df = pd.DataFrame(
+        {
+            "a": [1, 2, 3],
+            "b": [1, 2.0, 3.0],
+            "c": ["c", "编译", "c"],
+            "d": [1, np.nan, 2],
+        }
+    )
     bytes_, type_ = serialize(df)
     assert type_ == "pddf_feather"
     loaded = deserialize(bytes_, type_)
     pd.testing.assert_frame_equal(df, loaded)
 
-    df2 = pd.DataFrame({
-        "a": [1, 2, 3],
-        "b": [1, 2.0, 3.0],
-        "c": ["c", "编译", "c"],
-        "d": [1, np.nan, "d"],
-    })
+    df2 = pd.DataFrame(
+        {
+            "a": [1, 2, 3],
+            "b": [1, 2.0, 3.0],
+            "c": ["c", "编译", "c"],
+            "d": [1, np.nan, "d"],
+        }
+    )
     bytes_, type_ = serialize(df2)
     assert type_ == "pickle" or type_ == "pddf_feather"
     loaded = deserialize(bytes_, type_)

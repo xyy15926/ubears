@@ -12,18 +12,21 @@ import pytest
 
 if __name__ == "__main__":
     from importlib import reload
+
     from flagbear.slp import cache
+
     reload(cache)
     from flagbear.sched import protocols, task
+
     reload(protocols)
     reload(task)
 
-from flagbear.slp.cache import MemoryCache, CachePolicy, timedelta
-from flagbear.sched.task import(
+from flagbear.sched.task import (
+    TaskOnce,
     TaskProxy,
     task,
-    TaskOnce,
 )
+from flagbear.slp.cache import CachePolicy, MemoryCache, timedelta
 
 
 # %%
@@ -50,7 +53,7 @@ def test_TaskProxy():
     assert add2.execution_policy is None
 
     cache_policy = CachePolicy(None, timedelta(1), None)
-    add2.with_policy(name = "ak").with_policy(cache_policy = cache_policy)
+    add2.with_policy(name="ak").with_policy(cache_policy=cache_policy)
     assert add2.name == "ak"
     assert add2.cache_policy == cache_policy
     with pytest.raises(AttributeError):
@@ -68,7 +71,7 @@ def test_TaskOnce_from_func():
     def add(a, b, c, d):
         return a + b + c + d
 
-    add_fut = TaskOnce.from_func(add, (1, 2, 3, 4), {}, name = "add_new")
+    add_fut = TaskOnce.from_func(add, (1, 2, 3, 4), {}, name="add_new")
     assert add_fut.name == "add_new"
     assert add_fut.id_.startswith("add_new")
 
@@ -97,7 +100,7 @@ def test_TaskOnce_from_TaskProxy():
     assert len(failed) == 0
 
     pready, kready, unready, failed = mul_fut.resolve_args(cache)
-    assert pready == [1, ]
+    assert pready == [1]
     assert kready == {"d": 4}
     assert len(unready) == 1
     assert unready[0] == add_fut
