@@ -11,8 +11,10 @@
 from __future__ import annotations
 
 import logging
+
 import numpy as np
-from scipy.stats import kendalltau, contingency
+from scipy.stats import contingency, kendalltau
+
 # from IPython.core.debugger import set_trace
 
 # %%
@@ -104,7 +106,7 @@ def cal_lifts(
     pv: P-value of Kendall-tau.
     """
     assert x.ndim == 1 and y.ndim == 1
-    (ux, uy), ctab = contingency.crosstab(x, y)
+    (ux, _uy), ctab = contingency.crosstab(x, y)
     if acc_keys is not None:
         acc_keys = np.searchsorted(ux, acc_keys)
     return cal_lifts_from_ctab(ctab, acc_keys)
@@ -124,7 +126,6 @@ def cal_woes_from_ctab(ctab: np.ndarray) -> np.ndarray:
     woes: WOEs of each uniques.
     ivs: IVs of each uniques.
     """
-
     assert ctab.ndim == 2 and ctab.shape[1] == 2
 
     freqr = ctab / ctab.sum(axis=0, keepdims=True)
@@ -153,7 +154,7 @@ def cal_woes(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray]:
     ivs: IVs of each uniques.
     """
     assert x.ndim == 1 and y.ndim == 1
-    (ux, uy), ctab = contingency.crosstab(x, y)
+    (_ux, _uy), ctab = contingency.crosstab(x, y)
     return cal_woes_from_ctab(ctab)
 
 

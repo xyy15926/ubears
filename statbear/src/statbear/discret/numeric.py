@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import logging
+
 import numpy as np
 
 # %%
@@ -66,7 +67,7 @@ def std_outlier(
     outlier_map = np.full_like(arr, False, dtype=np.bool_)
     # Don't exclude current element when calculating mean and std.
     if not excluded:
-        for i in range(loops):
+        for _i in range(loops):
             in_arr = arr[~outlier_map]
             mean, std = np.nanmean(in_arr), np.nanstd(in_arr)
             _outlier_map = np.abs(arr - mean) >= (sigma_n * std)
@@ -76,7 +77,7 @@ def std_outlier(
             outlier_map |= _outlier_map
     # Exclude current element when calculating mean and std.
     else:
-        for i in range(loops):
+        for _i in range(loops):
             for idx in range(arr.shape[0]):
                 if outlier_map[idx] or np.isnan(arr[idx]):
                     continue

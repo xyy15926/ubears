@@ -12,9 +12,9 @@
 
 # %%
 from __future__ import annotations
-from typing import TypeVar, Any
 
 import logging
+
 import numpy as np
 
 from statbear.talib.overlap import ema, ma, sma
@@ -747,7 +747,7 @@ def stoch(
     SlowK: np.ndarray with preceding `fastk_period + slowk_period + slowd_period - 3` np.nan.
     SlowD: np.ndarray with preceding `fastk_period + slowk_period + slowd_period - 3` np.nan.
     """
-    fast_k, fast_d = stochf(
+    _fast_k, fast_d = stochf(
         high, low, close, fastk_period, slowk_period, slowk_matype
     )
 

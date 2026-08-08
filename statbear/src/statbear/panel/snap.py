@@ -3,22 +3,22 @@
 #   Name: snap.py
 #   Author: xyy15926
 #   Created: 2024-03-12 11:02:29
-#   Updated: 2026-04-03 15:13:53
+#   Updated: 2026-08-07 22:17:54
 #   Description:
 # ---------------------------------------------------------
 
 # %%
 from __future__ import annotations
-from typing import Any, TypeVar, TYPE_CHECKING
+
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import pandas as pd
 import logging
 import warnings
 from collections import deque
-from collections.abc import Callable, Iterator, Sequence, Container
-# from IPython.core.debugger import set_trace
 
+# from IPython.core.debugger import set_trace
 import numpy as np
 
 # %%
@@ -171,7 +171,7 @@ def snap_ovd(
         # set_trace()
         # Set initial values.
         if len(conti_recs) == 0:
-            if duei < len(dueds):
+            if duei < len(dueds):  # noqa: SIM108
                 ever_rema = das[duei] + ras[duei]
             else:
                 # No more valid records, so the last `rem_amt` will be kept
@@ -191,8 +191,8 @@ def snap_ovd(
                 conti_recs.append((duei, dued, repd, ovdd, duea, rema))
                 sconti_recs.append((duei, dued, repd, ovdd, duea, rema))
             else:
-                hduei, hdued, hrepd, hovdd, hduea, hrema = conti_recs[0]
-                tduei, tdued, trepd, tovdd, tduea, trema = conti_recs[-1]
+                _hduei, hdued, hrepd, hovdd, _hduea, _hrema = conti_recs[0]
+                _tduei, tdued, trepd, _tovdd, tduea, _trema = conti_recs[-1]
                 if hrepd < dued:
                     if tdued == trepd:
                         ever_ovdd = max(hovdd, ever_ovdd)
@@ -242,11 +242,11 @@ def snap_ovd(
             ever_ovda, ever_duea = np.zeros(amt_n), np.zeros(amt_n)
         else:
             # Check the last continuous overdued periods to update EVERs.
-            hduei, hdued, hrepd, hovdd, hduea, hrema = conti_recs[0]
-            tduei, tdued, trepd, tovdd, tduea, trema = conti_recs[-1]
+            _hduei, hdued, hrepd, hovdd, _hduea, _hrema = conti_recs[0]
+            _tduei, tdued, trepd, _tovdd, tduea, _trema = conti_recs[-1]
             # TODO: No-equal gap between obdates.
             ever_ovdd = max(min(hrepd, obd) - hdued, ever_ovdd)
-            if tdued == trepd or tdued == obd:
+            if tdued in (trepd, obd):
                 ever_ovdp = max(len(conti_recs) - 1, ever_ovdp)
                 va = np.sum([i[-2] for i in conti_recs], axis=0)
                 ever_ovda = np.max([va - tduea, ever_ovda], axis=0)
@@ -260,16 +260,15 @@ def snap_ovd(
             # Pop out records repayed before obdate.
             # TODO: No-equal gap may be solved here.
             while len(conti_recs) > 0 and conti_recs[0][2] <= obd:
-                hduei, hdued, hrepd, hovdd, hduea, hrema = conti_recs.popleft()
+                _hduei, hdued, hrepd, hovdd, _hduea, _hrema = (
+                    conti_recs.popleft()
+                )
                 ever_ovdd = max(hovdd, ever_ovdd)
 
         if len(sconti_recs) == 0:
             # As no post-effect from the fromer recoreds, just consider the
             # very next record will be fine.
-            if duei < len(dueds):
-                stop_rema = das[duei] + ras[duei]
-            else:
-                stop_rema = ras[-1]
+            stop_rema = das[duei] + ras[duei] if duei < len(dueds) else ras[-1]
             stop_ovdd, stop_ovdp = 0, 0
             stop_ovda, stop_duea = np.zeros(amt_n), np.zeros(amt_n)
         else:
@@ -295,7 +294,7 @@ def snap_ovd(
                 stop_ovda = va.copy()
                 stop_ovdp = len(sconti_recs)
                 # Check the if the last period is overdued.
-                if dued == repd or dued == obd:
+                if dued in (repd, obd):
                     stop_ovda -= duea
                     stop_ovdp -= 1
 
@@ -424,7 +423,7 @@ def ovdd_from_duepay_records(
         | 2022-11-28* |     |          |         | 31     | 17     | 20   | 0    |
         | inf*        |     |          |         | inf    | inf    | 0    | 0    |
 
-      Note:
+    Note:
       * last_dpd: Former overdue days that effects current period.
       * due_gap: Gap of days between two adjacent duepayment date.
       * ob_gap: Gap of days between two adjacent observation date.
@@ -689,17 +688,16 @@ def month_date(
         )
     elif isinstance(rule, int) and 1 <= rule <= 28:
         ob_date = due_date.astype("M8[M]") + np.timedelta64(rule - 1, "D")
-        if np.any(ob_date < due_date):
-            if forced:
-                logger.info(
-                    "Another month move forward to ensure the result "
-                    "succeed the given dates."
-                )
-                ob_date = (
-                    due_date.astype("M8[M]")
-                    + np.timedelta64(1, "M")
-                    + np.timedelta64(rule - 1, "D")
-                )
+        if np.any(ob_date < due_date) and forced:
+            logger.info(
+                "Another month move forward to ensure the result "
+                "succeed the given dates."
+            )
+            ob_date = (
+                due_date.astype("M8[M]")
+                + np.timedelta64(1, "M")
+                + np.timedelta64(rule - 1, "D")
+            )
     elif isinstance(rule, int) and 101 <= rule <= 128:
         ob_date = (
             due_date.astype("M8[M]")

@@ -13,12 +13,10 @@
 
 # %%
 from __future__ import annotations
-from typing import TypeVar, Any
 
 import logging
-import numpy as np
 
-from statbear.talib.overlap import ema, ma, sma
+import numpy as np
 
 # %%
 logging.basicConfig(
@@ -152,10 +150,7 @@ def candle_spec(
     }
 
     rg, man, ratio = settings[spec]
-    if man == 0:
-        ret = ratio * rgs[rg]
-    else:
-        ret = sma_excur(rgs[rg], man) * ratio
+    ret = ratio * rgs[rg] if man == 0 else sma_excur(rgs[rg], man) * ratio
 
     return ret
 
@@ -189,7 +184,7 @@ def belthold(
     BeltHold: np.ndarray filled with 0, 100, -100
     """
     if len(close) < 10:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {10}, "
             f"while only {len(close)} samples passed."
         )
@@ -236,7 +231,7 @@ def closing_marubozu(
     Closing Marubozu: np.ndarray filled with 0, 100, -100
     """
     if len(close) < 10:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {10}, "
             f"while only {len(close)} samples passed."
         )
@@ -282,7 +277,7 @@ def doji(
     Doji: np.ndarray filled with 0, 100
     """
     if len(close) < 10:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {10}, "
             f"while only {len(close)} samples passed."
         )
@@ -323,7 +318,7 @@ def dragonfly_doji(
     Dragonfly Doji: np.ndarray filled with 0, 100
     """
     if len(close) < 10:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {10}, "
             f"while only {len(close)} samples passed."
         )
@@ -368,7 +363,7 @@ def gravestone_doji(
     Gravestone Doji: np.ndarray filled with 0, 100, -100
     """
     if len(close) < 10:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {10}, "
             f"while only {len(close)} samples passed."
         )
@@ -416,7 +411,7 @@ def counter_attack(
     Counter Attack: np.ndarray filled with 0, 100, -100
     """
     if len(close) < 11:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {11}, "
             f"while only {len(close)} samples passed."
         )
@@ -477,7 +472,7 @@ def darkcloud_cover(
     DarkCloud Cover: np.ndarray filled with 0, -100
     """
     if len(close) < 11:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {11}, "
             f"while only {len(close)} samples passed."
         )
@@ -524,7 +519,7 @@ def doji_star(
     Doji Star: np.ndarray filled with 0, -100, 100
     """
     if len(close) < 11:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {11}, "
             f"while only {len(close)} samples passed."
         )
@@ -581,7 +576,7 @@ def engulfing(
     Engulfing: np.ndarray filled with 0, -100, 100
     """
     if len(close) < 2:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {2}, "
             f"while only {len(close)} samples passed."
         )
@@ -633,7 +628,7 @@ def hammer(
     Hammer: np.ndarray filled with 0, 100
     """
     if len(close) < 12:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {12}, "
             f"while only {len(close)} samples passed."
         )
@@ -687,7 +682,7 @@ def hangingman(
     Hangingman: np.ndarray filled with 0, -100
     """
     if len(close) < 12:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {12}, "
             f"while only {len(close)} samples passed."
         )
@@ -741,7 +736,7 @@ def crows2(
     2Crows: np.ndarray filled with 0, -100
     """
     if len(close) < 12:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {12}, "
             f"while only {len(close)} samples passed."
         )
@@ -798,7 +793,7 @@ def black_crows3(
     3 Black Crows: np.ndarray filled with 0, -100
     """
     if len(close) < 13:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {13}, "
             f"while only {len(close)} samples passed."
         )
@@ -861,7 +856,7 @@ def inside3(
     3 Inside: np.ndarray filled with 0, -100
     """
     if len(close) < 13:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {13}, "
             f"while only {len(close)} samples passed."
         )
@@ -920,7 +915,7 @@ def outside3(
     3 Outside: np.ndarray filled with 0, -100
     """
     if len(close) < 3:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {3}, "
             f"while only {len(close)} samples passed."
         )
@@ -976,7 +971,7 @@ def stars_insouth3(
     3 Stars In South: np.ndarray filled with 0, -100
     """
     if len(close) < 3:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {3}, "
             f"while only {len(close)} samples passed."
         )
@@ -1048,7 +1043,7 @@ def white_soldiers3(
     3 White Soldiers: np.ndarray filled with 0, -100
     """
     if len(close) < 3:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {3}, "
             f"while only {len(close)} samples passed."
         )
@@ -1120,7 +1115,7 @@ def line_strike3(
     2 Line Strike: np.ndarray filled with 0, -100
     """
     if len(close) < 14:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {14}, "
             f"while only {len(close)} samples passed."
         )
@@ -1196,7 +1191,7 @@ def conceal_baby_swall(
     Conceal Baby swall: np.ndarray filled with 0, -100
     """
     if len(close) < 14:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {14}, "
             f"while only {len(close)} samples passed."
         )
@@ -1259,7 +1254,7 @@ def abandoned_baby(
     Abandoned Baby: np.ndarray filled with 0, -100
     """
     if len(close) < 3:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {3}, "
             f"while only {len(close)} samples passed."
         )
@@ -1331,7 +1326,7 @@ def evening_doji_star(
     Evening Doji Star: np.ndarray filled with 0, -100
     """
     if len(close) < 3:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {3}, "
             f"while only {len(close)} samples passed."
         )
@@ -1391,7 +1386,7 @@ def evening_star(
     Evening Star: np.ndarray filled with 0, -100
     """
     if len(close) < 3:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {3}, "
             f"while only {len(close)} samples passed."
         )
@@ -1449,7 +1444,7 @@ def gap_side_side_white(
     Go Side Side White: np.ndarray filled with 0, -100
     """
     if len(close) < 7:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {7}, "
             f"while only {len(close)} samples passed."
         )
@@ -1514,7 +1509,7 @@ def break_away(
     Break Away: np.ndarray filled with 0, -100, 100
     """
     if len(close) < 3:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {3}, "
             f"while only {len(close)} samples passed."
         )
@@ -1597,7 +1592,7 @@ def advance_block(
     Advance Block: np.ndarray filled with 0, -100
     """
     if len(close) < 3:
-        logging.warning(
+        logger.warning(
             f"The number of samples should be larger than {3}, "
             f"while only {len(close)} samples passed."
         )

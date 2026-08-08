@@ -3,7 +3,7 @@
 #   Name: freqs.py
 #   Author: xyy15926
 #   Created: 2023-12-06 18:12:05
-#   Updated: 2024-01-17 21:15:30
+#   Updated: 2026-08-08 16:27:50
 #   Description: Module with functions handles 2-D NDA of frequencies.
 #
 # In most cases, the first parameters of the function in this module should be
@@ -19,6 +19,7 @@
 
 # %%
 from __future__ import annotations
+
 import logging
 import sys
 
@@ -46,6 +47,7 @@ def gropuby(
     *,
     pivot: bool = False,
 ) -> tuple:
+    """Group by keys and aggregate values."""
     pass
 
 
@@ -142,9 +144,13 @@ def _enhanced_freqs_1D(
     mask = np.empty(aux.size, dtype=np.bool_)
     mask[:1] = True
     mask[1:] = aux[1:] != aux[:-1]
+
+    # Get uniques of `arr`.
     unis = aux[mask]
 
-    where = np.concatenate(np.nonzero(mask) + ([mask.size],))
+    # Get index of uniques so to cut `auxo`.
+    # where = np.concatenate(np.nonzero(mask) + ([mask.size],))
+    where = [*np.nonzero(mask)[0], mask.size]
     auxo = others[perm]
     ret = np.vstack([agg(auxo[s:e]) for s, e in zip(where[:-1], where[1:])])
 
@@ -218,7 +224,8 @@ def _enhanced_freqs_2D(
     # Set the aggregation result.
     auxo = others[perm]
     ret = np.full((unisr.size, unisc.size), np.nan)
-    where = np.concatenate(np.nonzero(mask) + ([mask.size],))
+    # where = np.concatenate(np.nonzero(mask) + ([mask.size],))
+    where = [*np.nonzero(mask)[0], mask.size]
     for start, end in zip(where[:-1], where[1:]):
         r = np.searchsorted(unisr, aux[start, 0])
         c = np.searchsorted(unisc, aux[start, 1])

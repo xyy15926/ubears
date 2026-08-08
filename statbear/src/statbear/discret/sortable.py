@@ -9,6 +9,7 @@
 
 # %%
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -18,8 +19,8 @@ import logging
 import numpy as np
 from scipy.stats import contingency
 from sklearn.tree import DecisionTreeClassifier
-# from IPython.core.debugger import set_trace
 
+# from IPython.core.debugger import set_trace
 from statbear.panel.freqs import chi_pairwisely
 
 # %%
@@ -52,7 +53,8 @@ def tree_cut(
     """Cut sortable into bins with DecisionTreeClassifier.
 
     Cut `x` into `n_bins` by DescisionTreeClassifier with gini as criterion.
-    NOTE:
+
+    Note:
     1. Bins with frequency smaller than `freq_min` will be merged before
       considering Chi-stat.
 
@@ -148,7 +150,7 @@ def chimerge_cut(
     minimum Chi will be merged together until distributions of `y` in
     different bins differ obviously.
 
-    NOTE:
+    Note:
     1. Adjacent bins with straight zeros for one type  will be merged before
       considering Chi-stat. And no minimum frequency will be applied to bins
       as we just try to merge bins instead of chisquare-test, so the
@@ -188,7 +190,7 @@ def chimerge_cut(
     ctab: Cross table of final bins.
     """
     assert x.ndim == 1 and y.ndim == 1
-    (unis_x, unis_y), ctab = contingency.crosstab(x, y)
+    (unis_x, _unis_y), ctab = contingency.crosstab(x, y)
     bin_edges = np.array([*unis_x, unis_x[-1]])
 
     # Merge adjacent zeros in cross table or expected frequencies can't be

@@ -12,9 +12,9 @@
 
 # %%
 from __future__ import annotations
-from typing import TypeVar, Any
 
 import logging
+
 import numpy as np
 
 # %%
@@ -204,7 +204,7 @@ def ema(
     close: np.ndarray,
     timeperiod: int = 30,
     *,
-    K: float = None,
+    K: float | None = None,
 ) -> np.ndarray:
     """Exponential moving average.
 
@@ -635,10 +635,12 @@ def sar_ext(
 
 
 # %%
-def ht_trendline(close):
+def ht_trendline(close: np.ndarray) -> np.ndarray:
+    """Hilbert Transform - Trendline."""
     pass
 
 
 # %%
-def mama(close):
+def mama(close: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """MESA Adaptive Moving Average."""
     pass
