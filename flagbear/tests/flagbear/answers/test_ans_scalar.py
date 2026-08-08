@@ -46,7 +46,7 @@ def test_poly_eval():
     assert poly_eval(p, x) == ret
 
 
-def russian_mul():
+def test_russian_mul():
     assert russian_mul(24324, 243234) == 24324 * 243234
 
 

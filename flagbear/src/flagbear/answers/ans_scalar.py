@@ -79,7 +79,7 @@ def russian_mul(x: int, y: int):
     sum=130+1040+2080=3205
     """
     ans = 0
-    while x > 1:
+    while x > 0:
         if x & 1 == 1:
             ans += y
         x >>= 1

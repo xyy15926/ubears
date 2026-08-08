@@ -54,6 +54,7 @@ class NDABundle(DataBundle):
     def dumps_data(self):
         return self.data.dumps()
 
+    @staticmethod
     def loads_data(bytes_, metadata=None):
         return pickle.loads(bytes_)
 
