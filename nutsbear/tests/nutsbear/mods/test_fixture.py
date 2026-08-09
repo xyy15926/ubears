@@ -10,33 +10,39 @@
 
 # %%
 import pytest
-import numpy as np
 import torch
 import torch.nn.functional as F
 
 if __name__ == "__main__":
     from importlib import reload
+
     from nutsbear.mods import fixture
+
     reload(fixture)
 
 from nutsbear.mods.fixture import (
-    fkwargs_32_cpu,
-    fkwargs_64_cpu,
-    fkwargs_32_dml,
-    fkwargs_64_dml,
     all_close,
+    fkwargs_32_cpu,
+    fkwargs_32_dml,
+    fkwargs_64_cpu,
+    fkwargs_64_dml,
     ssoftmax,
 )
 
 if fkwargs_32_dml:
     torch_fkwargs_params = [fkwargs_64_cpu, fkwargs_32_dml]
 else:
-    torch_fkwargs_params = [fkwargs_64_cpu, ]
+    torch_fkwargs_params = [fkwargs_64_cpu]
+
+
 @pytest.fixture(params=torch_fkwargs_params)
 def torch_fkwargs(request):
     return request.param
+
+
 # torch_fkwargs = fkwargs_32_dml
 # torch_fkwargs = fkwargs_64_cpu
+
 
 # %%
 def test_all_close():
@@ -72,9 +78,11 @@ def test_ssoftmax(torch_fkwargs):
         assert torch.all(torch.isclose(ret1, ret2))
 
     # Check all-NInf input.
+    # fmt: off
     addup = torch.tensor([[float("-inf"), 0, 0, 0],
                           [0, 0, 0, 0],
                           [0, 0, 0, 0]], **torch_fkwargs)
+    # fmt: on
     inp = ori + addup
     for dim in (1, 2):
         ret1 = F.softmax(inp, dim)
@@ -98,5 +106,3 @@ def test_ssoftmax(torch_fkwargs):
     loss = ssoftmax(inp, 0).sum()
     loss.backward()
     assert all_close(ret2[:, 0, 0], 0.0)
-
-

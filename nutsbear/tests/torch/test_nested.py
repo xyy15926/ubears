@@ -9,19 +9,23 @@
 
 # %%
 import pytest
-from pytest import mark
-from packaging.version import Version
 import torch
+from packaging.version import Version
+from pytest import mark
 from torch import nested
-from torch.nn import functional as F
-from torch.nested._internal import sdpa
 from torch.backends.cuda import SDPAParams
+from torch.nested._internal import sdpa
+from torch.nn import functional as F
 
 
 # %%
-@pytest.mark.skipif(Version(torch.__version__) <= Version("2.7"),
-                    reason="Nested-Tensor behavior isn't decided yet.")
-@mark.filterwarnings("ignore: .*PyTorch API of nested tensors is in prototype.*")
+@pytest.mark.skipif(
+    Version(torch.__version__) <= Version("2.7"),
+    reason="Nested-Tensor behavior isn't decided yet.",
+)
+@mark.filterwarnings(
+    "ignore: .*PyTorch API of nested tensors is in prototype.*"
+)
 def test_scaled_dot_product_attention_njt():
     # 1. The size of last dimension must be 8n.
     query = torch.randn(3, 4, 8, dtype=torch.float64)
@@ -33,15 +37,30 @@ def test_scaled_dot_product_attention_njt():
         #   regarded as the dim-1 for 3D Tensor.
         # (bsz, slen, dim) => (bsz, slen, heads_n, qsz)
         # (3, 4, 8) => (3, j2, 8) => (3, j2, 1, 8)
-        query = nested.narrow(
-            query, dim=1, start=0, length=qlens, layout=torch.jagged
-        ).contiguous().unflatten(-1, (-1, 8)).transpose(2, 1)
-        key = nested.narrow(
-            key, dim=1, start=0, length=kvlens, layout=torch.jagged
-        ).contiguous().unflatten(-1, (-1, 8)).transpose(2, 1)
-        value = nested.narrow(
-            value, dim=1, start=0, length=kvlens, layout=torch.jagged
-        ).contiguous().unflatten(-1, (-1, 8)).transpose(2, 1)
+        query = (
+            nested.narrow(
+                query, dim=1, start=0, length=qlens, layout=torch.jagged
+            )
+            .contiguous()
+            .unflatten(-1, (-1, 8))
+            .transpose(2, 1)
+        )
+        key = (
+            nested.narrow(
+                key, dim=1, start=0, length=kvlens, layout=torch.jagged
+            )
+            .contiguous()
+            .unflatten(-1, (-1, 8))
+            .transpose(2, 1)
+        )
+        value = (
+            nested.narrow(
+                value, dim=1, start=0, length=kvlens, layout=torch.jagged
+            )
+            .contiguous()
+            .unflatten(-1, (-1, 8))
+            .transpose(2, 1)
+        )
 
         return query, key, value
 

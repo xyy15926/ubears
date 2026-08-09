@@ -10,31 +10,36 @@
 # %%
 import pytest
 import torch
+
 if __name__ == "__main__":
     from importlib import reload
-    from nutsbear.mods import fixture
+
     from nutsbear.demos import deepfm
+    from nutsbear.mods import fixture
+
     reload(fixture)
     reload(deepfm)
 
-from nutsbear.mods.fixture import (
-    fkwargs_32_cpu,
-    fkwargs_64_cpu,
-    fkwargs_32_dml,
-    fkwargs_64_dml,
-    all_close,
-)
 from nutsbear.demos.deepfm import DeepFM
+from nutsbear.mods.fixture import (
+    fkwargs_32_dml,
+    fkwargs_64_cpu,
+)
+
 torch.autograd.set_detect_anomaly(False)
 
 # %%
 if fkwargs_32_dml:
     torch_fkwargs_params = [fkwargs_64_cpu, fkwargs_32_dml]
 else:
-    torch_fkwargs_params = [fkwargs_64_cpu, ]
+    torch_fkwargs_params = [fkwargs_64_cpu]
+
+
 @pytest.fixture(params=torch_fkwargs_params)
 def torch_fkwargs(request):
     return request.param
+
+
 # torch_fkwargs = fkwargs_32_dml
 # torch_fkwargs = fkwargs_64_cpu
 
@@ -45,12 +50,14 @@ def mock_ctr(
     sample_n: int = 100,
     sparse_n: int = 4,
     dense_n: int = 5,
-    device: str = None,
-    dtype: str = None,
+    device: str | None = None,
+    dtype: str | None = None,
 ):
     factory_kwargs = {"device": device, "dtype": dtype}
     inp_idx = torch.randint(
-        0, fea_catn, (sample_n, sparse_n + dense_n),
+        0,
+        fea_catn,
+        (sample_n, sparse_n + dense_n),
         device=device,
     )
     inp_idx[:, sparse_n:] = 0
@@ -66,7 +73,7 @@ def test_DeepFM(torch_fkwargs):
     sparse_n, dense_n = 4, 5
     sample_n = 100
     fea_catn = 5
-    inp_idx, inp_val, label = mock_ctr(
+    inp_idx, inp_val, _label = mock_ctr(
         fea_catn,
         sample_n,
         sparse_n,

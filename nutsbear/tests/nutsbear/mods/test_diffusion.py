@@ -9,49 +9,51 @@
 
 # %%
 import pytest
-import numpy as np
 import torch
-from torch import nn, optim
-from torch.nn import functional as F
-from torch.utils.data import DataLoader, Dataset, Subset
-from torchvision import datasets
+
 # https://pytorch.org/blog/extending-torchvisions-transforms-to-object-detection-segmentation-and-video-tasks/#the-new-transforms-api
 import torchvision.transforms.v2 as transforms
+from torch import nn, optim
+from torch.nn import functional as F
+from torch.utils.data import DataLoader
+from torchvision import datasets
 from torchvision.utils import save_image
-from PIL import Image
 
 if __name__ == "__main__":
     from importlib import reload
-    from nutsbear.mods import fixture, posemb, diffusion
-    from nutsbear.demos import unet
+
     from nutsbear import trainer
+    from nutsbear.demos import unet
+    from nutsbear.mods import diffusion, fixture, posemb
+
     reload(fixture)
     reload(trainer)
     reload(unet)
     reload(diffusion)
     reload(posemb)
 
-from nutsbear.mods.fixture import (
-    fkwargs_32_cpu,
-    fkwargs_64_cpu,
-    fkwargs_32_dml,
-    fkwargs_64_dml,
-    all_close,
-)
-from flagbear.slp.finer import get_tmp_path, get_assets_path, tmp_file
-from nutsbear.trainer import Trainer
-from nutsbear.demos.unet import DoubleConv, UNetDown, UNetUp, UNet
-from nutsbear.mods.posemb import SinPE
+from flagbear.slp.finer import get_assets_path, tmp_file
+from nutsbear.demos.unet import DoubleConv, UNetDown, UNetUp
 from nutsbear.mods.diffusion import GaussianDiffusion
+from nutsbear.mods.fixture import (
+    fkwargs_32_dml,
+    fkwargs_64_cpu,
+)
+from nutsbear.mods.posemb import SinPE
+from nutsbear.trainer import Trainer
 
 # %%
 if fkwargs_32_dml:
     torch_fkwargs_params = [fkwargs_64_cpu, fkwargs_32_dml]
 else:
-    torch_fkwargs_params = [fkwargs_64_cpu, ]
+    torch_fkwargs_params = [fkwargs_64_cpu]
+
+
 @pytest.fixture(params=torch_fkwargs_params)
 def torch_fkwargs(request):
     return request.param
+
+
 # torch_fkwargs = fkwargs_32_dml
 # torch_fkwargs = fkwargs_64_cpu
 
@@ -63,13 +65,12 @@ class UNetCond(nn.Module):
         cin: int,
         cout: int,
         bilinear: bool = False,
-        class_n: int = None,
+        class_n: int | None = None,
         embed_sz: int = 8,
-        device: str = None,
-        dtype: str = None,
+        device: str | None = None,
+        dtype: str | None = None,
     ):
-        """UNet initialization.
-        """
+        """UNet initialization."""
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
         self.cin = cin
@@ -114,7 +115,7 @@ class UNetCond(nn.Module):
         tsteps: [bsz,]
         label: [bsz, ]
         """
-        bsz, esz, *____ = inp.size()
+        _bsz, _esz, *____ = inp.size()
         # Apply (position) embedding for `tsteps` and labels to add the
         # infomation of the label and noise to the image.
         temb = self.tsinpe.get_pe(tsteps, self.embed_sz, device=inp.device)
@@ -142,12 +143,14 @@ class UNetCond(nn.Module):
 # %%
 @pytest.mark.skip(reason="Time consuming.")
 def test_DDPM(torch_fkwargs):
-    device, dtype = torch_fkwargs["device"], torch_fkwargs["dtype"]
-    transform = transforms.Compose([
-        transforms.ToImage(),
-        transforms.ToDtype(torch.float32, scale=True),
-        transforms.Normalize([0.5,], [0.5,]),
-    ])
+    device, _dtype = torch_fkwargs["device"], torch_fkwargs["dtype"]
+    transform = transforms.Compose(
+        [
+            transforms.ToImage(),
+            transforms.ToDtype(torch.float32, scale=True),
+            transforms.Normalize([0.5], [0.5]),
+        ]
+    )
     mnist = datasets.MNIST(
         get_assets_path() / "images",
         train=True,
@@ -187,10 +190,12 @@ def test_DDPM(torch_fkwargs):
         x, y = next(iter(train_loader))
         x = x.to(device)
         y = y.to(device)
-        xs = [x,]
+        xs = [
+            x,
+        ]
         # Add noise and denoise.
         for n in range(10, 101, 10):
-            xn, zt = ddpm.addnoise(x, n)
+            xn, _zt = ddpm.addnoise(x, n)
             xs.append(xn)
             xd = ddpm.denoise(unetm, xn, n, y)
             xs.append(xd)

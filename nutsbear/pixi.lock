@@ -390,7 +390,7 @@ packages:
 - pypi: ../flagbear
   name: flagbear
   version: 0.1.1
-  sha256: 0ae72ba8cdcd8790c5507c2f2c7bd894290c0e4b87c2747d934d9275394be42a
+  sha256: 5f2406c7adef3b33ac522c444add6283f59a06371017d25626e66cec57d6abba
   requires_python: '>=3.10'
   editable: true
 - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/d5/1f/5f4a3cd9e4440e9d9bc78ad0a91a1c8d46b4d429d5239ebe6793c9fe5c41/fsspec-2026.3.0-py3-none-any.whl
@@ -1166,7 +1166,7 @@ packages:
 - pypi: ./
   name: nutsbear
   version: 0.1.1
-  sha256: e6a48092d4931867d9b05cb3ad967298559e6ad846a4826b67acd9acf5fa0ac4
+  sha256: f9e7be72f2047f22b86afd85db53b32309173cb694c66ba24fef77d84eb5a68d
   requires_dist:
   - flagbear
   - numpy>=2.0,<3.0

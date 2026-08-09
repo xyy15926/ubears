@@ -9,28 +9,28 @@
 
 # %%
 import pytest
-from pytest import mark
-from packaging.version import Version
 import torch
+from packaging.version import Version
 from torch import nn, optim
 from torch.nn import functional as F
 
 if __name__ == "__main__":
     from importlib import reload
-    from nutsbear.mods import fixture
-    from nutsbear.mods import attention
+
+    from nutsbear.mods import attention, fixture
+
     reload(fixture)
     reload(attention)
 
-from nutsbear.mods.fixture import (
-    fkwargs_32_cpu,
-    fkwargs_64_cpu,
-    fkwargs_32_dml,
-    fkwargs_64_dml,
-    all_close,
-)
 from nutsbear.mods.attention import (
     MultiheadAttention,
+)
+from nutsbear.mods.fixture import (
+    all_close,
+    fkwargs_32_cpu,
+    fkwargs_32_dml,
+    fkwargs_64_cpu,
+    fkwargs_64_dml,
 )
 
 torch.autograd.set_detect_anomaly(False)
@@ -70,6 +70,7 @@ def test_F_scaled_dot_product_attention_is_causal_3D_4D():
     value = torch.randn(3, 6, 8, **fkwargs_32_cpu)
 
     key_padding_mask = torch.randint(0, 2, (3, 6)).to(torch.bool)
+    # fmt: off
     key_padding_mask = torch.tensor([
         [0, 0, 0, 0, 0, 0],
         [1, 1, 0, 1, 1, 1],
@@ -82,18 +83,18 @@ def test_F_scaled_dot_product_attention_is_causal_3D_4D():
         [1, 1, 0, 0, 1, 1],
         [1, 1, 0, 1, 1, 1],
     ]).to(torch.bool).logical_not()
+    # fmt: on
 
     mask = MultiheadAttention.merge_masks(
-        key_padding_mask,
-        attn_mask,
-        False,
-        query
+        key_padding_mask, attn_mask, False, query
     )
     # 1. `F.scaled_dot_product_attention` will raise error for
     #   3D-QKV when `attn_mask` and `is_causal` is provided together.
     with pytest.raises(RuntimeError):
         fret = F.scaled_dot_product_attention(
-            query, key, value,
+            query,
+            key,
+            value,
             attn_mask=mask,
             is_causal=True,
         )
@@ -104,12 +105,16 @@ def test_F_scaled_dot_product_attention_is_causal_3D_4D():
     value = value.unsqueeze(1)
     mask = mask.unsqueeze(1)
     fret_ = F.scaled_dot_product_attention(
-        query, key, value,
+        query,
+        key,
+        value,
         attn_mask=mask,
         is_causal=False,
     )
     fret = F.scaled_dot_product_attention(
-        query, key, value,
+        query,
+        key,
+        value,
         attn_mask=mask,
         is_causal=True,
     )
@@ -123,7 +128,9 @@ def test_F_scaled_dot_product_attention_is_causal_3D_4D():
         value = value.to(**fkwargs_32_dml)
         with pytest.raises(RuntimeError):
             fret = F.scaled_dot_product_attention(
-                query, key, value,
+                query,
+                key,
+                value,
                 attn_mask=mask.to(fkwargs_32_dml["device"]),
                 is_causal=True,
             )
@@ -138,12 +145,14 @@ def test_F_scaled_dot_product_attention_all_ninf():
     # attn_mask = torch.randint(0, 2, (4, 6)).to(torch.bool)
     # attn_mask[0, :] = False
     # attn_mask[:, 0] = False
+    # fmt: off
     attn_mask = torch.tensor([
         [0, 0, 0, 0, 0, 0],
         [1, 1, 0, 1, 1, 1],
         [1, 1, 0, 0, 1, 1],
         [1, 1, 0, 1, 1, 1],
     ]).to(torch.bool)
+    # fmt: on
 
     foutp = F.scaled_dot_product_attention(
         query,
@@ -201,33 +210,43 @@ def test_nn_MultiHeadAttention_is_causal_hint():
 
     # Forward with causal attention-mask.
     # 1. `is_causal` in `nn.MultiheadAttention` is just a hint and
-    nnattn, nnw = nnmha(
-        query, key, value,
+    nnattn, _nnw = nnmha(
+        query,
+        key,
+        value,
         attn_mask=attn_mask,
         need_weights=False,
-        is_causal=False
+        is_causal=False,
     )
-    nnattn_, nnw_ = nnmha(
-        query, key, value,
+    nnattn_, _ = nnmha(
+        query,
+        key,
+        value,
         attn_mask=attn_mask,
         need_weights=False,
-        is_causal=True
+        is_causal=True,
     )
     assert not all_close(nnattn, nnattn_, 1, 1)
 
     # 2. `nn.MultiheadAttention`(and `F.multi_head_attention_foward`) may
     #   ignore `is_causal` if `attn_mask` is set in non-flash-SDPA cases,
     #   for`need_weights=True` for example.
-    nnattn, nnw = nnmha(
-        query, key, value,
+    nnattn, _nnw = nnmha(
+        query,
+        key,
+        value,
         attn_mask=attn_mask,
         need_weights=True,
-        is_causal=False)
-    nnattn_, nnw_ = nnmha(
-        query, key, value,
+        is_causal=False,
+    )
+    nnattn_, _ = nnmha(
+        query,
+        key,
+        value,
         attn_mask=attn_mask,
         need_weights=True,
-        is_causal=True)
+        is_causal=True,
+    )
     assert all_close(nnattn, nnattn_)
 
 
@@ -242,7 +261,9 @@ def test_nn_MultiHeadAttention_all_ninf():
     key_padding_mask = torch.randint(0, 2, (3, 6)).to(torch.bool)
     key_padding_mask[0, :] = True
     nnattn, nnw = nnmha(
-        query, key, value,
+        query,
+        key,
+        value,
         key_padding_mask=key_padding_mask,
         # need_weights=True,
     )
@@ -254,7 +275,9 @@ def test_nn_MultiHeadAttention_all_ninf():
     # -----------------------------------------------------------------
     if Version(torch.__version__) < Version("2.7"):
         nnattn, nnw = nnmha(
-            query, key, value,
+            query,
+            key,
+            value,
             key_padding_mask=key_padding_mask,
             need_weights=False,
         )
@@ -265,7 +288,9 @@ def test_nn_MultiHeadAttention_all_ninf():
     # and backward process just like `F.scaled_dot_product_attention`.
     else:
         nnattn, nnw = nnmha(
-            query, key, value,
+            query,
+            key,
+            value,
             key_padding_mask=key_padding_mask,
             need_weights=False,
         )
@@ -276,7 +301,9 @@ def test_nn_MultiHeadAttention_all_ninf():
     attn_mask = torch.randint(0, 2, (4, 6)).to(torch.bool)
     attn_mask[0, :] = True
     nnattn, nnw = nnmha(
-        query, key, value,
+        query,
+        key,
+        value,
         attn_mask=attn_mask,
         # need_weights=True,
     )
@@ -288,7 +315,9 @@ def test_nn_MultiHeadAttention_all_ninf():
     # -----------------------------------------------------------------
     if Version(torch.__version__) < Version("2.7"):
         nnattn, nnw = nnmha(
-            query, key, value,
+            query,
+            key,
+            value,
             attn_mask=attn_mask,
             need_weights=False,
         )
@@ -299,7 +328,9 @@ def test_nn_MultiHeadAttention_all_ninf():
     # and backward process just like `F.scaled_dot_product_attention`.
     else:
         nnattn, nnw = nnmha(
-            query, key, value,
+            query,
+            key,
+            value,
             attn_mask=attn_mask,
             need_weights=False,
         )
@@ -326,6 +357,7 @@ def test_nn_MultiHeadAttention_all_ninf_backward_grad():
 
     # Set mask with a query with all key masked.
     key_padding_mask = torch.randint(0, 2, (3, 6)).to(torch.bool)
+    # fmt: off
     key_padding_mask = torch.tensor([
         [0, 0, 0, 0, 0, 0],
         [1, 1, 0, 1, 1, 1],
@@ -338,6 +370,7 @@ def test_nn_MultiHeadAttention_all_ninf_backward_grad():
         [1, 1, 0, 0, 1, 1],
         [1, 1, 0, 1, 1, 1],
     ]).to(torch.bool).logical_not()
+    # fmt: on
 
     # `nn.MultiheadAttention` will return NaN in attention result and NaN in
     # `.grad` for the query with all key masked if `need_weights` is set,
@@ -346,8 +379,10 @@ def test_nn_MultiHeadAttention_all_ninf_backward_grad():
     # `F.scaled_dot_product_attention`
     # as `F.softmax` will return NaN for all NInf.
     query, key, value, sgd = _grad_data()
-    nnattn, nnw = nnmha(
-        query, key, value,
+    nnattn, _nnw = nnmha(
+        query,
+        key,
+        value,
         key_padding_mask=key_padding_mask,
         attn_mask=attn_mask,
         need_weights=True,
@@ -367,8 +402,10 @@ def test_nn_MultiHeadAttention_all_ninf_backward_grad():
     # Version-based branches:
     # -----------------------------------------------------------------
     query, key, value, sgd = _grad_data()
-    nnattn, nnw = nnmha(
-        query, key, value,
+    nnattn, _nnw = nnmha(
+        query,
+        key,
+        value,
         key_padding_mask=key_padding_mask,
         attn_mask=attn_mask,
         need_weights=False,
@@ -405,8 +442,8 @@ def test_nn_MultiHeadAttention_all_ninf_backward_grad():
 def test_nn_TransformerEncoderLayer_all_ninf():
     bsz, slen, tlen, mlen = 3, 4, 6, 4
     src = torch.randn(bsz, slen, 8, dtype=torch.float32)
-    tgt = torch.randn(bsz, tlen, 8, dtype=torch.float32)
-    mem = torch.randn(bsz, mlen, 8, dtype=torch.float32)
+    torch.randn(bsz, tlen, 8, dtype=torch.float32)
+    torch.randn(bsz, mlen, 8, dtype=torch.float32)
 
     nntel = nn.TransformerEncoderLayer(8, 2, 16, 0, batch_first=True)
     src_mask = torch.randint(0, 2, (slen, slen)).to(torch.bool)

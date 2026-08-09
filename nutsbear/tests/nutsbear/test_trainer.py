@@ -8,14 +8,16 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
 import torch
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, TensorDataset
+
 if __name__ == "__main__":
     from importlib import reload
-    from nutsbear.demos import deepfm
+
     from nutsbear import trainer
+    from nutsbear.demos import deepfm
+
     reload(deepfm)
     reload(trainer)
 

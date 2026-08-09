@@ -9,36 +9,35 @@
 
 # %%
 import pytest
-import numpy as np
 import torch
-from torch import nn, optim
-from torch.nn import functional as F
-from torch.utils.data import DataLoader, Dataset
-from torchvision import datasets
+
 # https://pytorch.org/blog/extending-torchvisions-transforms-to-object-detection-segmentation-and-video-tasks/#the-new-transforms-api
 import torchvision.transforms.v2 as transforms
-from torchvision.utils import save_image
 from PIL import Image
+from torch import optim
+from torch.nn import functional as F
+from torch.utils.data import DataLoader, Dataset
+from torchvision.utils import save_image
 
 if __name__ == "__main__":
     from importlib import reload
-    from nutsbear.mods import fixture
-    from nutsbear.demos import unet
+
     from nutsbear import trainer
+    from nutsbear.demos import unet
+    from nutsbear.mods import fixture
+
     reload(fixture)
     reload(unet)
     reload(trainer)
 
+from flagbear.slp.finer import get_assets_path, tmp_file
+from nutsbear.demos.unet import UNet
 from nutsbear.mods.fixture import (
     fkwargs_32_cpu,
-    fkwargs_64_cpu,
     fkwargs_32_dml,
-    fkwargs_64_dml,
-    all_close,
+    fkwargs_64_cpu,
 )
-from nutsbear.demos.unet import UNet
 from nutsbear.trainer import Trainer
-from flagbear.slp.finer import get_tmp_path, get_assets_path, tmp_file
 
 torch.autograd.set_detect_anomaly(False)
 
@@ -47,17 +46,21 @@ torch.autograd.set_detect_anomaly(False)
 if fkwargs_32_dml:
     torch_fkwargs_params = [fkwargs_64_cpu, fkwargs_32_dml]
 else:
-    torch_fkwargs_params = [fkwargs_64_cpu, ]
+    torch_fkwargs_params = [fkwargs_64_cpu]
+
+
 @pytest.fixture(params=torch_fkwargs_params)
 def torch_fkwargs(request):
     return request.param
+
+
 # torch_fkwargs = fkwargs_32_dml
 # torch_fkwargs = fkwargs_64_cpu
 
 
 # %%
 class ISBIImageDataset(Dataset):
-    def __init__(self, path:str, transform=None):
+    def __init__(self, path: str, transform=None):
         images = get_assets_path() / path / "train/image"
         labels = get_assets_path() / path / "train/label"
         self.images = list(images.iterdir())
@@ -81,13 +84,15 @@ class ISBIImageDataset(Dataset):
 # %%
 @pytest.mark.skip(reason="Time consuming.")
 def test_unet(torch_fkwargs):
-    device, dtype = torch_fkwargs["device"], torch_fkwargs["dtype"]
-    transform = transforms.Compose([
-        transforms.ToImage(),
-        transforms.ToDtype(torch.float32, scale=True),
-        transforms.RandomHorizontalFlip(p=0.5),
-        transforms.RandomVerticalFlip(p=0.5),
-    ])
+    _device, _dtype = torch_fkwargs["device"], torch_fkwargs["dtype"]
+    transform = transforms.Compose(
+        [
+            transforms.ToImage(),
+            transforms.ToDtype(torch.float32, scale=True),
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomVerticalFlip(p=0.5),
+        ]
+    )
     train_dataset = ISBIImageDataset(
         path="ISBI",
         transform=transform,

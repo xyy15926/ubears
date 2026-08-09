@@ -8,8 +8,9 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
 import time
+
+import pytest
 
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -19,11 +20,13 @@ DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 @pytest.fixture(scope="session", autouse=False)
 def time_session_scope():
     start = time.time()
-    print("\nStart: {}".format(time.strftime(DATE_FORMAT, time.localtime(start))))
+    print(
+        f"\nStart: {time.strftime(DATE_FORMAT, time.localtime(start))}"
+    )
     yield
     end = time.time()
-    print("\nEnd: {}".format(time.strftime(DATE_FORMAT, time.localtime(end))))
-    print("Total time cost: {:0.3f}s".format(end - start))
+    print(f"\nEnd: {time.strftime(DATE_FORMAT, time.localtime(end))}")
+    print(f"Total time cost: {end - start:0.3f}s")
 
 
 @pytest.fixture(scope="function", autouse=False)
@@ -31,4 +34,4 @@ def time_function_scope():
     start = time.time()
     yield
     end = time.time()
-    print("\nTime cost: {:0.3f}s".format(end - start))
+    print(f"\nTime cost: {end - start:0.3f}s")

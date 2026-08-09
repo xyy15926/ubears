@@ -9,23 +9,23 @@
 
 # %%
 import pytest
-from pytest import mark
-from packaging.version import Version
 import torch
-from torch import nn, optim
-from torch.nn import functional as F
+from pytest import mark
+from torch import nn
 
 if __name__ == "__main__":
     from importlib import reload
+
     from nutsbear.mods import fixture
+
     reload(fixture)
 
 from nutsbear.mods.fixture import (
-    fkwargs_32_cpu,
-    fkwargs_64_cpu,
-    fkwargs_32_dml,
-    fkwargs_64_dml,
     all_close,
+    fkwargs_32_cpu,
+    fkwargs_32_dml,
+    fkwargs_64_cpu,
+    fkwargs_64_dml,
 )
 
 # DML Attention:
@@ -52,7 +52,7 @@ from nutsbear.mods.fixture import (
 #
 # 6. `torch.full` doesn't support `torch.floating` in DML fully that
 #   unexpected result will come up for tensor with `inf`, `nan`.
-# 
+#
 # 7. `torch.triu` will set the lower-triangle with `nan` wrongly.
 # 7.1 `nn.Transformer.generate_square_subsequent_mask` will return `nan` for
 #   non-masked position in DML.
@@ -143,7 +143,7 @@ def test_to_dtype_DML():
         ("yes", fkwargs_32_cpu, fkwargs_64_dml),
         ("yes", fkwargs_64_cpu, fkwargs_32_dml),
         ("no", fkwargs_32_dml, fkwargs_64_cpu),
-        ("no", fkwargs_64_dml, fkwargs_32_cpu)
+        ("no", fkwargs_64_dml, fkwargs_32_cpu),
     ]:
         query = torch.randn(3, 4, 8, **ori_fk)
         q1 = query.to(**dest_fk)
@@ -194,6 +194,7 @@ def test_assginment_DML():
         # 3. But assignment will succeed with second `:` omitted.
         mt[4:8] = comp_dest.to(**fk).to(**fk)
         assert all_close(comp_dest, mt[4:8])
+
 
 # %%
 # 5. `torch.eye` hasn't been implemented for DML.
@@ -255,19 +256,25 @@ def test_full_inf_nan_error():
     ]:
         device = fk["device"]
         # `full` with normal float works fine.
-        tt = torch.full((2, 2), 1., device=device, dtype=torch.bool)
+        tt = torch.full((2, 2), 1.0, device=device, dtype=torch.bool)
         assert torch.all(tt)
 
         if tag == "yes":
-            tt = torch.full((2, 2), float("nan"), device=device, dtype=torch.bool)
+            tt = torch.full(
+                (2, 2), float("nan"), device=device, dtype=torch.bool
+            )
             assert torch.all(tt)
         else:
             # `full` will Inf or NaN with `dtype=torch.bool` will raise
             # RuntimeError in DML.
             with pytest.raises(RuntimeError):
-                tt = torch.full((2, 2), float("nan"), device=device, dtype=torch.bool)
+                tt = torch.full(
+                    (2, 2), float("nan"), device=device, dtype=torch.bool
+                )
             with pytest.raises(RuntimeError):
-                tt = torch.full((2, 2), float("inf"), device=device, dtype=torch.bool)
+                tt = torch.full(
+                    (2, 2), float("inf"), device=device, dtype=torch.bool
+                )
 
 
 # %%
@@ -281,31 +288,28 @@ def test_triu_nan():
         ("yes", fkwargs_64_cpu),
         ("no", fkwargs_32_dml),
     ]:
-        onet = torch.full((2, 2), 1., **fk)
-        assert all_close(onet, 1.)
+        onet = torch.full((2, 2), 1.0, **fk)
+        assert all_close(onet, 1.0)
         onetu = torch.triu(onet)
-        assert all_close(onetu, torch.tensor([[1., 1.], [0., 1.]]))
+        assert all_close(onetu, torch.tensor([[1.0, 1.0], [0.0, 1.0]]))
 
         inft = torch.full((2, 2), float("inf"), **fk)
         assert torch.all(torch.isinf(inft))
         inftu = torch.triu(inft)
         if tag == "yes":
-            ret_ = torch.tensor([
-                [float("inf"), float("inf")],
-                [0., float("inf")]
-            ])
+            ret_ = torch.tensor(
+                [[float("inf"), float("inf")], [0.0, float("inf")]]
+            )
             assert all_close(inftu, ret_)
         else:
-            ret_ = torch.tensor([
-                [float("inf"), float("inf")],
-                [float("nan"), float("inf")]
-            ])
+            ret_ = torch.tensor(
+                [[float("inf"), float("inf")], [float("nan"), float("inf")]]
+            )
             # `torch.triu` will set the lower-triangle with `nan` wrongly.
             assert all_close(inftu, ret_)
 
-
     # In fact, `nan` will come up even in the following case.
-    inft = torch.full((2, 2), 1., **fkwargs_32_dml)
+    inft = torch.full((2, 2), 1.0, **fkwargs_32_dml)
     inft[1] = torch.inf
     inftu = torch.triu(inft)
     assert torch.isnan(inftu[1, 0])

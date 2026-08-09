@@ -8,32 +8,29 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
-from pytest import mark
 import numpy as np
+import pytest
 import torch
-from torch import nn, optim
-from torch import nested
-from torch.nn import functional as F
+from torch import nn
 
 if __name__ == "__main__":
     from importlib import reload
-    from nutsbear.mods import fixture
-    from nutsbear.mods import posemb
+
+    from nutsbear.mods import fixture, posemb
+
     reload(fixture)
     reload(posemb)
 
 from nutsbear.mods.fixture import (
-    fkwargs_32_cpu,
-    fkwargs_64_cpu,
-    fkwargs_32_dml,
-    fkwargs_64_dml,
     all_close,
+    fkwargs_32_dml,
+    fkwargs_64_cpu,
 )
 from nutsbear.mods.posemb import (
-    SinPE,
     RotaryPE,
+    SinPE,
 )
+
 torch.autograd.set_detect_anomaly(False)
 
 
@@ -41,10 +38,14 @@ torch.autograd.set_detect_anomaly(False)
 if fkwargs_32_dml:
     torch_fkwargs_params = [fkwargs_64_cpu, fkwargs_32_dml]
 else:
-    torch_fkwargs_params = [fkwargs_64_cpu, ]
+    torch_fkwargs_params = [fkwargs_64_cpu]
+
+
 @pytest.fixture(params=torch_fkwargs_params)
 def torch_fkwargs(request):
     return request.param
+
+
 # torch_fkwargs = fkwargs_32_dml
 # torch_fkwargs = fkwargs_64_cpu
 
@@ -62,14 +63,16 @@ class TimestepSinPE(nn.Module):
         # Why set the dividen with `half_dim - 1` ????
         # embeddings = np.log(10000) / (half_dim - 1)
         embeddings = np.log(10000) / half_dim
-        embeddings = torch.exp(torch.arange(half_dim, device=device) * -embeddings)
+        embeddings = torch.exp(
+            torch.arange(half_dim, device=device) * -embeddings
+        )
         embeddings = time[:, None] * embeddings[None, :]
         embeddings = torch.cat((embeddings.sin(), embeddings.cos()), dim=-1)
         return embeddings
 
 
 def test_SinPE(torch_fkwargs):
-    dtype, device = torch_fkwargs["dtype"], torch_fkwargs["device"]
+    _dtype, device = torch_fkwargs["dtype"], torch_fkwargs["device"]
     esz = 32
     tstep = torch.randint(0, 100, (100,))
 
@@ -86,13 +89,13 @@ def test_SinPE(torch_fkwargs):
     # The cache won't be updated(regenerated).
     cache = sinpe.pe_cache
     tstep = torch.randint(0, 50, (100,))
-    xped2 = sinpe(x, tstep)
+    sinpe(x, tstep)
     assert cache is sinpe.pe_cache
 
     # The cache will be updated(regenerated).
     cache = sinpe.pe_cache
     tstep = torch.randint(100, 200, (100,))
-    xped3 = sinpe(x, tstep)
+    sinpe(x, tstep)
     assert cache is not sinpe.pe_cache
     assert sinpe.pe_cache.size(0) > 100
     assert sinpe.pe_cache.size(1) == esz
@@ -101,7 +104,7 @@ def test_SinPE(torch_fkwargs):
     cache = sinpe.pe_cache
     x = torch.zeros(100, esz + 2, dtype=torch.int)
     tstep = torch.randint(0, 50, (100,))
-    xped4 = sinpe(x, tstep)
+    sinpe(x, tstep)
     assert cache is not sinpe.pe_cache
     assert sinpe.pe_cache.size(0) > 100
     assert sinpe.pe_cache.size(1) == esz + 2
@@ -109,7 +112,7 @@ def test_SinPE(torch_fkwargs):
 
 # %%
 def test_RotaryPE(torch_fkwargs):
-    dtype, device = torch_fkwargs["dtype"], torch_fkwargs["device"]
+    _dtype, device = torch_fkwargs["dtype"], torch_fkwargs["device"]
     esz = 32
     rpe = RotaryPE(esz)
     rpe.rotary_cache(100, **torch_fkwargs)

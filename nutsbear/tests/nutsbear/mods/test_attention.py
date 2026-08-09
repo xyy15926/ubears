@@ -3,37 +3,39 @@
 #   Name: test_attention.py
 #   Author: xyy15926
 #   Created: 2025-06-17 15:58:08
-#   Updated: 2026-04-02 18:28:19
+#   Updated: 2026-08-09 19:32:30
 #   Description:
 # ---------------------------------------------------------
 
 # %%
 import pytest
-from pytest import mark
 import torch
+from pytest import mark
 from torch import nn, optim
 from torch.nn import functional as F
 
 if __name__ == "__main__":
     from importlib import reload
-    from nutsbear.mods import fixture
-    from nutsbear.mods import attention
+
+    from nutsbear.mods import attention, fixture
+
     reload(fixture)
     reload(attention)
 
-from nutsbear.mods.fixture import (
-    fkwargs_32_cpu,
-    fkwargs_64_cpu,
-    fkwargs_32_dml,
-    fkwargs_64_dml,
-    all_close,
-)
 from nutsbear.mods.attention import (
-    ssoftmax,
-    scaled_dot_product_attention,
     MultiheadAttention,
     SimpleMHA,
+    _infer_mask_shapes,
+    _init_sdpa_mask,
+    _merge_to_bias,
+    scaled_dot_product_attention,
 )
+from nutsbear.mods.fixture import (
+    all_close,
+    fkwargs_32_dml,
+    fkwargs_64_cpu,
+)
+
 torch.autograd.set_detect_anomaly(False)
 
 
@@ -41,18 +43,24 @@ torch.autograd.set_detect_anomaly(False)
 if fkwargs_32_dml:
     torch_fkwargs_params = [fkwargs_64_cpu, fkwargs_32_dml]
 else:
-    torch_fkwargs_params = [fkwargs_64_cpu, ]
+    torch_fkwargs_params = [fkwargs_64_cpu]
+
+
 @pytest.fixture(params=torch_fkwargs_params)
 def torch_fkwargs(request):
     return request.param
+
+
 # torch_fkwargs = fkwargs_32_dml
 # torch_fkwargs = fkwargs_64_cpu
 
 
 # %%
-@mark.filterwarnings("ignore: .*is not currently supported on the DML backend*")
+@mark.filterwarnings(
+    "ignore: .*is not currently supported on the DML backend*"
+)
 def test_scaled_dot_product_attention(torch_fkwargs):
-    dtype, device = torch_fkwargs["dtype"], torch_fkwargs["device"]
+    _dtype, device = torch_fkwargs["dtype"], torch_fkwargs["device"]
     query = torch.randn(3, 4, 5, **torch_fkwargs)
     key = torch.randn(3, 6, 5, **torch_fkwargs)
     value = torch.randn(3, 6, 5, **torch_fkwargs)
@@ -61,64 +69,64 @@ def test_scaled_dot_product_attention(torch_fkwargs):
     attn_mask_3D = torch.randint(0, 2, (3, 4, 6), device=device).to(torch.bool)
 
     # Attention mask SDPA.
-    outp, ws = scaled_dot_product_attention(
-        query, key, value,
-        attn_mask=attn_mask.logical_not()
+    outp, _ws = scaled_dot_product_attention(
+        query, key, value, attn_mask=attn_mask.logical_not()
     )
     foutp = F.scaled_dot_product_attention(
         query, key, value, attn_mask=attn_mask
     )
     assert all_close(outp, foutp, 0, 1)
 
-    outp, ws = scaled_dot_product_attention(
-        query, key, value,
+    outp, _ws = scaled_dot_product_attention(
+        query,
+        key,
+        value,
         attn_mask=attn_mask.logical_not(),
         safe_softmax=False,
     )
     assert all_close(outp, foutp, 1, 1)
 
     # 3D-Attention mask SDPA.
-    outp, ws = scaled_dot_product_attention(
-        query, key, value,
-        attn_mask=attn_mask_3D.logical_not()
+    outp, _ws = scaled_dot_product_attention(
+        query, key, value, attn_mask=attn_mask_3D.logical_not()
     )
     foutp = F.scaled_dot_product_attention(
         query, key, value, attn_mask=attn_mask_3D
     )
     assert all_close(outp, foutp, 0, 1)
 
-    outp, ws = scaled_dot_product_attention(
-        query, key, value,
+    outp, _ws = scaled_dot_product_attention(
+        query,
+        key,
+        value,
         attn_mask=attn_mask_3D.logical_not(),
         safe_softmax=False,
     )
     assert all_close(outp, foutp, 1, 1)
 
     # Causal attention mask SDPA.
-    outp, ws = scaled_dot_product_attention(query, key, value, is_causal=True)
+    outp, _ws = scaled_dot_product_attention(query, key, value, is_causal=True)
     foutp = F.scaled_dot_product_attention(query, key, value, is_causal=True)
     assert all_close(outp, foutp, 0, 1)
 
-    outp, ws = scaled_dot_product_attention(
-        query, key, value,
-        attn_mask=attn_mask,
-        is_causal=True
+    outp, _ws = scaled_dot_product_attention(
+        query, key, value, attn_mask=attn_mask, is_causal=True
     )
     # Construct `attn_mask` for `F.scaled_dot_product_attention` manually.
     F_attn_mask = (
-        attn_mask + 1
+        attn_mask
+        + 1
         - torch.ones(4, 6, dtype=torch.int, device=device).tril(diagonal=0)
     )
     foutp = F.scaled_dot_product_attention(
-        query, key, value,
-        attn_mask=F_attn_mask.logical_not()
+        query, key, value, attn_mask=F_attn_mask.logical_not()
     )
     assert all_close(outp, foutp, 0, 1)
 
 
 # %%
 def test_scaled_dot_product_attention_backward_grad(torch_fkwargs):
-    dtype, device = torch_fkwargs["dtype"], torch_fkwargs["device"]
+    _dtype, device = torch_fkwargs["dtype"], torch_fkwargs["device"]
     query = torch.randn(3, 4, 2, requires_grad=True, **torch_fkwargs)
     key = torch.randn(3, 6, 2, requires_grad=True, **torch_fkwargs)
     value = torch.randn(3, 6, 2, requires_grad=True, **torch_fkwargs)
@@ -126,16 +134,18 @@ def test_scaled_dot_product_attention_backward_grad(torch_fkwargs):
     # attn_mask = torch.randint(0, 2, (4, 6)).to(torch.bool)
     # attn_mask[0, :] = False
     # attn_mask[:, 0] = False
+    # fmt: off
     attn_mask = torch.tensor([
         [0, 0, 0, 0, 0, 0],
         [1, 1, 0, 1, 1, 1],
         [1, 1, 0, 0, 1, 1],
         [1, 1, 0, 1, 1, 1],
     ]).to(dtype=torch.bool, device=device)
+    # fmt: on
 
     # `NaN` will be return for all-NInf query and lead to NaN in `.grad`
     # in backward.
-    output, ws = scaled_dot_product_attention(
+    output, _ws = scaled_dot_product_attention(
         query,
         key,
         value,
@@ -159,12 +169,8 @@ def test_scaled_dot_product_attention_backward_grad(torch_fkwargs):
     value = torch.randn(3, 6, 2, requires_grad=True, **torch_fkwargs)
     sgd = optim.SGD((query, key, value))
 
-    outp, ws = scaled_dot_product_attention(
-        query,
-        key,
-        value,
-        attn_mask=attn_mask.logical_not(),
-        safe_softmax=True
+    outp, _ws = scaled_dot_product_attention(
+        query, key, value, attn_mask=attn_mask.logical_not(), safe_softmax=True
     )
     os = outp.sum()
     os.backward()
@@ -181,7 +187,7 @@ def test_scaled_dot_product_attention_backward_grad(torch_fkwargs):
 
 # %%
 def test_MultiHeadAttention(torch_fkwargs):
-    dtype, device = torch_fkwargs["dtype"], torch_fkwargs["device"]
+    _dtype, device = torch_fkwargs["dtype"], torch_fkwargs["device"]
     query = torch.randn(3, 4, 8, **torch_fkwargs)
     key = torch.randn(3, 6, 8, **torch_fkwargs)
     value = torch.randn(3, 6, 8, **torch_fkwargs)
@@ -198,37 +204,44 @@ def test_MultiHeadAttention(torch_fkwargs):
     mha.load_state_dict(sd)
 
     # Default forward.
-    nnattn, nnw = nnmha(query, key, value)
-    attn, attn_ws = mha(query, key, value)
+    nnattn, _nnw = nnmha(query, key, value)
+    attn, _attn_ws = mha(query, key, value)
     assert all_close(nnattn, attn)
 
     # Forward with `is_causal` only.
     # `is_causal` in `nn.MultiheadAttention` is just a hint and
     # `attn_mask`(`src_mask`) must be set if `is_causal` is set.
-    causal_mask = MultiheadAttention.merge_masks(
-        None, None, 1, query, key
-    ).squeeze().to(query.dtype)
-    nnattn, nnw = nnmha(query, key, value, attn_mask=causal_mask, is_causal=True)
-    attn, attn_ws = mha(query, key, value, is_causal=True)
+    causal_mask = (
+        MultiheadAttention.merge_masks(None, None, 1, query, key)
+        .squeeze()
+        .to(query.dtype)
+    )
+    nnattn, _nnw = nnmha(
+        query, key, value, attn_mask=causal_mask, is_causal=True
+    )
+    attn, _attn_ws = mha(query, key, value, is_causal=True)
     assert all_close(nnattn, attn)
 
     # Forward with key-padding-mask.
-    key_padding_mask = torch.randint(0, 2, (3, 6)).to(dtype=torch.bool, device=device)
+    key_padding_mask = torch.randint(0, 2, (3, 6)).to(
+        dtype=torch.bool, device=device
+    )
     key_padding_mask[0, :] = True
-    nnattn, nnw = nnmha(query, key, value, key_padding_mask=key_padding_mask)
-    attn, attn_ws = mha(query, key, value, key_padding_mask=key_padding_mask)
+    nnattn, _nnw = nnmha(query, key, value, key_padding_mask=key_padding_mask)
+    attn, _attn_ws = mha(query, key, value, key_padding_mask=key_padding_mask)
     assert torch.all(torch.isnan(nnattn[0]))
     assert not torch.any(torch.isnan(attn))
     assert all_close(nnattn, attn, 1, 0)
 
-    nnattn, nnw = nnmha(
-        query, key, value,
+    nnattn, _nnw = nnmha(
+        query,
+        key,
+        value,
         key_padding_mask=key_padding_mask.logical_not(),
         need_weights=False,
     )
-    attn, attn_ws = mha(
-        query, key, value,
-        key_padding_mask=key_padding_mask.logical_not()
+    attn, _attn_ws = mha(
+        query, key, value, key_padding_mask=key_padding_mask.logical_not()
     )
     assert all_close(nnattn, attn, 1, 0)
 
@@ -236,17 +249,23 @@ def test_MultiHeadAttention(torch_fkwargs):
     attn_mask = torch.randint(0, 2, (4, 6)).to(dtype=torch.bool, device=device)
     attn_mask[0, :] = True
     nnattn, nnattn_w = nnmha(
-        query, key, value,
+        query,
+        key,
+        value,
         attn_mask=attn_mask,
         need_weights=True,
     )
-    attn, attn_ws = mha(
-        query, key, value,
+    attn, _attn_ws = mha(
+        query,
+        key,
+        value,
         attn_mask=attn_mask,
         need_weights=False,
     )
     attn_w, attn_ws_w = mha(
-        query, key, value,
+        query,
+        key,
+        value,
         attn_mask=attn_mask,
         need_weights=True,
     )
@@ -258,42 +277,51 @@ def test_MultiHeadAttention(torch_fkwargs):
 
     # Forward with attention-mask(or mixed mask).
     attn_mask = torch.randint(0, 2, (4, 6)).to(dtype=torch.bool, device=device)
-    nnattn, nnw = nnmha(
-        query, key, value,
+    nnattn, _nnw = nnmha(
+        query,
+        key,
+        value,
         attn_mask=attn_mask,
         key_padding_mask=key_padding_mask,
         need_weights=False,
     )
-    attn, attn_ws = mha(
-        query, key, value,
+    attn, _attn_ws = mha(
+        query,
+        key,
+        value,
         attn_mask=attn_mask,
         key_padding_mask=key_padding_mask,
     )
     assert all_close(nnattn, attn, 1, 0)
 
-    nnattn, nnw = nnmha(
-        query, key, value,
+    nnattn, _nnw = nnmha(
+        query,
+        key,
+        value,
         attn_mask=attn_mask.logical_not(),
         key_padding_mask=key_padding_mask.logical_not(),
         need_weights=False,
     )
-    attn, attn_ws = mha(
-        query, key, value,
+    attn, _attn_ws = mha(
+        query,
+        key,
+        value,
         attn_mask=attn_mask.logical_not(),
-        key_padding_mask=key_padding_mask.logical_not()
+        key_padding_mask=key_padding_mask.logical_not(),
     )
     assert all_close(nnattn, attn, 1, 0)
 
 
 # %%
 def test_MultiHeadAttention_qkv_diffsz(torch_fkwargs):
-    dtype, device = torch_fkwargs["dtype"], torch_fkwargs["device"]
+    _dtype, _device = torch_fkwargs["dtype"], torch_fkwargs["device"]
     query = torch.randn(3, 4, 8, **torch_fkwargs)
     key = torch.randn(3, 6, 16, **torch_fkwargs)
     value = torch.randn(3, 6, 16, **torch_fkwargs)
 
     nnmha = nn.MultiheadAttention(
-        8, 1,
+        8,
+        1,
         bias=True,
         kdim=16,
         vdim=16,
@@ -316,14 +344,14 @@ def test_MultiHeadAttention_qkv_diffsz(torch_fkwargs):
     mha.load_state_dict(sd)
 
     # Default forward.
-    nnattn, nnw = nnmha(query, key, value)
-    attn, attn_ws = mha(query, key, value)
+    nnattn, _nnw = nnmha(query, key, value)
+    attn, _attn_ws = mha(query, key, value)
     assert all_close(nnattn, attn, 1, 0)
 
 
 # %%
 def test_MHA_merge_masks(torch_fkwargs):
-    dtype, device = torch_fkwargs["dtype"], torch_fkwargs["device"]
+    _dtype, device = torch_fkwargs["dtype"], torch_fkwargs["device"]
 
     # 4D-QKV and mask will be used here so that
     # `F.scaled_dot_product_attention` won't raise RuntimeError.
@@ -331,39 +359,53 @@ def test_MHA_merge_masks(torch_fkwargs):
     key = torch.randn(3, 1, 6, 2, requires_grad=True, **torch_fkwargs)
     value = torch.randn(3, 1, 6, 2, requires_grad=True, **torch_fkwargs)
 
-    key_padding_mask = torch.randint(0, 2, (3, 6), device=device).to(torch.bool)
+    key_padding_mask = torch.randint(0, 2, (3, 6), device=device).to(
+        torch.bool
+    )
+    # fmt: off
     key_padding_mask = torch.tensor([
         [0, 0, 0, 0, 0, 0],
         [1, 1, 0, 1, 1, 1],
         [1, 1, 0, 0, 1, 1],
     ], device=device).to(torch.bool).logical_not()
+    # fmt: on
     attn_mask = torch.randint(0, 2, (4, 6), device=device).to(torch.bool)
+    # fmt: off
     attn_mask = torch.tensor([
         [0, 0, 0, 0, 0, 0],
         [1, 1, 0, 1, 1, 1],
         [1, 1, 0, 0, 1, 1],
         [1, 1, 0, 1, 1, 1],
     ], device=device).to(torch.bool).logical_not()
+    # fmt: on
 
     # Causality from `is_causal` or `attn_mask` lead to the same result.
     def check_SDPA_and_causal(query, key, value, non_causal_mask, causal_mask):
-        cn_ret, c_ws = scaled_dot_product_attention(
-            query, key, value,
+        cn_ret, _c_ws = scaled_dot_product_attention(
+            query,
+            key,
+            value,
             attn_mask=causal_mask,
             is_causal=False,
         )
-        nc_ret, nc_ws = scaled_dot_product_attention(
-            query, key, value,
+        nc_ret, _nc_ws = scaled_dot_product_attention(
+            query,
+            key,
+            value,
             attn_mask=non_causal_mask,
             is_causal=True,
         )
-        cc_ret, c_ws = scaled_dot_product_attention(
-            query, key, value,
+        cc_ret, _c_ws = scaled_dot_product_attention(
+            query,
+            key,
+            value,
             attn_mask=causal_mask,
             is_causal=True,
         )
         cn_fret = F.scaled_dot_product_attention(
-            query, key, value,
+            query,
+            key,
+            value,
             attn_mask=causal_mask,
             is_causal=False,
         )
@@ -374,12 +416,16 @@ def test_MHA_merge_masks(torch_fkwargs):
 
         if device == torch.device("cpu"):
             nc_fret = F.scaled_dot_product_attention(
-                query, key, value,
+                query,
+                key,
+                value,
                 attn_mask=non_causal_mask,
                 is_causal=True,
             )
             cc_fret = F.scaled_dot_product_attention(
-                query, key, value,
+                query,
+                key,
+                value,
                 attn_mask=causal_mask,
                 is_causal=True,
             )
@@ -414,7 +460,7 @@ def test_MHA_merge_masks(torch_fkwargs):
 
 # %%
 def test_MultiHeadAttention_is_causal(torch_fkwargs):
-    dtype, device = torch_fkwargs["dtype"], torch_fkwargs["device"]
+    _dtype, device = torch_fkwargs["dtype"], torch_fkwargs["device"]
 
     query = torch.randn(3, 4, 8, **torch_fkwargs)
     key = torch.randn(3, 6, 8, **torch_fkwargs)
@@ -431,34 +477,41 @@ def test_MultiHeadAttention_is_causal(torch_fkwargs):
     }
     mha.load_state_dict(sd)
     attn_mask = torch.randint(0, 2, (4, 6), device=device).to(torch.bool)
-    key_padding_mask = torch.randint(0, 2, (3, 6), device=device).to(torch.bool)
+    key_padding_mask = torch.randint(0, 2, (3, 6), device=device).to(
+        torch.bool
+    )
 
     # Construct `attn_mask` for `F.scaled_dot_product_attention` manually.
     F_attn_mask = attn_mask.logical_or(
-        torch.ones(4, 6, dtype=torch.int, device=device).tril(diagonal=0)
+        torch.ones(4, 6, dtype=torch.int, device=device)
+        .tril(diagonal=0)
         .logical_not()
     )
-    nnattn, nnw = nnmha(
-        query, key, value,
+    nnattn, _nnw = nnmha(
+        query,
+        key,
+        value,
         attn_mask=F_attn_mask,
         key_padding_mask=key_padding_mask.logical_not(),
         need_weights=False,
     )
     # `is_causal` and `attn_mask` are merged.
-    attn, attn_ws = mha(
-        query, key, value,
+    attn, _attn_ws = mha(
+        query,
+        key,
+        value,
         attn_mask=attn_mask,
         key_padding_mask=key_padding_mask.logical_not(),
-        is_causal=True
+        is_causal=True,
     )
     assert all_close(nnattn, attn, 1, 0)
 
 
 # %%
 def test_SimpleMHA(torch_fkwargs):
-    dtype, device = torch_fkwargs["dtype"], torch_fkwargs["device"]
+    _dtype, device = torch_fkwargs["dtype"], torch_fkwargs["device"]
 
-    bsz, slen, tlen, mlen = 3, 4, 6, 5
+    bsz, slen, _tlen, mlen = 3, 4, 6, 5
     hn, esz = 1, 8
     query = torch.randn(bsz, slen, esz, **torch_fkwargs)
     key = torch.randn(bsz, mlen, esz, **torch_fkwargs)
@@ -484,16 +537,17 @@ def test_SimpleMHA(torch_fkwargs):
     assert all_close(nnattn_ws, attn_ws, 1, 0)
 
     # Forward with key-padding-mask.
-    key_padding_mask = torch.randint(0, 2, (bsz, mlen), device=device).to(torch.bool)
+    key_padding_mask = torch.randint(0, 2, (bsz, mlen), device=device).to(
+        torch.bool
+    )
     nnattn, nnattn_ws = nnmha(
-        query, key, value,
+        query,
+        key,
+        value,
         key_padding_mask=key_padding_mask,
         need_weights=True,
     )
-    attn, attn_ws = mha(
-        query, key, value,
-        key_padding_mask=key_padding_mask
-    )
+    attn, attn_ws = mha(query, key, value, key_padding_mask=key_padding_mask)
     assert attn.size() == (bsz, slen, esz)
     assert attn_ws.size() == (bsz, slen, mlen)
     assert all_close(nnattn, attn, 1, 0)
@@ -502,12 +556,16 @@ def test_SimpleMHA(torch_fkwargs):
     # Forward with attention-mask only.
     attn_mask = torch.randint(0, 2, (slen, mlen), device=device).to(torch.bool)
     nnattn, nnattn_ws = nnmha(
-        query, key, value,
+        query,
+        key,
+        value,
         attn_mask=attn_mask,
         need_weights=True,
     )
     attn, attn_ws = mha(
-        query, key, value,
+        query,
+        key,
+        value,
         attn_mask=attn_mask,
     )
     assert attn.size() == (bsz, slen, esz)
@@ -517,15 +575,19 @@ def test_SimpleMHA(torch_fkwargs):
 
     # Forward with attention-mask(or mixed mask).
     nnattn, nnattn_ws = nnmha(
-        query, key, value,
+        query,
+        key,
+        value,
         attn_mask=attn_mask,
         key_padding_mask=key_padding_mask,
         need_weights=True,
     )
     attn, attn_ws = mha(
-        query, key, value,
+        query,
+        key,
+        value,
         attn_mask=attn_mask,
-        key_padding_mask=key_padding_mask
+        key_padding_mask=key_padding_mask,
     )
     assert attn.size() == (bsz, slen, esz)
     assert attn_ws.size() == (bsz, slen, mlen)
@@ -535,8 +597,8 @@ def test_SimpleMHA(torch_fkwargs):
 
 # %%
 def test_SimpleMHA_qkv_diffsz(torch_fkwargs):
-    bsz, slen, tlen, mlen = 3, 4, 6, 5
-    hn, qksz, vsz = 2, 8, 16
+    bsz, slen, _tlen, mlen = 3, 4, 6, 5
+    _hn, qksz, vsz = 2, 8, 16
     query = torch.randn(bsz, slen, qksz, **torch_fkwargs)
     key = torch.randn(bsz, mlen, qksz, **torch_fkwargs)
     value = torch.randn(bsz, mlen, vsz, **torch_fkwargs)
@@ -550,14 +612,6 @@ def test_SimpleMHA_qkv_diffsz(torch_fkwargs):
     attn, attn_ws = mha(query, key, value)
     assert attn.size() == (bsz, slen, qksz)
     assert attn_ws.size() == (bsz, slen, mlen)
-
-
-# %%
-from nutsbear.mods.attention import (
-    _infer_mask_shapes,
-    _merge_to_bias,
-    _init_sdpa_mask,
-)
 
 
 # %%
@@ -577,7 +631,7 @@ class TestInferMaskShapes:
     def test_key_padding_mask_infer_bsz_kslen(self):
         """key_padding_mask provides bsz and kslen."""
         kpm = torch.zeros(5, 8, dtype=torch.bool)
-        bsz, qslen, kslen, device = _infer_mask_shapes(
+        bsz, qslen, kslen, _device = _infer_mask_shapes(
             kpm, None, False, None, None
         )
         assert bsz == 5
@@ -587,7 +641,7 @@ class TestInferMaskShapes:
     def test_3d_attn_mask_infer_all(self):
         """3D attn_mask provides bsz, qslen, kslen."""
         attn = torch.zeros(3, 4, 6)
-        bsz, qslen, kslen, device = _infer_mask_shapes(
+        bsz, qslen, kslen, _device = _infer_mask_shapes(
             None, attn, False, None, None
         )
         assert bsz == 3
@@ -597,7 +651,7 @@ class TestInferMaskShapes:
     def test_2d_attn_mask_qslen_kslen(self):
         """2D attn_mask provides qslen, kslen but not bsz."""
         attn = torch.zeros(4, 6)
-        bsz, qslen, kslen, device = _infer_mask_shapes(
+        bsz, qslen, kslen, _device = _infer_mask_shapes(
             None, attn, False, None, None
         )
         assert bsz == 1
@@ -608,7 +662,7 @@ class TestInferMaskShapes:
         """is_causal=True, query provided -> qslen from query."""
         query = torch.randn(2, 7, 5)
         key = torch.randn(2, 9, 5)
-        bsz, qslen, kslen, device = _infer_mask_shapes(
+        bsz, qslen, kslen, _device = _infer_mask_shapes(
             None, None, True, query, key
         )
         assert bsz == 1
@@ -618,7 +672,7 @@ class TestInferMaskShapes:
     def test_device_from_query(self):
         """Device is inferred from the first non-None tensor."""
         query = torch.randn(2, 4, 5)
-        bsz, qslen, kslen, device = _infer_mask_shapes(
+        _bsz, _qslen, _kslen, device = _infer_mask_shapes(
             None, None, False, query, None
         )
         assert device == query.device
@@ -627,7 +681,7 @@ class TestInferMaskShapes:
         """key_padding_mask takes priority over attn_mask for bsz."""
         kpm = torch.zeros(7, 6, dtype=torch.bool)
         attn = torch.zeros(3, 4, 6)
-        bsz, qslen, kslen, device = _infer_mask_shapes(
+        bsz, qslen, kslen, _device = _infer_mask_shapes(
             kpm, attn, False, None, None
         )
         assert bsz == 7
@@ -664,10 +718,12 @@ class TestMergeToBias:
     def test_bool_key_padding_mask(self):
         """Bool key_padding_mask fills with -inf."""
         shapes = (2, 4, 6, torch.device("cpu"))
+        # fmt: off
         kpm = torch.tensor([
             [0, 0, 0, 0, 0, 0],
             [1, 1, 0, 1, 1, 1],
         ], dtype=torch.bool)
+        # fmt: on
         bias = _merge_to_bias(kpm, None, False, shapes)
         # Batch 0: no padding -> all zeros.
         assert (bias[0] == 0).all()
@@ -683,11 +739,13 @@ class TestMergeToBias:
     def test_bool_attn_mask(self):
         """Bool attn_mask fills with -inf."""
         shapes = (1, 3, 4, torch.device("cpu"))
+        # fmt: off
         attn = torch.tensor([
             [0, 1, 0, 1],
             [1, 0, 1, 0],
             [0, 0, 0, 1],
         ], dtype=torch.bool)
+        # fmt: on
         bias = _merge_to_bias(None, attn, False, shapes)
         assert bias[0, 0, 1] == float("-inf")
         assert bias[0, 0, 3] == float("-inf")
@@ -737,20 +795,26 @@ class TestInitSdpaMask:
         """Non-bool, non-causal attn_mask returned directly."""
         attn = torch.randn(4, 6)
         query = torch.randn(3, 4, 5)
-        result = _init_sdpa_mask(attn, False, 4, 6, torch.float32, query.device, query)
+        result = _init_sdpa_mask(
+            attn, False, 4, 6, torch.float32, query.device, query
+        )
         assert result is attn
 
     def test_none_mask_no_causal(self):
         """No mask, no causal -> all zeros."""
         query = torch.randn(3, 4, 5)
-        result = _init_sdpa_mask(None, False, 4, 6, torch.float32, query.device, query)
+        result = _init_sdpa_mask(
+            None, False, 4, 6, torch.float32, query.device, query
+        )
         assert result.shape == (4, 6)
         assert (result == 0).all()
 
     def test_causal_only(self):
         """is_causal=True, no attn_mask -> lower-triangular -inf."""
         query = torch.randn(3, 4, 4)
-        result = _init_sdpa_mask(None, True, 4, 4, torch.float32, query.device, query)
+        result = _init_sdpa_mask(
+            None, True, 4, 4, torch.float32, query.device, query
+        )
         assert result.shape == (4, 4)
         # Upper triangle should be -inf.
         assert result[0, 1] == float("-inf")
@@ -764,12 +828,16 @@ class TestInitSdpaMask:
     def test_bool_attn_mask(self):
         """Bool attn_mask -> masked positions get -inf."""
         query = torch.randn(3, 3, 4)
+        # fmt: off
         attn = torch.tensor([
             [0, 1, 0, 1],
             [1, 0, 1, 0],
             [0, 0, 0, 1],
         ], dtype=torch.bool)
-        result = _init_sdpa_mask(attn, False, 3, 4, torch.float32, query.device, query)
+        # fmt: on
+        result = _init_sdpa_mask(
+            attn, False, 3, 4, torch.float32, query.device, query
+        )
         assert result[0, 1] == float("-inf")
         assert result[0, 3] == float("-inf")
         assert result[0, 0] == 0
@@ -778,19 +846,25 @@ class TestInitSdpaMask:
         """3D attn_mask broadcast and merged."""
         query = torch.randn(2, 4, 5)
         attn = torch.randn(2, 4, 6)
-        result = _init_sdpa_mask(attn, False, 4, 6, torch.float32, query.device, query)
+        result = _init_sdpa_mask(
+            attn, False, 4, 6, torch.float32, query.device, query
+        )
         assert result.shape == (2, 4, 6)
         assert torch.allclose(result, attn)
 
     def test_causal_with_bool_attn_mask(self):
         """Causal + bool attn_mask both applied."""
         query = torch.randn(1, 3, 3)
+        # fmt: off
         attn = torch.tensor([
             [0, 0, 1],
             [0, 0, 0],
             [1, 0, 0],
         ], dtype=torch.bool)
-        result = _init_sdpa_mask(attn, True, 3, 3, torch.float32, query.device, query)
+        # fmt: on
+        result = _init_sdpa_mask(
+            attn, True, 3, 3, torch.float32, query.device, query
+        )
         # Causal: upper triangle -inf.
         assert result[0, 1] == float("-inf")
         assert result[0, 2] == float("-inf")

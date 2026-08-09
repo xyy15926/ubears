@@ -8,8 +8,8 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
 import numpy as np
+import pytest
 import torch
 from torch import nn, optim
 from torch.nn import functional as F
@@ -19,23 +19,22 @@ from torchvision.utils import save_image
 
 if __name__ == "__main__":
     from importlib import reload
-    from nutsbear.mods import fixture
-    from nutsbear.demos import autoencoder
+
     from nutsbear import trainer
+    from nutsbear.demos import autoencoder
+    from nutsbear.mods import fixture
+
     reload(fixture)
     reload(autoencoder)
     reload(trainer)
 
-from nutsbear.mods.fixture import (
-    fkwargs_32_cpu,
-    fkwargs_64_cpu,
-    fkwargs_32_dml,
-    fkwargs_64_dml,
-    all_close,
-)
+from flagbear.slp.finer import get_assets_path, tmp_file
 from nutsbear.demos.autoencoder import VAEBase
+from nutsbear.mods.fixture import (
+    fkwargs_32_dml,
+    fkwargs_64_cpu,
+)
 from nutsbear.trainer import Trainer
-from flagbear.slp.finer import get_tmp_path, get_assets_path, tmp_file
 
 torch.autograd.set_detect_anomaly(False)
 
@@ -44,10 +43,14 @@ torch.autograd.set_detect_anomaly(False)
 if fkwargs_32_dml:
     torch_fkwargs_params = [fkwargs_64_cpu, fkwargs_32_dml]
 else:
-    torch_fkwargs_params = [fkwargs_64_cpu, ]
+    torch_fkwargs_params = [fkwargs_64_cpu]
+
+
 @pytest.fixture(params=torch_fkwargs_params)
 def torch_fkwargs(request):
     return request.param
+
+
 # torch_fkwargs = fkwargs_32_dml
 # torch_fkwargs = fkwargs_64_cpu
 
@@ -58,12 +61,14 @@ class MNISTEnc(nn.Module):
         self,
         inp_sz: int = (1, 28, 28),
         oup_sz: int = 128,
-        device: str = None,
-        dtype: str = None,
+        device: str | None = None,
+        dtype: str | None = None,
     ):
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
-        self.fc1 = nn.Linear(np.multiply.reduce(inp_sz), oup_sz, **factory_kwargs)
+        self.fc1 = nn.Linear(
+            np.multiply.reduce(inp_sz), oup_sz, **factory_kwargs
+        )
 
     def forward(self, inp):
         inp = inp.flatten(1, -1)
@@ -76,8 +81,8 @@ class MNISTDec(nn.Module):
         self,
         inp_sz: int = 128,
         oup_sz: int = (1, 28, 28),
-        device: str = None,
-        dtype: str = None,
+        device: str | None = None,
+        dtype: str | None = None,
     ):
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -95,13 +100,13 @@ class MNISTDec(nn.Module):
 # %%
 @pytest.mark.skip(reason="Time consuming.")
 def test_VAEBase(torch_fkwargs):
-    device, dtype = torch_fkwargs["device"], torch_fkwargs["dtype"]
+    _device, _dtype = torch_fkwargs["device"], torch_fkwargs["dtype"]
     bsz = 100
     mnist = datasets.MNIST(
         get_assets_path(),
         train=True,
         download=True,
-        transform=transforms.ToTensor()
+        transform=transforms.ToTensor(),
     )
     train_loader = DataLoader(
         mnist,
