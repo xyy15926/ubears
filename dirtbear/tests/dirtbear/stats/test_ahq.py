@@ -14,6 +14,7 @@ import pytest
 if __name__ == "__main__":
     from importlib import reload
     from dirtbear.stats import ahp
+
     reload(ahp)
 
 from dirtbear.stats.ahp import AHP_get_RCI, AHP_get_RCI_n, AHP_solve
@@ -28,14 +29,16 @@ def test_AHP_get_RCI():
 
 
 def test_ahq_solve():
-    a1 = np.array([
-        [1, 1, 1, 4, 1, 1 / 2],
-        [1, 1, 2, 4, 1, 1 / 2],
-        [1, 1 / 2, 1, 5, 3, 1 / 2],
-        [1 / 4, 1 / 4, 1 / 5, 1, 1 / 3, 1 / 3],
-        [1, 1, 1 / 3, 3, 1, 1],
-        [2, 2, 2, 3, 3, 1],
-    ])
+    a1 = np.array(
+        [
+            [1, 1, 1, 4, 1, 1 / 2],
+            [1, 1, 2, 4, 1, 1 / 2],
+            [1, 1 / 2, 1, 5, 3, 1 / 2],
+            [1 / 4, 1 / 4, 1 / 5, 1, 1 / 3, 1 / 3],
+            [1, 1, 1 / 3, 3, 1, 1],
+            [2, 2, 2, 3, 3, 1],
+        ]
+    )
 
     b1 = np.array([[1, 1 / 4, 1 / 2], [4, 1, 3], [2, 1 / 3, 1]])
     b2 = np.array([[1, 1 / 4, 1 / 5], [4, 1, 1 / 2], [5, 2, 1]])

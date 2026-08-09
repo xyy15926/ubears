@@ -18,20 +18,31 @@ import networkx as nx
 # ref: <https://pyvis.readthedocs.io/en/latest/tutorial.html>
 def test_graph_manipulation():
     # Manipulate Undirected Graph.
-    G = nx.Graph([("s", "e", {"etype": "init"}), ])
+    G = nx.Graph(
+        [
+            ("s", "e", {"etype": "init"}),
+        ]
+    )
     G.add_node(1, etype="node")
-    G.add_nodes_from([
-        (2, {"etype": "list"}),
-        (3, {"etype" : "list"}),
-    ])
+    G.add_nodes_from(
+        [
+            (2, {"etype": "list"}),
+            (3, {"etype": "list"}),
+        ]
+    )
     G.add_edge(4, 5, etype="edge")
-    G.add_edges_from([
-        (4, 5),
-        (4, 2),
-    ], etype="list")
-    G.add_weighted_edges_from([
-        (3, 1, 0.5),
-    ])
+    G.add_edges_from(
+        [
+            (4, 5),
+            (4, 2),
+        ],
+        etype="list",
+    )
+    G.add_weighted_edges_from(
+        [
+            (3, 1, 0.5),
+        ]
+    )
     G.add_edge(5, 2, weight=0.7)
 
     # Check the nodes, edges and degrees view of Graph.
@@ -44,7 +55,11 @@ def test_graph_manipulation():
     # Remove nodes or edges in Graph.
     G.remove_node(1)
     assert len(G.nodes) == 6
-    G.remove_edges_from([(2, 4), ])
+    G.remove_edges_from(
+        [
+            (2, 4),
+        ]
+    )
     assert len(G.edges) == 3
 
     # Check and manipulate edges.

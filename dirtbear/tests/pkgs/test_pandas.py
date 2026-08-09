@@ -34,8 +34,10 @@ def repeat_df(NN):
 # `DataFrame.groupby().apply` features:
 # 1. If DF returned by the callable applied shares the same index with the
 #   group-DF, the result of groupby won't add and additional level of Index.
-@pytest.mark.skipif(Version(pd.__version__) >= Version("2.0"),
-                    reason="Index level bug has been fixed for Pandas == 2.2.3.")
+@pytest.mark.skipif(
+    Version(pd.__version__) >= Version("2.0"),
+    reason="Index level bug has been fixed for Pandas == 2.2.3.",
+)
 @pytest.mark.pkgs
 def test_groupby_apply_index():
     def func_reset_index(df):
@@ -61,7 +63,9 @@ def test_groupby_apply_index():
     data = repeat_df(NN).set_index("GPKey3Rand")
     ridata = data.reset_index(drop=True)
 
-    index_added = data.groupby("GPKey3", group_keys=True).apply(func_reset_index)
+    index_added = data.groupby("GPKey3", group_keys=True).apply(
+        func_reset_index
+    )
     assert index_added.index.nlevels == data.index.nlevels + 1
 
     # No additional index will be added if the index value are not changed
@@ -83,7 +87,9 @@ def test_groupby_apply_index():
     assert kret.index.nlevels == data.index.nlevels
 
     # Ditto.
-    kret = data.groupby("GPKey3", sort=False, group_keys=True).apply(func_change_value)
+    kret = data.groupby("GPKey3", sort=False, group_keys=True).apply(
+        func_change_value
+    )
     assert kret.index.nlevels == data.index.nlevels
 
 
@@ -161,7 +167,9 @@ def test_groupby_apply_efficiency():
     # the return from `apply` will also be efficient.
     ret = r4data.groupby("GPKey3", sort=False).progress_apply(func_reset_index)
     ret = r4data.groupby("GPKey3", sort=False).progress_apply(func_dup_index)
-    ret = r4data.groupby("GPKey3", sort=False).progress_apply(func_modified_index)
+    ret = r4data.groupby("GPKey3", sort=False).progress_apply(
+        func_modified_index
+    )
 
     # 4. Duplicated group key with duplicated index and **the same** index of
     # the return from `apply` will be time-comsuming.
@@ -171,14 +179,20 @@ def test_groupby_apply_efficiency():
     ret = r3data.groupby("GPKey5", sort=True).progress_apply(func_keep_index)
     gpk5 = pd.Index(ret["GPKey5"].values)
     assert not (gpk5.is_monotonic_increasing or gpk5.is_monotonic_decreasing)
-    ret = r3data.groupby("GPKey4Rand", sort=False).progress_apply(func_keep_index)
+    ret = r3data.groupby("GPKey4Rand", sort=False).progress_apply(
+        func_keep_index
+    )
     ret = r4data.groupby("GPKey3", sort=False).progress_apply(func_keep_index)
-    ret = r4data.groupby("GPKey3Rand", sort=False).progress_apply(func_keep_index)
+    ret = r4data.groupby("GPKey3Rand", sort=False).progress_apply(
+        func_keep_index
+    )
     # 4.2 The duplication-level of index seems to be more-weighted.
     # As `o5data.groupby("GPKey2")` can't even return in time when NN > 2000.
     ret = o5data.groupby("GPKey2", sort=False).progress_apply(func_keep_index)
     o5data_s2 = o5data.sort_values("GPKey2")
-    ret = o5data_s2.groupby("GPKey2", sort=False).progress_apply(func_keep_index)
+    ret = o5data_s2.groupby("GPKey2", sort=False).progress_apply(
+        func_keep_index
+    )
     ret = o2data.groupby("GPKey5", sort=False).progress_apply(func_keep_index)
 
 
@@ -257,8 +271,12 @@ def test_empty_datetime_seris_pd14():
         assert gap.dtype == "m8[s]"
 
     # 2. `gap` for Period[M] is even more strange.
-    a = pd.Series(["2024-01-01", "2024-01-02"], dtype="M8[s]").dt.to_period("M")
-    b = pd.Series(["2023-01-01", "2023-01-02"], dtype="M8[s]").dt.to_period("M")
+    a = pd.Series(["2024-01-01", "2024-01-02"], dtype="M8[s]").dt.to_period(
+        "M"
+    )
+    b = pd.Series(["2023-01-01", "2023-01-02"], dtype="M8[s]").dt.to_period(
+        "M"
+    )
     gap = a - b
     assert gap.dtype == "O"
 

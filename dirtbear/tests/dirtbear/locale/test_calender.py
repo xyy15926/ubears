@@ -9,9 +9,11 @@
 
 # %%
 import pytest
+
 if __name__ == "__main__":
     from importlib import reload
     from dirtbear.locale import calender
+
     reload(calender)
 
 import numpy as np
@@ -21,7 +23,7 @@ from dirtbear.locale.calender import (
     ChnBusdayCalendar,
     is_chn_busday,
     not_chn_busday,
-    ChineseHolidaysCalendar
+    ChineseHolidaysCalendar,
 )
 
 
@@ -40,7 +42,9 @@ def test_is_chn_busday():
     ret = not_chn_busday(x)
     assert np.all(ret == [0, 1, 1, 1, 0])
 
-    x = np.array(["2021-11-11", "2025-01-01", "2021-11-13", "2021-11-14", "NaT"])
+    x = np.array(
+        ["2021-11-11", "2025-01-01", "2021-11-13", "2021-11-14", "NaT"]
+    )
     ret = is_chn_busday(x)
     assert np.all(ret == [1, 0, 0, 0, 0])
     ret = not_chn_busday(x)

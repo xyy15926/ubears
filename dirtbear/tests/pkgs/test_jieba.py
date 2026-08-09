@@ -107,16 +107,16 @@ def jieba_toker():
     reg_df["pos"] = "ns"
     reg_names = reg_df[["name", "deep", "pos"]].drop_duplicates("name").copy()
     reg_names["deep"] = 1000 // (reg_names["deep"] + 1) ** 2
-    reg_exts = reg_df[["ext_name", "deep", "pos"]].drop_duplicates("ext_name").copy()
+    reg_exts = (
+        reg_df[["ext_name", "deep", "pos"]].drop_duplicates("ext_name").copy()
+    )
     reg_exts["deep"] = 1500 // (reg_exts["deep"] + 1) ** 2
     reg_exts.columns = ["name", "deep", "pos"]
 
     # Save cuustomed user dict into local file.
-    reg_names = (pd.concat([reg_names, reg_exts])
-                 .to_csv(TMP_DIR / "govern_region_names.txt",
-                         sep=" ",
-                         columns=None,
-                         header=None))
+    reg_names = pd.concat([reg_names, reg_exts]).to_csv(
+        TMP_DIR / "govern_region_names.txt", sep=" ", columns=None, header=None
+    )
 
     # Init new customed Tokenizer.
     # `jiebe.dt` is the default Tokenizer, which is delegated by `jiebe`.
@@ -124,8 +124,9 @@ def jieba_toker():
     # Load user dict from local file.
     toker.add_word("咔咔咔", tag="nr")
     toker.add_word("aki7", tag="nz")
-    toker.load_userdict(open(TMP_DIR / "govern_region_names.txt",
-                             encoding="utf8"))
+    toker.load_userdict(
+        open(TMP_DIR / "govern_region_names.txt", encoding="utf8")
+    )
 
     return toker
 

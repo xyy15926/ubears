@@ -14,6 +14,7 @@ if __name__ == "__main__":
     from importlib import reload
     from flagbear.str2 import fliper
     from statbear.dflater import ex2df, ex4df
+
     reload(fliper)
     reload(ex2df)
     reload(ex4df)
@@ -39,21 +40,18 @@ def pboc_rec():
             "PA01": {
                 "PA01A": {
                     "PA01AI01": "2019101617463675115707",
-                    "PA01AR01": "2019-10-16T17:46:36"
+                    "PA01AR01": "2019-10-16T17:46:36",
                 },
                 "PA01B": {
                     "PA01BD01": "10",
                     "PA01BD02": "22",
                     "PA01BI01": "622926198501293785",
                     "PA01BI02": "A10311000H0001",
-                    "PA01BQ01": "王小二"
-
+                    "PA01BQ01": "王小二",
                 },
                 "PA01C": None,
                 "PA01D": None,
-                "PA01E": {
-                    "PA01ES01": "1"
-                }
+                "PA01E": {"PA01ES01": "1"},
             }
         },
         "PDA": {
@@ -81,39 +79,33 @@ def pboc_rec():
                     "PD01C": None,
                     "PD01D": {
                         "PD01DH": [
-                            {
-                                "PD01DD01": "#",
-                                "PD01DR03": "2016-08"
-                            },
-                            {
-                                "PD01DD01": "#",
-                                "PD01DR03": "2016-07"
-                            }
+                            {"PD01DD01": "#", "PD01DR03": "2016-08"},
+                            {"PD01DD01": "#", "PD01DR03": "2016-07"},
                         ],
                         "PD01DR01": "2016-07",
-                        "PD01DR02": "2018-06"
+                        "PD01DR02": "2018-06",
                     },
                     "PD01E": {
                         "PD01EH": [
                             {
                                 "PD01ED01": "#",
                                 "PD01EJ01": "",
-                                "PD01ER03": "2014-12"
+                                "PD01ER03": "2014-12",
                             },
                             {
                                 "PD01ED01": "#",
                                 "PD01EJ01": "",
-                                "PD01ER03": "2014-11"
+                                "PD01ER03": "2014-11",
                             },
                             {
                                 "PD01ED01": "#",
                                 "PD01EJ01": "",
-                                "PD01ER03": "2014-10"
-                            }
+                                "PD01ER03": "2014-10",
+                            },
                         ],
                         "PD01ER01": "2014-11",
                         "PD01ER02": "2018-06",
-                        "PD01ES01": "44"
+                        "PD01ES01": "44",
                     },
                     "PD01F": None,
                     "PD01G": None,
@@ -143,17 +135,11 @@ def pboc_rec():
                     "PD01C": None,
                     "PD01D": {
                         "PD01DH": [
-                            {
-                                "PD01DD01": "#",
-                                "PD01DR03": "2016-08"
-                            },
-                            {
-                                "PD01DD01": "#",
-                                "PD01DR03": "2016-07"
-                            }
+                            {"PD01DD01": "#", "PD01DR03": "2016-08"},
+                            {"PD01DD01": "#", "PD01DR03": "2016-07"},
                         ],
                         "PD01DR01": "2016-07",
-                        "PD01DR02": "2018-06"
+                        "PD01DR02": "2018-06",
                     },
                     "PD01E": None,
                     "PD01F": None,
@@ -162,7 +148,7 @@ def pboc_rec():
                     "PD01Z": None,
                 },
             ],
-        }
+        },
     }
 
     return src
@@ -181,18 +167,18 @@ def pboc_acc_info():
     nrec = rebuild_rec2df(rec, val_rules, index_rules, explode=True)
 
     fval_rules = [
-        ["PD01AD01", "PD01A:PD01AD01", "VARCHAR(31)",],
-        ["PD01AD02", "PD01A:PD01AD02", "VARCHAR(31)",],
-        ["PD01AD03", "PD01A:PD01AD03", "VARCHAR(31)",],
-        ["PD01AD04", "PD01A:PD01AD04", "VARCHAR(31)",],
+        ["PD01AD01", "PD01A:PD01AD01", "VARCHAR(31)"],
+        ["PD01AD02", "PD01A:PD01AD02", "VARCHAR(31)"],
+        ["PD01AD03", "PD01A:PD01AD03", "VARCHAR(31)"],
+        ["PD01AD04", "PD01A:PD01AD04", "VARCHAR(31)"],
     ]
-    findex_rules = [
-        ["accid", "PD01A:PD01AI01"]
-    ]
-    fields = nrec["pboc_acc_info"].apply(rebuild_rec2df,
-                                         val_rules=fval_rules,
-                                         index_rules=findex_rules,
-                                         explode=True)
+    findex_rules = [["accid", "PD01A:PD01AI01"]]
+    fields = nrec["pboc_acc_info"].apply(
+        rebuild_rec2df,
+        val_rules=fval_rules,
+        index_rules=findex_rules,
+        explode=True,
+    )
     fields = pd.concat(fields.values, keys=nrec.index)
 
     return fields
@@ -201,6 +187,7 @@ def pboc_acc_info():
 # %%
 def test_trans_on_df():
     src = pboc_acc_info()
+    # fmt: off
     mapper = {
         "cdr_cat": {
             "D1": (1        , "非循环贷账户"),
@@ -220,15 +207,22 @@ def test_trans_on_df():
             "CAD": (5.3     , "CAD"),
         },
     }
-    mapper = {k: {kk: vv[0] for kk, vv in v.items()} for k,v in mapper.items()}
+    # fmt: on
+    mapper = {
+        k: {kk: vv[0] for kk, vv in v.items()} for k, v in mapper.items()
+    }
 
     trans_rules = [
         ["acc_cat", "map(PD01AD01, cdr_cat)"],
         ["acc_exchange_rate", "acc_cat != 99", "map(PD01AD04, exchange_rate)"],
     ]
     transed = trans_on_df(src, trans_rules, env=mapper)
-    assert np.all(transed.loc[transed["acc_cat"] == 99, "acc_exchange_rate"].isna())
-    assert np.all(transed.loc[transed["acc_cat"] != 99, "acc_exchange_rate"].notna())
+    assert np.all(
+        transed.loc[transed["acc_cat"] == 99, "acc_exchange_rate"].isna()
+    )
+    assert np.all(
+        transed.loc[transed["acc_cat"] != 99, "acc_exchange_rate"].notna()
+    )
     mret = {k: v for i, k, v in transed[["PD01AD01", "acc_cat"]].itertuples()}
     for k, v in mret.items():
         assert v == mapper["cdr_cat"][k]
@@ -237,6 +231,7 @@ def test_trans_on_df():
 # %%
 def cal_trans_on_df():
     src = pboc_acc_info()
+    # fmt: off
     mapper = {
         "cdr_cat": {
             "D1": (1        , "非循环贷账户"),
@@ -256,7 +251,10 @@ def cal_trans_on_df():
             "CAD": (5.3     , "CAD"),
         },
     }
-    mapper = {k: {kk: vv[0] for kk, vv in v.items()} for k,v in mapper.items()}
+    # fmt: on
+    mapper = {
+        k: {kk: vv[0] for kk, vv in v.items()} for k, v in mapper.items()
+    }
 
     trans_rules = [
         ["acc_cat", "map(PD01AD01, cdr_cat)"],
@@ -287,6 +285,7 @@ def test_agg_on_df():
 # %%
 def autofin_graphdf():
     # Only fields `nid`, `ntype` are necessary.
+    # fmt: off
     node_df = pd.DataFrame.from_records([
         ["Node1"    , "NType1"  , 100],
         ["Node2"    , "NType1"  , 200],
@@ -297,7 +296,9 @@ def autofin_graphdf():
         ["Node7"    , "NType2"  , 1000],
         ["Node8"    , "NType2"  , 10000],
     ], columns=["nid", "ntype", "weight"])
+    # fmt: on
     # Only fields `source`, `target` are necessary.
+    # fmt: off
     edge_df = pd.DataFrame.from_records([
         ["Node1"    , "Node2"   , "RType1"  , "2021-01-01"],
         ["Node1"    , "Node3"   , "RType1"  , "2023-01-01"],
@@ -307,6 +308,7 @@ def autofin_graphdf():
         ["Node4"    , "Node5"   , "RType1"  , "2021-01-01"],
         ["Node3"    , "Node8"   , "RType1"  , "2022-01-01"],
     ], columns=["source", "target", "etype", "update"])
+    # fmt: on
     edge_df["update"] = edge_df["update"].astype("M8[s]")
 
     return node_df, edge_df
@@ -407,7 +409,8 @@ def test_DFKGraph_init_with_only_ref_dfs():
     for netype, rdf in ref_dfs.items():
         if netype in _ref_dfs:
             assert rdf is _ref_dfs[netype], (
-                "The original reference DFs is the DF in `DFKGraph.ref_dfs`.")
+                "The original reference DFs is the DF in `DFKGraph.ref_dfs`."
+            )
 
     # Check the `__iloc__` and the `ntype`
     for netype, rdf in ref_dfs.items():
@@ -448,13 +451,16 @@ def test_DFKGraph_init_with_both_nedf_ref_dfs():
     for netype, rdf in ref_dfs.items():
         if netype in _ref_dfs:
             assert rdf is _ref_dfs[netype], (
-                "The original reference DFs is the DF in `DFKGraph.ref_dfs`.")
+                "The original reference DFs is the DF in `DFKGraph.ref_dfs`."
+            )
         elif fnid in rdf:
             assert rdf is node_df, (
-                "Newly added refernece DFs must be node-df or edge-df.")
+                "Newly added refernece DFs must be node-df or edge-df."
+            )
         elif fsrc in rdf:
             assert rdf is edge_df, (
-                "Newly added refernece DFs must be node-df or edge-df.")
+                "Newly added refernece DFs must be node-df or edge-df."
+            )
         else:
             assert False, "Unexpected reference DF."
 
@@ -479,7 +485,9 @@ def test_DFKGraph_agg_on_nodes():
     fetype = "etype"
     edge_joinkey = [fsrc, ftgt]
     node_df, edge_df = autofin_graphdf()
-    edge_df["upm_itvl"] = (np.datetime64("2025-06-14") - edge_df["update"]).dt.days
+    edge_df["upm_itvl"] = (
+        np.datetime64("2025-06-14") - edge_df["update"]
+    ).dt.days
 
     _ref_dfs = {}
     for x, y in node_df.groupby(fntype):
@@ -491,6 +499,7 @@ def test_DFKGraph_agg_on_nodes():
 
     kg = DFKGraph(node_df, edge_df, _ref_dfs)
     nids = "Node1"
+    # fmt: off
     rules = [
         ("dp1_ncnt", [("both", "upm_itvl < 1000", ""), ], "count(_)"),
         ("dp1_ws1", [("both", "upm_itvl < 2000", ""), ], "sum(weight)"),
@@ -500,5 +509,6 @@ def test_DFKGraph_agg_on_nodes():
         ("dp2_ws2", [("both", "upm_itvl < 2000", "weight > 200"),
                      ("target", "etype == \"RType1\"", "weight > 100")], "sum(weight)"),
     ]
+    # fmt: on
     ret = kg.agg_on_nodes(nids, rules)
     assert np.all(ret.values == [1, 12200, 11000, 1100, 1000])

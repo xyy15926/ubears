@@ -10,10 +10,12 @@
 # %%
 from __future__ import annotations
 import pytest
+
 if __name__ == "__main__":
     from importlib import reload
     from flagbear.slp import finer
     from dirtbear.spanner import pdsl
+
     reload(finer)
     reload(pdsl)
 

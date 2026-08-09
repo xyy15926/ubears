@@ -10,10 +10,12 @@
 # %%
 from __future__ import annotations
 import pytest
+
 if __name__ == "__main__":
     from importlib import reload
     from flagbear.slp import finer, databundle
     from dirtbear.quant import dataloader
+
     reload(finer)
     reload(databundle)
     reload(dataloader)
@@ -39,21 +41,24 @@ def tmpfile_fixture(request):
     if not any(get_tmp_path().iterdir()):
         get_tmp_path().rmdir()
 
+
 # %%
 def test_csv_cache(tmpfile_fixture):
     ONLY_ONCE = True
 
-    @csv_cache(dest = PYTEST_DIR)
+    @csv_cache(dest=PYTEST_DIR)
     def fetch_df():
         nonlocal ONLY_ONCE
         if not ONLY_ONCE:
             raise ValueError("Should be called only once.")
-        df = pd.DataFrame({
-            "a": [1, 1, 1],
-            "b": [1, 1, 1.0],
-            "c": ["a", "b", "测试"],
-            "d": [1, 1.0, "测试"]
-        })
+        df = pd.DataFrame(
+            {
+                "a": [1, 1, 1],
+                "b": [1, 1, 1.0],
+                "c": ["a", "b", "测试"],
+                "d": [1, 1.0, "测试"],
+            }
+        )
         ONLY_ONCE = False
         return df
 

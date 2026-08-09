@@ -14,6 +14,7 @@ from pytest import mark
 if __name__ == "__main__":
     from importlib import reload
     from dirtbear.locale import geoenc
+
     reload(geoenc)
 
 from dirtbear.locale.geoenc import CHNGovEncoder

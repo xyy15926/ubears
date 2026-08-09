@@ -19,18 +19,19 @@ from sklearn.datasets import load_iris
 # %%
 @pytest.mark.skip(reason="Time Comsuming")
 def inner_fit():
-    """ Fit XGB in XGB-style.
-    """
+    """Fit XGB in XGB-style."""
     X, y = load_iris(return_X_y=True)
     train_X, test_X, train_y, test_y = train_test_split(X, y)
 
     xgtrain = xgb.DMatrix(train_X, train_y)
     xgtest = xgb.DMatrix(test_X, test_y)
-    params = {"max_depth": 5,
-              "eta": 0.1,
-              "subsample": 0.7,
-              "colsample_bytree": 0.7,
-              "num_class": len(np.unique(y))}
+    params = {
+        "max_depth": 5,
+        "eta": 0.1,
+        "subsample": 0.7,
+        "colsample_bytree": 0.7,
+        "num_class": len(np.unique(y)),
+    }
     watchlist = [(xgtest, "eval"), (xgtrain, "train")]
     epochs = 10
 
@@ -44,18 +45,19 @@ def inner_fit():
 # %%
 @pytest.mark.skip(reason="Time Comsuming")
 def skl_fit():
-    """ Fit XGB in sklearn-style.
-    """
+    """Fit XGB in sklearn-style."""
     X, y = load_iris(return_X_y=True)
     train_X, test_X, train_y, test_y = train_test_split(X, y)
 
-    xgbclf = XGBClassifier(n_estimators=10,
-                           silent=1,
-                           max_depth=4,
-                           learning_rate=0.1,
-                           subsample=0.7,
-                           colsample_bytree=0.7,
-                           eval_metric="error")
+    xgbclf = XGBClassifier(
+        n_estimators=10,
+        silent=1,
+        max_depth=4,
+        learning_rate=0.1,
+        subsample=0.7,
+        colsample_bytree=0.7,
+        eval_metric="error",
+    )
 
     xgbclf.fit(train_X, train_y)
 

@@ -16,6 +16,7 @@ import pandas as pd
 if __name__ == "__main__":
     from importlib import reload
     from dirtbear.docer import pdframe
+
     reload(pdframe)
 
 from flagbear.slp.finer import get_assets_path
@@ -35,7 +36,7 @@ def test_format_table():
         "交易方式": None,
         "金额(元)": None,
         "交易对方": None,
-        "商户单号": None
+        "商户单号": None,
     }
     columns = list(columns.keys())
     dtypes = {
@@ -43,9 +44,9 @@ def test_format_table():
         "交易时间": "DATE",
     }
 
-    ftable, desc = format_table(table, columns,
-                                drop_chars="\n\t",
-                                dtypes=dtypes)
+    ftable, desc = format_table(
+        table, columns, drop_chars="\n\t", dtypes=dtypes
+    )
     assert np.all(ftable.columns == columns)
     assert ftable["金额(元)"].dtype == "float64"
     assert ftable["交易时间"].dtype == "datetime64[ns]"

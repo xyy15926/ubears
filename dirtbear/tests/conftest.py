@@ -19,7 +19,9 @@ DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 @pytest.fixture(scope="session", autouse=False)
 def time_session_scope():
     start = time.time()
-    print("\nStart: {}".format(time.strftime(DATE_FORMAT, time.localtime(start))))
+    print(
+        "\nStart: {}".format(time.strftime(DATE_FORMAT, time.localtime(start)))
+    )
     yield
     end = time.time()
     print("\nEnd: {}".format(time.strftime(DATE_FORMAT, time.localtime(end))))

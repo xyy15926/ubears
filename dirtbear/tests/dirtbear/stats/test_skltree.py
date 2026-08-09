@@ -14,6 +14,7 @@ if __name__ == "__main__":
     from importlib import reload
     from dirtbear.stats import skltree
     from statbear.panel import freqs
+
     reload(skltree)
     reload(freqs)
 
@@ -24,21 +25,23 @@ from dirtbear.stats.skltree import (
     tree_node_metric,
     extract_paths_from_tree,
     build_parent_from_children,
-    biclf_select_nodes
+    biclf_select_nodes,
 )
 
 
 # %%
-def make_data(length: int = 20, *,
-              add_nan: bool = False,
-              seed: int = 7777) -> tuple:
+def make_data(
+    length: int = 20, *, add_nan: bool = False, seed: int = 7777
+) -> tuple:
     np.random.seed(seed)
-    X = np.column_stack([
-        np.random.randint(1, 5, length),
-        np.random.randint(1, 100, length),
-        np.random.randint(1, 100, length),
-        np.random.randint(1, 100, length),
-    ])
+    X = np.column_stack(
+        [
+            np.random.randint(1, 5, length),
+            np.random.randint(1, 100, length),
+            np.random.randint(1, 100, length),
+            np.random.randint(1, 100, length),
+        ]
+    )
     y = np.random.choice([0, 1], length)
     if add_nan:
         X.iloc[np.random.choice(range(length), 2), 0] = np.nan

@@ -9,9 +9,11 @@
 
 # %%
 import pytest
+
 if __name__ == "__main__":
     from importlib import reload
     from dirtbear.locale import pronoun
+
     reload(pronoun)
 
 import string

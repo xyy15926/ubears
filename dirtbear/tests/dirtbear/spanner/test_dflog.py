@@ -15,6 +15,7 @@ if __name__ == "__main__":
     from statbear.panel import metrics
     from statbear.panel import sortable
     from dirtbear.spanner import dflog
+
     reload(metrics)
     reload(sortable)
     reload(dflog)
@@ -92,8 +93,7 @@ def test_serdiffm():
 # %%
 @pytest.mark.filterwarnings("ignore: divide by zero encountered")
 def test_dfdesc():
-    df = pd.DataFrame({"a": [99, 2, 3, 2, 3, 99],
-                       "b": ["a", 2, 3, 2, 3, "a"]})
+    df = pd.DataFrame({"a": [99, 2, 3, 2, 3, 99], "b": ["a", 2, 3, 2, 3, "a"]})
     label = np.array([1, 0, 0, 1, 0, 1])
     fdf, sdf = dfdesc(df, label)
     assert np.all(fdf.loc["a"].values == fdf.loc["b"].values)
@@ -103,14 +103,22 @@ def test_dfdesc():
 # %%
 @pytest.mark.filterwarnings("ignore: divide by zero encountered")
 def test_dfdiffm():
-    dfo = pd.DataFrame({"a": [99, 2, 3, 4, 99, 2, float("nan")],
-                        "b": [99, 2, 3, 4, 99, 2, float("nan")],
-                        "c": [99] * 7,
-                        "d": [99, 2, "a", 4, 99, 2, float("nan")]})
-    dfn = pd.DataFrame({"a": [0, 1, 2, 3, 0, 1, -1],
-                        "b": [9, 0, 0, 0, 9, 0, np.nan],
-                        "c": [0] * 7,
-                        "d": [0, 0, 0, 1, 0, 0, 1]})
+    dfo = pd.DataFrame(
+        {
+            "a": [99, 2, 3, 4, 99, 2, float("nan")],
+            "b": [99, 2, 3, 4, 99, 2, float("nan")],
+            "c": [99] * 7,
+            "d": [99, 2, "a", 4, 99, 2, float("nan")],
+        }
+    )
+    dfn = pd.DataFrame(
+        {
+            "a": [0, 1, 2, 3, 0, 1, -1],
+            "b": [9, 0, 0, 0, 9, 0, np.nan],
+            "c": [0] * 7,
+            "d": [0, 0, 0, 1, 0, 0, 1],
+        }
+    )
     cat_df, num_df = dfdiffm(dfo, dfn, True)
 
     assert len(cat_df.index.levels[0]) == 1
@@ -138,14 +146,22 @@ def test_dfdiffm():
 def test_process_logger():
     logger = ProcessLogger()
     ldf = logger.proc_logs
-    dfo = pd.DataFrame({"a": [99, 2, 3, 4, 99, 2, float("nan")],
-                        "b": [99, 2, 3, 4, 99, 2, float("nan")],
-                        "c": [99] * 7,
-                        "d": [99, 2, "a", 4, 99, 2, float("nan")]})
-    dfn = pd.DataFrame({"a": [0, 1, 2, 3, 0, 1, -1],
-                        "b": [9, 0, 0, 0, 9, 0, np.nan],
-                        "c": [0] * 7,
-                        "d": [0, 0, 0, 1, 0, 0, 1]})
+    dfo = pd.DataFrame(
+        {
+            "a": [99, 2, 3, 4, 99, 2, float("nan")],
+            "b": [99, 2, 3, 4, 99, 2, float("nan")],
+            "c": [99] * 7,
+            "d": [99, 2, "a", 4, 99, 2, float("nan")],
+        }
+    )
+    dfn = pd.DataFrame(
+        {
+            "a": [0, 1, 2, 3, 0, 1, -1],
+            "b": [9, 0, 0, 0, 9, 0, np.nan],
+            "c": [0] * 7,
+            "d": [0, 0, 0, 1, 0, 0, 1],
+        }
+    )
     label = np.array([1, 0, 0, 1, 0, 1, 0])
 
     logger.vallog(dfo, label, ltag="ori")
@@ -158,8 +174,16 @@ def test_process_logger():
 
     logger.vallog(dfn, label, ltag="new")
     assert len(ldf) == 8
-    assert list(ldf.keys())[5:] == ["fdesc_new_1", "cdesc_new_1", "pcorr_new_1"]
+    assert list(ldf.keys())[5:] == [
+        "fdesc_new_1",
+        "cdesc_new_1",
+        "pcorr_new_1",
+    ]
 
     logger.vallog(dfn, label, ltag="new")
     assert len(ldf) == 11
-    assert list(ldf.keys())[8:] == ["fdesc_new_2", "cdesc_new_2", "pcorr_new_2"]
+    assert list(ldf.keys())[8:] == [
+        "fdesc_new_2",
+        "cdesc_new_2",
+        "pcorr_new_2",
+    ]

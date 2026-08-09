@@ -14,6 +14,7 @@ if __name__ == "__main__":
     from importlib import reload
     from flagbear.str2 import dtyper, fliper
     from dirtbear.dflater import ex2df
+
     reload(dtyper)
     reload(fliper)
     reload(ex2df)
@@ -24,7 +25,11 @@ import os
 import json
 
 from flagbear.str2.fliper import extract_field, rebuild_dict
-from dirtbear.dflater.ex2df import rebuild_rec2df, compress_hierarchy, flat_records
+from dirtbear.dflater.ex2df import (
+    rebuild_rec2df,
+    compress_hierarchy,
+    flat_records,
+)
 
 
 # %%
@@ -34,21 +39,18 @@ def pboc_rec():
             "PA01": {
                 "PA01A": {
                     "PA01AI01": "2019101617463675115707",
-                    "PA01AR01": "2019-10-16T17:46:36"
+                    "PA01AR01": "2019-10-16T17:46:36",
                 },
                 "PA01B": {
                     "PA01BD01": "10",
                     "PA01BD02": "22",
                     "PA01BI01": "622926198501293785",
                     "PA01BI02": "A10311000H0001",
-                    "PA01BQ01": "王小二"
-
+                    "PA01BQ01": "王小二",
                 },
                 "PA01C": None,
                 "PA01D": None,
-                "PA01E": {
-                    "PA01ES01": "1"
-                }
+                "PA01E": {"PA01ES01": "1"},
             }
         },
         "PDA": {
@@ -76,39 +78,33 @@ def pboc_rec():
                     "PD01C": None,
                     "PD01D": {
                         "PD01DH": [
-                            {
-                                "PD01DD01": "#",
-                                "PD01DR03": "2016-08"
-                            },
-                            {
-                                "PD01DD01": "#",
-                                "PD01DR03": "2016-07"
-                            }
+                            {"PD01DD01": "#", "PD01DR03": "2016-08"},
+                            {"PD01DD01": "#", "PD01DR03": "2016-07"},
                         ],
                         "PD01DR01": "2016-07",
-                        "PD01DR02": "2018-06"
+                        "PD01DR02": "2018-06",
                     },
                     "PD01E": {
                         "PD01EH": [
                             {
                                 "PD01ED01": "#",
                                 "PD01EJ01": "",
-                                "PD01ER03": "2014-12"
+                                "PD01ER03": "2014-12",
                             },
                             {
                                 "PD01ED01": "#",
                                 "PD01EJ01": "",
-                                "PD01ER03": "2014-11"
+                                "PD01ER03": "2014-11",
                             },
                             {
                                 "PD01ED01": "#",
                                 "PD01EJ01": "",
-                                "PD01ER03": "2014-10"
-                            }
+                                "PD01ER03": "2014-10",
+                            },
                         ],
                         "PD01ER01": "2014-11",
                         "PD01ER02": "2018-06",
-                        "PD01ES01": "44"
+                        "PD01ES01": "44",
                     },
                     "PD01F": None,
                     "PD01G": None,
@@ -138,17 +134,11 @@ def pboc_rec():
                     "PD01C": None,
                     "PD01D": {
                         "PD01DH": [
-                            {
-                                "PD01DD01": "#",
-                                "PD01DR03": "2016-08"
-                            },
-                            {
-                                "PD01DD01": "#",
-                                "PD01DR03": "2016-07"
-                            }
+                            {"PD01DD01": "#", "PD01DR03": "2016-08"},
+                            {"PD01DD01": "#", "PD01DR03": "2016-07"},
                         ],
                         "PD01DR01": "2016-07",
-                        "PD01DR02": "2018-06"
+                        "PD01DR02": "2018-06",
                     },
                     "PD01E": None,
                     "PD01F": None,
@@ -157,7 +147,7 @@ def pboc_rec():
                     "PD01Z": None,
                 },
             ],
-        }
+        },
     }
 
     return src
@@ -225,14 +215,16 @@ def test_rebuild_rec2df_range_index():
     index_rules = [
         ["rid", "PRH:PA01:PA01A:PA01AI01"],
         ["certno", "PRH:PA01:PA01B:PA01BI01"],
-        ["PD01AI01", "PDA:PD01:[_]:PD01A:PD01AI01"]
+        ["PD01AI01", "PDA:PD01:[_]:PD01A:PD01AI01"],
     ]
     nrec = rebuild_rec2df(rec, val_rules, index_rules, explode=True)
     assert len(nrec) >= 1
     assert np.all(nrec.columns == [i[0] for i in val_rules])
     assert np.all(nrec.index.names == [i[0] for i in index_rules])
 
-    nrec = rebuild_rec2df(rec, val_rules, index_rules, explode=True, range_index="ridx")
+    nrec = rebuild_rec2df(
+        rec, val_rules, index_rules, explode=True, range_index="ridx"
+    )
     assert len(nrec) >= 1
     assert np.all(nrec.columns == [i[0] for i in val_rules])
     assert np.all(nrec.index.names == [i[0] for i in index_rules] + ["ridx"])
@@ -282,11 +274,7 @@ def test_rebuild_rec2df_null_fields():
 
 # %%
 def test_rebuild_rec2df_check_dtype():
-    rec = {
-        "int": ["", ""],
-        "varchar": ["", ""],
-        "date": ["2024-05", "abc"]
-    }
+    rec = {"int": ["", ""], "varchar": ["", ""], "date": ["2024-05", "abc"]}
     val_rules = [
         ("int", None, "int", "INT", np.nan),
         ("varchar", "varchar", "VARCHAR(255)"),
@@ -302,8 +290,9 @@ def test_rebuild_rec2df_check_dtype():
         ("date", None, "date:[_]", "DATE", np.datetime64("NaT")),
         ("null_date", None, "null_date:[_]", "DATE", np.datetime64("NaT")),
     ]
-    element_wise_nrec = rebuild_rec2df(rec, val_rules_element_wise,
-                                       explode=True)
+    element_wise_nrec = rebuild_rec2df(
+        rec, val_rules_element_wise, explode=True
+    )
 
     assert np.any(nrec.dtypes == element_wise_nrec.dtypes)
     assert np.any(nrec.dtypes != element_wise_nrec.dtypes)
@@ -323,7 +312,7 @@ def test_compress_hierarchy():
                 ("rid", "PRH:PA01:PA01A:PA01AI01"),
                 ("certno", "PRH:PA01:PA01B:PA01BI01"),
                 ("accid", "PDA:PD01:[_]:PD01A:PD01AI01"),
-            ]
+            ],
         }
     ]
     acc_info_psrc = compress_hierarchy(src, acc_info_part)
@@ -337,10 +326,11 @@ def test_compress_hierarchy():
                 ("rid", "PRH:PA01:PA01A:PA01AI01"),
                 ("certno", "PRH:PA01:PA01B:PA01BI01"),
                 ("accid", "PDA:PD01:[_]:PD01A:PD01AI01"),
-            ]
-        },{
+            ],
+        },
+        {
             "content": "PD01EH:[_]",
-        }
+        },
     ]
     repay_60m_psrc = compress_hierarchy(src, repay_60m_part)
     assert repay_60m_psrc.index.nlevels == src.index.nlevels + 3 + 1
@@ -369,7 +359,7 @@ def cal_compress_hierarchy():
                 ("rid", "PRH:PA01:PA01A:PA01AI01"),
                 ("certno", "PRH:PA01:PA01B:PA01BI01"),
                 ("accid", "PDA:PD01:[_]:PD01A:PD01AI01"),
-            ]
+            ],
         }
     ]
     acc_info_psrc = compress_hierarchy(src, acc_info_part)
@@ -381,10 +371,11 @@ def cal_compress_hierarchy():
                 ("rid", "PRH:PA01:PA01A:PA01AI01"),
                 ("certno", "PRH:PA01:PA01B:PA01BI01"),
                 ("accid", "PDA:PD01:[_]:PD01A:PD01AI01"),
-            ]
-        },{
+            ],
+        },
+        {
             "content": "PD01EH:[_]",
-        }
+        },
     ]
 
     repay_60m_psrc = compress_hierarchy(src, repay_60m_part)
@@ -407,10 +398,11 @@ def test_compress_hierarchy_range_idx():
                 ("rid", "PRH:PA01:PA01A:PA01AI01"),
                 ("certno", "PRH:PA01:PA01B:PA01BI01"),
                 ("accid", "RANGEINDEX"),
-            ]
-        },{
+            ],
+        },
+        {
             "content": "PD01EH:[_]",
-        }
+        },
     ]
     repay_60m_psrc = compress_hierarchy(src, repay_60m_part)
     assert repay_60m_psrc.index.nlevels == src.index.nlevels + 3 + 1
@@ -431,10 +423,11 @@ def test_compress_hierarchy_null_vals():
                 ("rid", "PRH:PA01:PA01A:PA01AI01"),
                 ("certno", "PRH:PA01:PA01B:PA01BI01"),
                 ("accid", "PDA:PD01:[_]:PD01A:PD01AI01"),
-            ]
-        },{
+            ],
+        },
+        {
             "content": "PD01AH:[_]",
-        }
+        },
     ]
     repay_60m_psrc = compress_hierarchy(src, repay_60m_part)
     assert repay_60m_psrc.empty
@@ -514,6 +507,10 @@ def test_flat_record():
         ("PD01EJ01", "PD01EJ01", "int", "逾期（透支）总额"),
     ]
     tuple2_fields = [ele[:2] for ele in repay_60m_fields]
-    repay_60m_vals = flat_records(repay_60m_psrc, tuple2_fields, drop_rid=False)
-    assert np.all(repay_60m_vals.index.names[:-1] == repay_60m_psrc.index.names)
+    repay_60m_vals = flat_records(
+        repay_60m_psrc, tuple2_fields, drop_rid=False
+    )
+    assert np.all(
+        repay_60m_vals.index.names[:-1] == repay_60m_psrc.index.names
+    )
     assert len(repay_60m_vals) == len(repay_60m_psrc)

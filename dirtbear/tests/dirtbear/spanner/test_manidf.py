@@ -15,6 +15,7 @@ import pandas as pd
 if __name__ == "__main__":
     from importlib import reload
     from dirtbear.spanner import manidf
+
     reload(manidf)
 
 from dirtbear.spanner.manidf import rename_overlaped
@@ -64,18 +65,34 @@ def test_merge_dfs():
     N = 30
     by6 = list("abcdef")
     nby6 = N // len(by6)
-    df1 = pd.DataFrame({"on": np.arange(N, dtype=np.float64),
-                        "by": sorted(by6 * nby6),
-                        "vals": np.arange(N)})
-    df2 = pd.DataFrame({"on": np.arange(N, dtype=np.float64) - 0.1,
-                        "by": np.random.choice(by6, N),
-                        "vals_1": np.arange(N)})
-    df3 = pd.DataFrame({"on": np.arange(N, dtype=np.float64) + 0.2,
-                        "by": np.random.choice(by6, N),
-                        "vals": np.arange(N)})
-    df4 = pd.DataFrame({"on": np.arange(N, dtype=np.float64) + 0.3,
-                        "by": np.random.choice(by6, N),
-                        "vals": np.arange(N)})
+    df1 = pd.DataFrame(
+        {
+            "on": np.arange(N, dtype=np.float64),
+            "by": sorted(by6 * nby6),
+            "vals": np.arange(N),
+        }
+    )
+    df2 = pd.DataFrame(
+        {
+            "on": np.arange(N, dtype=np.float64) - 0.1,
+            "by": np.random.choice(by6, N),
+            "vals_1": np.arange(N),
+        }
+    )
+    df3 = pd.DataFrame(
+        {
+            "on": np.arange(N, dtype=np.float64) + 0.2,
+            "by": np.random.choice(by6, N),
+            "vals": np.arange(N),
+        }
+    )
+    df4 = pd.DataFrame(
+        {
+            "on": np.arange(N, dtype=np.float64) + 0.3,
+            "by": np.random.choice(by6, N),
+            "vals": np.arange(N),
+        }
+    )
     dfs = [df1, df2, df3, df4]
 
     merged = merge_dfs(dfs, ons="on")
