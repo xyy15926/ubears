@@ -478,7 +478,7 @@ def test_flat_record():
 
     # Flat with 5-Tuple confs.
     mixed_fields = []
-    for key, step, dtype, desc in acc_info_fields:
+    for key, step, dtype, _desc in acc_info_fields:
         if dtype == "DATE":
             mixed_fields.append([key, None, step, dtype, np.datetime64("nat")])
         else:
@@ -490,7 +490,7 @@ def test_flat_record():
 
     # Flat with 6-Tuple confs.
     mixed_fields = []
-    for key, step, dtype, desc in acc_info_fields:
+    for key, step, dtype, _desc in acc_info_fields:
         if dtype == "DATE":
             mixed_fields.append([key, None, step, dtype, None, True])
         else:
@@ -503,7 +503,7 @@ def test_flat_record():
     repay_60m_fields = [
         ("PD01ER03", "PD01ER03", "date", "月份"),
         ("PD01ED01", "PD01ED01", "varchar(31)", "还款状态"),
-        ("PD01EJ01", "PD01EJ01", "int", "逾期（透支）总额"),
+        ("PD01EJ01", "PD01EJ01", "int", "逾期(透支)总额"),
     ]
     tuple2_fields = [ele[:2] for ele in repay_60m_fields]
     repay_60m_vals = flat_records(

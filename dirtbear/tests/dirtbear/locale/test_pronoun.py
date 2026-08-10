@@ -34,7 +34,7 @@ from dirtbear.locale.pronoun import (
 
 # %%
 def test_certno():
-    for i in range(10):
+    for _i in range(10):
         rct = rand_certno()
         assert len(rct) == 6 + 8 + 4
         for ele in rct:
@@ -54,7 +54,7 @@ def test_certno():
 
 # %%
 def test_orgno():
-    for i in range(10):
+    for _i in range(10):
         rct = rand_orgno()
         assert len(rct) == 18
         for ele in rct:

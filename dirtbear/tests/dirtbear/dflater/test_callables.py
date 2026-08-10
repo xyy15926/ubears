@@ -65,28 +65,28 @@ def test_nnfilter():
     x = [1, 2, 2, None]
     ret = nnfilter(x)
     assert np.all(ret == [1, 2, 2])
-    env = dict(x=x)
+    env = {"x": x}
     ret = envp.bind_env(env).parse("nnfilter(x)")
     assert np.all(ret == [1, 2, 2])
 
     x = np.array([1, 2, 2, None])
     ret = nnfilter(x)
     assert np.all(ret == [1, 2, 2])
-    env = dict(x=x)
+    env = {"x": x}
     ret = envp.bind_env(env).parse("nnfilter(x)")
     assert np.all(ret == [1, 2, 2])
 
     x = pd.Series([1, 2, 2, None])
     ret = nnfilter(x)
     assert np.all(np.isclose(ret, [1, 2, 2, np.nan], equal_nan=True))
-    env = pd.DataFrame(dict(x=x))
+    env = pd.DataFrame({"x": x})
     ret = envp.bind_env(env).parse("nnfilter(x)")
     assert np.all(np.isclose(ret, [1, 2, 2, np.nan], equal_nan=True))
 
     # Empty sequence.
     ret = nnfilter([])
     assert ret == []
-    env = dict(x=[])
+    env = {"x": []}
     ret = envp.bind_env(env).parse("nnfilter(x)")
     assert ret == []
 
@@ -104,7 +104,7 @@ def test_getn():
     ret = getn(x, None)
     assert ret is None
 
-    env = dict(x=x)
+    env = {"x": x}
     ret = envp.bind_env(env).parse("getn(x, 1)")
     assert ret == 2
     ret = envp.bind_env(env).parse("getn(x, 7)")
@@ -120,7 +120,7 @@ def test_getn():
     ret = getn(x, None)
     assert ret is None
 
-    env = dict(x=x)
+    env = {"x": x}
     ret = envp.bind_env(env).parse("getn(x, 1)")
     assert ret == 2
     ret = envp.bind_env(env).parse("getn(x, 7)")
@@ -136,7 +136,7 @@ def test_getn():
     ret = getn(x, None)
     assert ret is None
 
-    env = pd.DataFrame(dict(x=x))
+    env = pd.DataFrame({"x": x})
     ret = envp.bind_env(env).parse("getn(x, 1)")
     assert ret == 2
     ret = envp.bind_env(env).parse("getn(x, 7)")
@@ -152,135 +152,87 @@ def test_getn():
 
 
 # %%
+def _assert_dropdup_equal(ret, expected):
+    for le, re in zip(ret.ravel(), expected, strict=True):
+        assert le == re or np.isnan(le)
+
+
+def _dropdup_single(envp, x, env):
+    expected = [1, 2, 3, "a", None, np.nan]
+    _assert_dropdup_equal(drop_duplicates([x]), expected)
+    _assert_dropdup_equal(drop_duplicates(x), expected)
+    _assert_dropdup_equal(
+        envp.bind_env(env).parse("drop_duplicates([x,])"), expected
+    )
+    _assert_dropdup_equal(
+        envp.bind_env(env).parse("drop_duplicates(x)"), expected
+    )
+
+
 def test_dropdup():
     envp = get_envp()
 
     # Single List, np.ndarray and pd.Series.
     x = [1, 1, 2, 3, "a", None, None, np.nan, np.nan]
-    ret = drop_duplicates([x])
-    # `None` and `np.nan` will be treated as the same, and the first will be
-    # reserved.
-    for le, re in zip(ret, [1, 2, 3, "a", None]):
-        assert le == re or np.isnan(le)
-    ret = drop_duplicates(x)
-    for le, re in zip(ret, [1, 2, 3, "a", None]):
-        assert le == re or np.isnan(le)
-
-    env = dict(x=x)
-    ret = envp.bind_env(env).parse("drop_duplicates([x,])")
-    for le, re in zip(ret, [1, 2, 3, "a", None]):
-        assert le == re or np.isnan(le)
-    ret = envp.bind_env(env).parse("drop_duplicates(x)")
-    for le, re in zip(ret, [1, 2, 3, "a", None]):
-        assert le == re or np.isnan(le)
+    _dropdup_single(envp, x, {"x": x})
 
     x = np.array([1, 1, 2, 3, "a", None, None, np.nan, np.nan], dtype="O")
-    ret = drop_duplicates([x])
-    for le, re in zip(ret, [1, 2, 3, "a", None]):
-        assert le == re or np.isnan(le)
-    ret = drop_duplicates(x)
-    for le, re in zip(ret, [1, 2, 3, "a", None]):
-        assert le == re or np.isnan(le)
-
-    env = dict(x=x)
-    ret = envp.bind_env(env).parse("drop_duplicates([x,])")
-    for le, re in zip(ret, [1, 2, 3, "a", None]):
-        assert le == re or np.isnan(le)
-    ret = envp.bind_env(env).parse("drop_duplicates(x)")
-    for le, re in zip(ret, [1, 2, 3, "a", None]):
-        assert le == re or np.isnan(le)
+    _dropdup_single(envp, x, {"x": x})
 
     x = pd.Series([1, 1, 2, 3, "a", None, None, np.nan, np.nan])
-    ret = drop_duplicates([x])
-    for le, re in zip(ret, [1, 2, 3, "a", None]):
-        assert le == re or np.isnan(le)
-    ret = drop_duplicates(x)
-    for le, re in zip(ret, [1, 2, 3, "a", None]):
-        assert le == re or np.isnan(le)
-
-    env = pd.DataFrame(dict(x=x))
-    ret = envp.bind_env(env).parse("drop_duplicates([x,])")
-    for le, re in zip(ret, [1, 2, 3, "a", None]):
-        assert le == re or np.isnan(le)
-    ret = envp.bind_env(env).parse("drop_duplicates(x)")
-    for le, re in zip(ret, [1, 2, 3, "a", None]):
-        assert le == re or np.isnan(le)
+    _dropdup_single(envp, x, pd.DataFrame({"x": x}))
 
     # Empty single sequences.
-    ret = drop_duplicates([])
-    assert len(ret) == 0
-    ret = drop_duplicates([[]])
-    assert len(ret) == 0
-    ret = envp.bind_env(env).parse("drop_duplicates([])")
-    assert len(ret) == 0
-    ret = envp.bind_env(env).parse("drop_duplicates([[]])")
-    assert len(ret) == 0
+    assert len(drop_duplicates([])) == 0
+    assert len(drop_duplicates([[]])) == 0
+    assert len(envp.bind_env({"x": []}).parse("drop_duplicates([])")) == 0
+    assert len(envp.bind_env({"x": []}).parse("drop_duplicates([[]])")) == 0
 
     # Single factor of multiple sequences.
     ret = drop_duplicates([1, 1])
     assert np.all(ret == [1])
     assert ret.shape == (1,)
-    ret = envp.bind_env(env).parse("drop_duplicates([1, 1])")
+    ret = envp.bind_env({}).parse("drop_duplicates([1, 1])")
     assert np.all(ret == [1])
     assert ret.shape == (1,)
 
     # Multiple List, np.ndarray and pd.Series.
+    expected_multi = [1, 1, 2, 2, 3, "a", "a", 5, None, 5, np.nan, 6]
     x = [1, 1, 2, 3, "a", None, None, np.nan, np.nan]
     y = [1, 1, 2, "a", 5, 5, 5, 6, 6]
-    ret = drop_duplicates([x, y])
-    for le, re in zip(
-        ret.ravel(), [1, 1, 2, 2, 3, "a", "a", 5, None, 5, np.nan, 6]
-    ):
-        assert le == re or np.isnan(le)
-
-    env = dict(x=x, y=y)
-    ret = envp.bind_env(env).parse("drop_duplicates([x,y])")
-    for le, re in zip(
-        ret.ravel(), [1, 1, 2, 2, 3, "a", "a", 5, None, 5, np.nan, 6]
-    ):
-        assert le == re or np.isnan(le)
+    _assert_dropdup_equal(drop_duplicates([x, y]), expected_multi)
+    _assert_dropdup_equal(
+        envp.bind_env({"x": x, "y": y}).parse("drop_duplicates([x,y])"),
+        expected_multi,
+    )
 
     x = np.array([1, 1, 2, 3, "a", None, None, np.nan, np.nan], dtype="O")
     y = np.array([1, 1, 2, "a", 5, 5, 5, 6, 6], dtype="O")
-    ret = drop_duplicates([x, y])
-    for le, re in zip(
-        ret.ravel(), [1, 1, 2, 2, 3, "a", "a", 5, None, 5, np.nan, 6]
-    ):
-        assert le == re or np.isnan(le)
-
-    env = dict(x=x, y=y)
-    ret = envp.bind_env(env).parse("drop_duplicates([x,y])")
-    for le, re in zip(
-        ret.ravel(), [1, 1, 2, 2, 3, "a", "a", 5, None, 5, np.nan, 6]
-    ):
-        assert le == re or np.isnan(le)
+    _assert_dropdup_equal(drop_duplicates([x, y]), expected_multi)
+    _assert_dropdup_equal(
+        envp.bind_env({"x": x, "y": y}).parse("drop_duplicates([x,y])"),
+        expected_multi,
+    )
 
     x = pd.Series([1, 1, 2, 3, "a", None, None, np.nan, np.nan])
     y = pd.Series([1, 1, 2, "a", 5, 5, 5, 6, 6])
-    ret = drop_duplicates([x, y])
-    for le, re in zip(
-        ret.ravel(), [1, 1, 2, 2, 3, "a", "a", 5, None, 5, np.nan, 6]
-    ):
-        assert le == re or np.isnan(le)
-
-    env = pd.DataFrame(dict(x=x, y=y))
-    ret = envp.bind_env(env).parse("drop_duplicates([x,y])")
-    for le, re in zip(
-        ret.ravel(), [1, 1, 2, 2, 3, "a", "a", 5, None, 5, np.nan, 6]
-    ):
-        assert le == re or np.isnan(le)
+    _assert_dropdup_equal(drop_duplicates([x, y]), expected_multi)
+    _assert_dropdup_equal(
+        envp.bind_env(pd.DataFrame({"x": x, "y": y})).parse(
+            "drop_duplicates([x,y])"
+        ),
+        expected_multi,
+    )
 
     # Empty multiple sequences.
-    ret = drop_duplicates([[], []])
-    assert len(ret) == 0
-    ret = envp.bind_env(env).parse("drop_duplicates([[], []])")
-    assert len(ret) == 0
+    assert len(drop_duplicates([[], []])) == 0
+    assert len(envp.bind_env({}).parse("drop_duplicates([[], []])")) == 0
 
     # Single factor of multiple sequences.
     ret = drop_duplicates([[1, 1], [1, 1]])
     assert np.all(ret == [[1, 1]])
     assert ret.shape == (1, 2)
-    ret = envp.bind_env(env).parse("drop_duplicates([[1, 1], [1, 1]])")
+    ret = envp.bind_env({}).parse("drop_duplicates([[1, 1], [1, 1]])")
     assert np.all(ret == [[1, 1]])
     assert ret.shape == (1, 2)
 
@@ -299,7 +251,7 @@ def test_maxminavg():
     ret = sum(x)
     assert ret == 5
 
-    env = dict(x=x)
+    env = {"x": x}
     ret = envp.bind_env(env).parse("max(x)")
     assert ret == 2
     ret = envp.bind_env(env).parse("avg(x)")
@@ -315,7 +267,7 @@ def test_maxminavg():
     ret = sum(x)
     assert ret == 5
 
-    env = dict(x=x)
+    env = {"x": x}
     ret = envp.bind_env(env).parse("max(x)")
     assert ret == 2
     ret = envp.bind_env(env).parse("avg(x)")
@@ -331,7 +283,7 @@ def test_maxminavg():
     ret = sum(x)
     assert ret == 5
 
-    env = dict(x=x)
+    env = {"x": x}
     ret = envp.bind_env(env).parse("max(x)")
     assert ret == 2
     ret = envp.bind_env(env).parse("avg(x)")
@@ -364,7 +316,7 @@ def test_maxminavg():
     ret = sum(x)
     assert ret == 0
 
-    env = dict(x=x)
+    env = {"x": x}
     ret = envp.bind_env(env).parse("max(x)")
     assert np.isnan(ret)
     ret = envp.bind_env(env).parse("avg(x)")
@@ -381,7 +333,7 @@ def test_maxminavg():
     ret = sum(x)
     assert np.isinf(ret)
 
-    env = dict(x=x)
+    env = {"x": x}
     ret = envp.bind_env(env).parse("max(x)")
     assert np.isinf(ret)
     ret = envp.bind_env(env).parse("avg(x)")
@@ -399,21 +351,21 @@ def test_argmaxmin():
     x = [1, 1, 2, 2, np.nan]
     ret = argmax(x)
     assert ret == 2
-    env = dict(x=x)
+    env = {"x": x}
     ret = envp.bind_env(env).parse("argmax(x)")
     assert ret == 2
 
     x = np.array([1, 1, 2, 2, np.nan])
     ret = argmax(x)
     assert ret == 2
-    env = dict(x=x)
+    env = {"x": x}
     ret = envp.bind_env(env).parse("argmax(x)")
     assert ret == 2
 
     x = pd.Series([1, 1, 2, 2, np.nan])
     ret = argmax(x)
     assert ret == 2
-    env = pd.DataFrame(dict(x=x))
+    env = pd.DataFrame({"x": x})
     ret = envp.bind_env(env).parse("argmax(x)")
     assert ret == 2
 
@@ -437,7 +389,7 @@ def test_argmaxsmins():
     ret = argmins(x, y)
     assert np.all(ret == [1, 2])
 
-    env = dict(x=x, y=y)
+    env = {"x": x, "y": y}
     ret = envp.bind_env(env).parse("argmaxs(x, y)")
     assert np.all(ret == [3, 4])
     ret = envp.bind_env(env).parse("argmins(x, y)")
@@ -450,7 +402,7 @@ def test_argmaxsmins():
     ret = argmins(x, y)
     assert np.all(ret == [1, 2])
 
-    env = dict(x=x, y=y)
+    env = {"x": x, "y": y}
     ret = envp.bind_env(env).parse("argmaxs(x, y)")
     assert np.all(ret == [3, 4])
     ret = envp.bind_env(env).parse("argmins(x, y)")
@@ -463,7 +415,7 @@ def test_argmaxsmins():
     ret = argmins(x, y)
     assert np.all(ret == [1, 2])
 
-    env = pd.DataFrame(dict(x=x, y=y))
+    env = pd.DataFrame({"x": x, "y": y})
     ret = envp.bind_env(env).parse("argmaxs(x, y)")
     assert np.all(ret == [3, 4])
     ret = envp.bind_env(env).parse("argmins(x, y)")
@@ -476,7 +428,7 @@ def test_argmaxsmins():
         ret = argmaxs(x, y)
         assert len(ret) == 0
 
-    env = dict(x=x, y=y)
+    env = {"x": x, "y": y}
     with pytest.warns(RuntimeWarning):
         ret = envp.bind_env(env).parse("argmaxs(x, y)")
         assert len(ret) == 0
@@ -492,7 +444,7 @@ def test_argmaxsmins():
     ret = argmins(x, y)
     assert np.all(ret == [2, 4])
 
-    env = dict(x=x, y=y)
+    env = {"x": x, "y": y}
     ret = envp.bind_env(env).parse("argmaxs(x, y)")
     assert np.all(ret == 3)
     ret = envp.bind_env(env).parse("argmins(x, y)")
@@ -508,7 +460,7 @@ def test_argmaxsmins():
     ret = argmins(x, y)
     assert np.all(ret == [2, 4])
 
-    env = pd.DataFrame(dict(x=x, y=y))
+    env = pd.DataFrame({"x": x, "y": y})
     ret = envp.bind_env(env).parse("argmaxs(x, y)")
     assert np.all(ret == 3)
     ret = envp.bind_env(env).parse("argmins(x, y)")
@@ -541,7 +493,7 @@ def test_cals():
     ret = flat1_max([0])
     assert ret == 0
 
-    env = dict(x=x)
+    env = {"x": x}
     ret = envp.bind_env(env).parse("flat1_max(x)")
     assert ret == 4
     ret = envp.bind_env(env).parse("flat1_max([])")
@@ -558,7 +510,7 @@ def test_cals():
     ret = coef_var([])
     assert ret == 0
 
-    env = dict(x=x)
+    env = {"x": x}
     ret = envp.bind_env(env).parse("coef_var(x)")
     assert ret == np.std(env["x"]) / np.mean(env["x"])
     ret = envp.bind_env(env).parse("coef_var([])")
@@ -577,7 +529,7 @@ def test_sortby():
     ret = sortby(x, y)
     assert np.all(np.isclose(ret, [11, 13, np.nan, 4, np.nan], equal_nan=True))
 
-    env = dict(x=x, y=y)
+    env = {"x": x, "y": y}
     ret = envp.bind_env(env).parse("sortby(x, y)")
     assert np.all(np.isclose(ret, [11, 13, np.nan, 4, np.nan], equal_nan=True))
 
@@ -586,7 +538,7 @@ def test_sortby():
     ret = sortby(x, y)
     assert np.all(np.isclose(ret, [11, 13, np.nan, 4, np.nan], equal_nan=True))
 
-    env = dict(x=x, y=y)
+    env = {"x": x, "y": y}
     ret = envp.bind_env(env).parse("sortby(x, y)")
     assert np.all(np.isclose(ret, [11, 13, np.nan, 4, np.nan], equal_nan=True))
 
@@ -595,7 +547,7 @@ def test_sortby():
     ret = sortby(x, y)
     assert np.all(np.isclose(ret, [11, 13, np.nan, 4, np.nan], equal_nan=True))
 
-    env = pd.DataFrame(dict(x=x, y=y))
+    env = pd.DataFrame({"x": x, "y": y})
     ret = envp.bind_env(env).parse("sortby(x, y)")
     assert np.all(np.isclose(ret, [11, 13, np.nan, 4, np.nan], equal_nan=True))
 
@@ -608,10 +560,10 @@ def test_sortby():
 
 # %%
 def test_map():
-    ref = dict(zip("abcde", range(1, 6)))
+    ref = dict(zip("abcde", range(1, 6), strict=True))
 
     def refcall(ele):
-        refi = dict(zip("abcde", range(1, 6)))
+        refi = dict(zip("abcde", range(1, 6), strict=True))
         return refi.get(ele, 7)
 
     envp = get_envp({"ref": ref, "refcall": refcall})
@@ -628,7 +580,7 @@ def test_map():
     ret = map(x, refcall)
     assert np.all(np.isclose(ret, [1, 3, 4, 5, 2, 7, 7], equal_nan=True))
 
-    env = dict(x=x)
+    env = {"x": x}
     ret = envp.bind_env(env).parse("map(x, ref)")
     assert np.all(
         np.isclose(ret, [1, 3, 4, 5, 2, np.nan, np.nan], equal_nan=True)
@@ -649,7 +601,7 @@ def test_map():
     assert np.all(np.isclose(ret, [1, 3, 4, 5, 2, 7, 7], equal_nan=True))
 
     x = np.array(["a", "c", "d", "e", "b", None, "NA"])
-    env = dict(x=x)
+    env = {"x": x}
     ret = envp.bind_env(env).parse("map(x, ref)")
     assert np.all(
         np.isclose(ret, [1, 3, 4, 5, 2, np.nan, np.nan], equal_nan=True)
@@ -669,7 +621,7 @@ def test_map():
     ret = map(x, refcall)
     assert np.all(np.isclose(ret, [1, 3, 4, 5, 2, 7, 7], equal_nan=True))
 
-    env = pd.DataFrame(dict(x=x))
+    env = pd.DataFrame({"x": x})
     ret = envp.bind_env(env).parse("map(x, ref)")
     assert np.all(
         np.isclose(ret, [1, 3, 4, 5, 2, np.nan, np.nan], equal_nan=True)
@@ -687,107 +639,105 @@ def test_map_with_multiple_seqs():
 
     x = list(range(5))
     y = list(range(5, 10))
-    env = dict(x=x, y=y)
+    env = {"x": x, "y": y}
     envp = get_envp({"refcall": refcall})
     ret = envp.bind_env(env).parse("map(x, y, refcall)")
     assert np.all(ret == list(range(5, 14, 2)))
 
     x = np.arange(5)
     y = np.arange(5, 10)
-    env = dict(x=x, y=y)
+    env = {"x": x, "y": y}
     envp = get_envp({"refcall": refcall})
     ret = envp.bind_env(env).parse("map(x, y, refcall)")
     assert np.all(ret == list(range(5, 14, 2)))
 
     x = np.arange(5)
     y = np.arange(5, 10)
-    env = dict(x=pd.Series(x), y=pd.Series(y))
+    env = {"x": pd.Series(x), "y": pd.Series(y)}
     envp = get_envp({"refcall": refcall})
     ret = envp.bind_env(env).parse("map(x, y, refcall)")
     assert np.all(ret == list(range(5, 14, 2)))
 
 
 # %%
+def _assert_sep_map(x, ref, refcall, envp=None):
+    expected_ref = [(1, 2, 3, 4, 5), (1, 3), ()]
+    expected_refcall = [(1, 2, 3, 4, 5, 7), (1, 3, 7), (7,)]
+    expected_ref_str = ["1:2:3:4:5", "1:3", ""]
+    expected_refcall_str = ["1:2:3:4:5:7", "1:3:7", "7"]
+
+    for le, re in zip(sep_map(x, ref), expected_ref, strict=True):
+        assert le == re
+    assert np.all(sep_map(x, ref, ",", ":") == expected_ref_str)
+    for le, re in zip(sep_map(x, refcall), expected_refcall, strict=True):
+        assert le == re
+    assert np.all(sep_map(x, refcall, ",", ":") == expected_refcall_str)
+
+    if envp is not None:
+        env = {"x": x}
+        for le, re in zip(
+            envp.bind_env(env).parse("sep_map(x, ref)"),
+            expected_ref,
+            strict=True,
+        ):
+            assert le == re
+        assert np.all(
+            envp.bind_env(env).parse('sep_map(x, ref, ",", ":")')
+            == expected_ref_str
+        )
+        for le, re in zip(
+            envp.bind_env(env).parse("sep_map(x, refcall)"),
+            expected_refcall,
+            strict=True,
+        ):
+            assert le == re
+        assert np.all(
+            envp.bind_env(env).parse('sep_map(x, refcall, ",", ":")')
+            == expected_refcall_str
+        )
+
+
 def test_sep_map():
-    ref = dict(zip("abcde", range(1, 6)))
+    ref = dict(zip("abcde", range(1, 6), strict=True))
 
     def refcall(ele):
-        refi = dict(zip("abcde", range(1, 6)))
+        refi = dict(zip("abcde", range(1, 6), strict=True))
         return refi.get(ele, 7)
 
     envp = get_envp({"ref": ref, "refcall": refcall})
-    # Seperate map.
-    x = ["a,b,c,d,e,na,g", "a,g,c", "g"]
-    ret = sep_map(x, ref)
-    for le, re in zip(ret, [(1, 2, 3, 4, 5), (1, 3), ()]):
-        assert le == re
-    ret = sep_map(x, ref, ",", ":")
-    assert np.all(ret == ["1:2:3:4:5", "1:3", ""])
-    ret = sep_map(x, refcall)
-    for le, re in zip(ret, [(1, 2, 3, 4, 5, 7), (1, 3, 7), (7,)]):
-        assert le == re
-    ret = sep_map(x, refcall, ",", ":")
-    assert np.all(ret == ["1:2:3:4:5:7", "1:3:7", "7"])
-
-    env = dict(x=x)
-    ret = envp.bind_env(env).parse("sep_map(x, ref)")
-    for le, re in zip(ret, [(1, 2, 3, 4, 5), (1, 3), ()]):
-        assert le == re
-    ret = envp.bind_env(env).parse('sep_map(x, ref, ",", ":")')
-    assert np.all(ret == ["1:2:3:4:5", "1:3", ""])
-    ret = envp.bind_env(env).parse("sep_map(x, refcall)")
-    for le, re in zip(ret, [(1, 2, 3, 4, 5, 7), (1, 3, 7), (7,)]):
-        assert le == re
-    ret = envp.bind_env(env).parse('sep_map(x, refcall, ",", ":")')
-    assert np.all(ret == ["1:2:3:4:5:7", "1:3:7", "7"])
-
-    x = np.array(["a,b,c,d,e,na,g", "a,g,c", "g"])
-    ret = sep_map(x, ref)
-    for le, re in zip(ret, [(1, 2, 3, 4, 5), (1, 3), ()]):
-        assert le == re
-    ret = sep_map(x, ref, ",", ":")
-    assert np.all(ret == ["1:2:3:4:5", "1:3", ""])
-    ret = sep_map(x, refcall)
-    for le, re in zip(ret, [(1, 2, 3, 4, 5, 7), (1, 3, 7), (7,)]):
-        assert le == re
-    ret = sep_map(x, refcall, ",", ":")
-    assert np.all(ret == ["1:2:3:4:5:7", "1:3:7", "7"])
-
-    env = dict(x=x, ref=ref)
-    ret = envp.bind_env(env).parse("sep_map(x, ref)")
-    for le, re in zip(ret, [(1, 2, 3, 4, 5), (1, 3), ()]):
-        assert le == re
-    ret = envp.bind_env(env).parse('sep_map(x, ref, ",", ":")')
-    assert np.all(ret == ["1:2:3:4:5", "1:3", ""])
-    ret = envp.bind_env(env).parse("sep_map(x, refcall)")
-    for le, re in zip(ret, [(1, 2, 3, 4, 5, 7), (1, 3, 7), (7,)]):
-        assert le == re
-    ret = envp.bind_env(env).parse('sep_map(x, refcall, ",", ":")')
-    assert np.all(ret == ["1:2:3:4:5:7", "1:3:7", "7"])
-
+    # List.
+    _assert_sep_map(["a,b,c,d,e,na,g", "a,g,c", "g"], ref, refcall, envp)
+    # np.ndarray.
+    _assert_sep_map(
+        np.array(["a,b,c,d,e,na,g", "a,g,c", "g"]), ref, refcall, envp
+    )
+    # pd.Series.
+    _assert_sep_map(
+        pd.Series(["a,b,c,d,e,na,g", "a,g,c", "g"]), ref, refcall, envp
+    )
+    # pd.DataFrame env.
     x = pd.Series(["a,b,c,d,e,na,g", "a,g,c", "g"])
-    ret = sep_map(x, ref)
-    for le, re in zip(ret, [(1, 2, 3, 4, 5), (1, 3), ()]):
+    env = pd.DataFrame({"x": x})
+    for le, re in zip(
+        envp.bind_env(env).parse("sep_map(x, ref)"),
+        [(1, 2, 3, 4, 5), (1, 3), ()],
+        strict=True,
+    ):
         assert le == re
-    ret = sep_map(x, ref, ",", ":")
-    assert np.all(ret == ["1:2:3:4:5", "1:3", ""])
-    ret = sep_map(x, refcall)
-    for le, re in zip(ret, [(1, 2, 3, 4, 5, 7), (1, 3, 7), (7,)]):
+    assert np.all(
+        envp.bind_env(env).parse('sep_map(x, ref, ",", ":")')
+        == ["1:2:3:4:5", "1:3", ""]
+    )
+    for le, re in zip(
+        envp.bind_env(env).parse("sep_map(x, refcall)"),
+        [(1, 2, 3, 4, 5, 7), (1, 3, 7), (7,)],
+        strict=True,
+    ):
         assert le == re
-    ret = sep_map(x, refcall, ",", ":")
-    assert np.all(ret == ["1:2:3:4:5:7", "1:3:7", "7"])
-
-    env = pd.DataFrame(dict(x=x))
-    ret = envp.bind_env(env).parse("sep_map(x, ref)")
-    for le, re in zip(ret, [(1, 2, 3, 4, 5), (1, 3), ()]):
-        assert le == re
-    ret = envp.bind_env(env).parse('sep_map(x, ref, ",", ":")')
-    assert np.all(ret == ["1:2:3:4:5", "1:3", ""])
-    ret = envp.bind_env(env).parse("sep_map(x, refcall)")
-    for le, re in zip(ret, [(1, 2, 3, 4, 5, 7), (1, 3, 7), (7,)]):
-        assert le == re
-    ret = envp.bind_env(env).parse('sep_map(x, refcall, ",", ":")')
-    assert np.all(ret == ["1:2:3:4:5:7", "1:3:7", "7"])
+    assert np.all(
+        envp.bind_env(env).parse('sep_map(x, refcall, ",", ":")')
+        == ["1:2:3:4:5:7", "1:3:7", "7"]
+    )
 
 
 # %%
@@ -801,7 +751,7 @@ def test_isin():
     ret = isin(x, y)
     assert np.all(ret == [1, 0, 0, 0, 1, 1, 1])
 
-    env = dict(x=x, y=y)
+    env = {"x": x, "y": y}
     ret = envp.bind_env(env).parse("isin(x, y)")
     assert np.all(ret == [1, 0, 0, 0, 1, 1, 1])
 
@@ -810,7 +760,7 @@ def test_isin():
     ret = isin(x, y)
     assert np.all(ret == [1, 0, 0, 0, 1, 1, 1])
 
-    env = dict(x=x, y=y)
+    env = {"x": x, "y": y}
     ret = envp.bind_env(env).parse("isin(x, y)")
     assert np.all(ret == [1, 0, 0, 0, 1, 1, 1])
 
@@ -819,7 +769,7 @@ def test_isin():
     ret = isin(x, y)
     assert np.all(ret == [1, 0, 0, 0, 1, 1, 1])
 
-    env = pd.DataFrame(dict(x=x, y=y))
+    env = pd.DataFrame({"x": x, "y": y})
     ret = envp.bind_env(env).parse("isin(x, y)")
     assert np.all(ret == [1, 0, 0, 0, 1, 1, 1])
 
@@ -829,7 +779,7 @@ def test_isin():
     ret = isin(x, y)
     assert np.all(ret == [1, 1, 0, 0, 0, 1, 0])
 
-    env = dict(x=x, y=y)
+    env = {"x": x, "y": y}
     ret = envp.bind_env(env).parse("isin(x, y)")
     assert np.all(ret == [1, 1, 0, 0, 0, 1, 0])
 
@@ -840,7 +790,7 @@ def test_isin():
     ret = isin(x, y)
     assert np.all(ret == [1, 1, 0, 0, 0, 1, 0])
 
-    env = dict(x=x, y=y)
+    env = {"x": x, "y": y}
     ret = envp.bind_env(env).parse("isin(x, y)")
     assert np.all(ret == [1, 1, 0, 0, 0, 1, 0])
 
@@ -851,7 +801,7 @@ def test_isin():
     ret = isin(x, y)
     assert np.all(ret == [1, 1, 0, 0, 0, 1, 0])
 
-    env = dict(x=x, y=y)
+    env = {"x": x, "y": y}
     ret = envp.bind_env(env).parse("isin(x, y)")
     assert np.all(ret == [1, 1, 0, 0, 0, 1, 0])
 
@@ -870,7 +820,7 @@ def test_cb_fstmaxmin():
     ret = cb_min(x, y)
     assert np.all(np.isclose(ret, [11, 12, 3, 4, np.nan], equal_nan=True))
 
-    env = dict(x=x, y=y)
+    env = {"x": x, "y": y}
     ret = envp.bind_env(env).parse("cb_fst(x, y)")
     assert np.all(np.isclose(ret, [11, 12, 13, 4, np.nan], equal_nan=True))
     ret = envp.bind_env(env).parse("cb_max(x, y)")
@@ -887,7 +837,7 @@ def test_cb_fstmaxmin():
     ret = cb_min(x, y)
     assert np.all(np.isclose(ret, [11, 12, 3, 4, np.nan], equal_nan=True))
 
-    env = dict(x=x, y=y)
+    env = {"x": x, "y": y}
     ret = envp.bind_env(env).parse("cb_fst(x, y)")
     assert np.all(np.isclose(ret, [11, 12, 13, 4, np.nan], equal_nan=True))
     ret = envp.bind_env(env).parse("cb_max(x, y)")
@@ -904,7 +854,7 @@ def test_cb_fstmaxmin():
     ret = cb_min(x, y)
     assert np.all(np.isclose(ret, [11, 12, 3, 4, np.nan], equal_nan=True))
 
-    env = pd.DataFrame(dict(x=x, y=y))
+    env = pd.DataFrame({"x": x, "y": y})
     ret = envp.bind_env(env).parse("cb_fst(x, y)")
     assert np.all(np.isclose(ret, [11, 12, 13, 4, np.nan], equal_nan=True))
     ret = envp.bind_env(env).parse("cb_max(x, y)")
@@ -948,7 +898,7 @@ def test_cb_fstmaxmin():
     )
     assert np.isnat(ret[-1])
 
-    env = dict(x=x, y=y)
+    env = {"x": x, "y": y}
     ret = envp.bind_env(env).parse("cb_fst(x, y)")
     assert np.all(
         ret[:-1]
@@ -1013,7 +963,7 @@ def test_cb_fstmaxmin():
     )
     assert np.isnat(ret[-1])
 
-    env = pd.DataFrame(dict(x=x, y=y))
+    env = pd.DataFrame({"x": x, "y": y})
     ret = envp.bind_env(env).parse("cb_fst(x, y)")
     assert np.all(
         ret[:-1]
@@ -1046,19 +996,25 @@ def test_cb_fstmaxmin():
     x = ["a", None, None, 11, np.nan, 13, 4, np.nan]
     y = [None, "b", None, np.nan, 12, 3, 14, np.nan]
     ret = cb_fst(x, y)
-    for le, re in zip(ret, ["a", "b", None, 11, 12, 13, 4, np.nan]):
+    for le, re in zip(
+        ret, ["a", "b", None, 11, 12, 13, 4, np.nan], strict=True
+    ):
         assert le == re or np.isnan(le)
 
     x = np.array(["a", None, None, 11, np.nan, 13, 4, np.nan])
     y = np.array([None, "b", None, np.nan, 12, 3, 14, np.nan])
     ret = cb_fst(x, y)
-    for le, re in zip(ret, ["a", "b", None, 11, 12, 13, 4, np.nan]):
+    for le, re in zip(
+        ret, ["a", "b", None, 11, 12, 13, 4, np.nan], strict=True
+    ):
         assert le == re or np.isnan(le)
 
     x = pd.Series(["a", None, None, 11, np.nan, 13, 4, np.nan])
     y = pd.Series([None, "b", None, np.nan, 12, 3, 14, np.nan])
     ret = cb_fst(x, y)
-    for le, re in zip(ret, ["a", "b", None, 11, 12, 13, 4, np.nan]):
+    for le, re in zip(
+        ret, ["a", "b", None, 11, 12, 13, 4, np.nan], strict=True
+    ):
         assert le == re or np.isnan(le)
 
 
@@ -1078,7 +1034,7 @@ def test_mon_day_itvl():
         np.isclose(ret, [-20, np.nan, -48, -18, np.nan], equal_nan=True)
     )
 
-    env = dict(x=x, y=y)
+    env = {"x": x, "y": y}
     ret = envp.bind_env(env).parse("mon_itvl(x, y)")
     assert np.all(
         np.isclose(ret, [-1, np.nan, -1, -1, np.nan], equal_nan=True)
@@ -1104,7 +1060,7 @@ def test_mon_day_itvl():
         np.isclose(ret, [-20, np.nan, -48, -18, np.nan], equal_nan=True)
     )
 
-    env = dict(x=x, y=y)
+    env = {"x": x, "y": y}
     ret = envp.bind_env(env).parse("mon_itvl(x, y)")
     assert np.all(
         np.isclose(ret, [-1, np.nan, -1, -1, np.nan], equal_nan=True)
@@ -1130,7 +1086,7 @@ def test_mon_day_itvl():
         np.isclose(ret, [-20, np.nan, -48, -18, np.nan], equal_nan=True)
     )
 
-    env = pd.DataFrame(dict(x=x, y=y))
+    env = pd.DataFrame({"x": x, "y": y})
     ret = envp.bind_env(env).parse("mon_itvl(x, y)")
     assert np.all(
         np.isclose(ret, [-1, np.nan, -1, -1, np.nan], equal_nan=True)
@@ -1163,7 +1119,7 @@ def test_busiday():
     ret = not_busiday(x)
     assert np.all(ret == [0, 1, 1, 1, 0])
 
-    env = dict(x=x)
+    env = {"x": x}
     ret = envp.bind_env(env).parse("is_busiday(x)")
     assert np.all(ret == [1, 0, 0, 0, 0])
     ret = envp.bind_env(env).parse("not_busiday(x)")
@@ -1177,7 +1133,7 @@ def test_busiday():
     ret = not_busiday(x)
     assert np.all(ret == [0, 1, 1, 1, 0])
 
-    env = dict(x=x)
+    env = {"x": x}
     ret = envp.bind_env(env).parse("is_busiday(x)")
     assert np.all(ret == [1, 0, 0, 0, 0])
     ret = envp.bind_env(env).parse("not_busiday(x)")
@@ -1191,7 +1147,7 @@ def test_busiday():
     ret = not_busiday(x)
     assert np.all(ret == [0, 1, 1, 1, 0])
 
-    env = pd.DataFrame(dict(x=x))
+    env = pd.DataFrame({"x": x})
     ret = envp.bind_env(env).parse("is_busiday(x)")
     assert np.all(ret == [1, 0, 0, 0, 0])
     ret = envp.bind_env(env).parse("not_busiday(x)")
@@ -1218,7 +1174,7 @@ def test_gethour():
     ret = get_hour(x)
     assert np.all(np.isclose(ret, [11, 13, np.nan], equal_nan=True))
 
-    env = dict(x=x)
+    env = {"x": x}
     ret = envp.bind_env(env).parse("get_hour(x)")
     assert np.all(np.isclose(ret, [11, 13, np.nan], equal_nan=True))
 
@@ -1226,7 +1182,7 @@ def test_gethour():
     ret = get_hour(x)
     assert np.all(np.isclose(ret, [11, 13, np.nan], equal_nan=True))
 
-    env = dict(x=x)
+    env = {"x": x}
     ret = envp.bind_env(env).parse("get_hour(x)")
     assert np.all(np.isclose(ret, [11, 13, np.nan], equal_nan=True))
 
@@ -1236,7 +1192,7 @@ def test_gethour():
     ret = get_hour(x)
     assert np.all(np.isclose(ret, [11, 13, np.nan], equal_nan=True))
 
-    env = pd.DataFrame(dict(x=x))
+    env = pd.DataFrame({"x": x})
     ret = envp.bind_env(env).parse("get_hour(x)")
     assert np.all(np.isclose(ret, [11, 13, np.nan], equal_nan=True))
 
@@ -1244,7 +1200,7 @@ def test_gethour():
     ret = get_hour(x)
     assert np.all(np.isclose(ret, [11, 13, np.nan], equal_nan=True))
 
-    env = pd.DataFrame(dict(x=x))
+    env = pd.DataFrame({"x": x})
     ret = envp.bind_env(env).parse("get_hour(x)")
     assert np.all(np.isclose(ret, [11, 13, np.nan], equal_nan=True))
 

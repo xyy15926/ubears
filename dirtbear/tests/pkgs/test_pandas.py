@@ -200,11 +200,11 @@ def test_groupby_apply_efficiency():
 def test_zero_divide():
     # ZeroDivisionError won't be raised for numeric dtype.
     df = pd.DataFrame(np.arange(10).reshape((5, 2)))
-    div_ret = df[1] / df[0]
+    _div_ret = df[1] / df[0]
 
     # ZeroDivisionError won't be raised for numeric dtype.
     df = pd.DataFrame(np.arange(10).reshape((5, 2)).astype(float))
-    div_ret = df[1] / df[0]
+    _div_ret = df[1] / df[0]
 
     # While the it will be raised for object dtype though nothing is done
     # except dtype change.
@@ -212,7 +212,7 @@ def test_zero_divide():
     assert np.all(df.dtypes == "object")
     assert isinstance(df.iloc[0, 0], int)
     with pytest.raises(ZeroDivisionError):
-        div_ret = df[1] / df[0]
+        _div_ret = df[1] / df[0]
 
 
 # %%

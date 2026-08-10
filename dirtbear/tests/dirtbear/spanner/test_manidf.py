@@ -30,10 +30,10 @@ from dirtbear.spanner.manidf import (
 def test_rename_overlapped():
     unil = [1, 2, 3, 4, 5]
     nodup = rename_overlaped([unil, unil])
-    assert all([f"{x}_2" == y for x, y in zip(*nodup)])
+    assert all(f"{x}_2" == y for x, y in zip(*nodup, strict=True))
 
     nodup = rename_overlaped([unil, unil], ["a", "b"])
-    assert all([f"{x}_b" == f"{y}" for x, y in zip(*nodup)])
+    assert all(f"{x}_b" == f"{y}" for x, y in zip(*nodup, strict=True))
 
 
 # %%

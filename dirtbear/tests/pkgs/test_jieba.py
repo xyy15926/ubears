@@ -45,7 +45,7 @@ def tmpfile_fixture(request):
 # Govern Region Data: <https://github.com/xiangyuecn/AreaCity-JsSpider-StatsGov>
 # China Area Mysql: <https://github.com/kakuilan/china_area_mysql>
 # Geocoding Ref: <https://github.com/casuallyName/Geocoding>
-# 词性：
+# 词性:
 # - a 形容词
 #     - ad 副形词
 #     - ag 形容词性语素
@@ -124,9 +124,8 @@ def jieba_toker():
     # Load user dict from local file.
     toker.add_word("咔咔咔", tag="nr")
     toker.add_word("aki7", tag="nz")
-    toker.load_userdict(
-        open(TMP_DIR / "govern_region_names.txt", encoding="utf8")
-    )
+    with open(TMP_DIR / "govern_region_names.txt", encoding="utf8") as f:
+        toker.load_userdict(f)
 
     return toker
 

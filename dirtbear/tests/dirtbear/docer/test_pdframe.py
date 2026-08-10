@@ -42,7 +42,7 @@ def test_format_table():
         "交易时间": "DATE",
     }
 
-    ftable, desc = format_table(
+    ftable, _desc = format_table(
         table, columns, drop_chars="\n\t", dtypes=dtypes
     )
     assert np.all(ftable.columns == columns)

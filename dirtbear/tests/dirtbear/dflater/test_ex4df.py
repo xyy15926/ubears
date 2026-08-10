@@ -12,13 +12,15 @@
 if __name__ == "__main__":
     from importlib import reload
 
-    from flagbear.str2 import fliper
     from dirtbear.dflater import ex2df, ex4df
+    from flagbear.str2 import fliper
 
     reload(fliper)
     reload(ex2df)
     reload(ex4df)
 
+
+from itertools import pairwise
 
 import numpy as np
 import pandas as pd
@@ -330,13 +332,13 @@ def test_DFKGraph_init_with_only_nedf():
     # All reference DFs are all the original node-DF or edge-DF.
     all_ntypes = np.unique(node_ref[fntype])
     all_etypes = np.unique(edge_ref[fetype])
-    for a, b in zip(all_ntypes[:-1], all_ntypes[1:]):
+    for a, b in pairwise(all_ntypes):
         assert kg.ref_dfs[a] is kg.ref_dfs[b]
-    for a, b in zip(all_etypes[:-1], all_etypes[1:]):
+    for a, b in pairwise(all_etypes):
         assert kg.ref_dfs[a] is kg.ref_dfs[b]
 
     # Check the `__iloc__` and the `ntype`
-    for netype, rdf in ref_dfs.items():
+    for rdf in ref_dfs.values():
         if rdf is node_df or rdf is edge_df:
             continue
         if fnid in rdf:
@@ -365,13 +367,13 @@ def test_DFKGraph_init_with_only_nedf_notype():
     # All reference DFs are all the original node-DF or edge-DF.
     all_ntypes = np.unique(node_ref[fntype])
     all_etypes = np.unique(edge_ref[fetype])
-    for a, b in zip(all_ntypes[:-1], all_ntypes[1:]):
+    for a, b in pairwise(all_ntypes):
         assert kg.ref_dfs[a] is kg.ref_dfs[b]
-    for a, b in zip(all_etypes[:-1], all_etypes[1:]):
+    for a, b in pairwise(all_etypes):
         assert kg.ref_dfs[a] is kg.ref_dfs[b]
 
     # Check the `__iloc__` and the `ntype`
-    for netype, rdf in ref_dfs.items():
+    for rdf in ref_dfs.values():
         if rdf is node_df or rdf is edge_df:
             continue
         if fnid in rdf:
@@ -394,9 +396,9 @@ def test_DFKGraph_init_with_only_ref_dfs():
 
     _ref_dfs = {}
     for x, y in node_df.groupby(fntype):
-        _ref_dfs[x] = y
+        _ref_dfs[x] = y  # noqa: PERF403
     for x, y in edge_df.groupby(fetype):
-        _ref_dfs[x] = y
+        _ref_dfs[x] = y  # noqa: PERF403
 
     kg = DFKGraph(ref_dfs=_ref_dfs)
     node_ref = kg.node_ref
@@ -411,7 +413,7 @@ def test_DFKGraph_init_with_only_ref_dfs():
             )
 
     # Check the `__iloc__` and the `ntype`
-    for netype, rdf in ref_dfs.items():
+    for rdf in ref_dfs.values():
         if rdf is node_df or rdf is edge_df:
             continue
         if fnid in rdf:
@@ -460,10 +462,10 @@ def test_DFKGraph_init_with_both_nedf_ref_dfs():
                 "Newly added refernece DFs must be node-df or edge-df."
             )
         else:
-            assert False, "Unexpected reference DF."
+            raise AssertionError("Unexpected reference DF.")
 
     # Check the `__iloc__` and the `ntype`.
-    for netype, rdf in ref_dfs.items():
+    for rdf in ref_dfs.values():
         if rdf is node_df or rdf is edge_df:
             continue
         if fnid in rdf:
@@ -476,12 +478,8 @@ def test_DFKGraph_init_with_both_nedf_ref_dfs():
 
 # %%
 def test_DFKGraph_agg_on_nodes():
-    fnid = "nid"
-    fsrc = "src"
-    ftgt = "tgt"
     fntype = "ntype"
     fetype = "etype"
-    edge_joinkey = [fsrc, ftgt]
     node_df, edge_df = autofin_graphdf()
     edge_df["upm_itvl"] = (
         np.datetime64("2025-06-14") - edge_df["update"]
