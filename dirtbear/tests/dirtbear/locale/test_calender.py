@@ -8,22 +8,22 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
 
 if __name__ == "__main__":
     from importlib import reload
+
     from dirtbear.locale import calender
 
     reload(calender)
 
 import numpy as np
-import pandas as pd
 from chinese_calendar import holidays
+
 from dirtbear.locale.calender import (
+    ChineseHolidaysCalendar,
     ChnBusdayCalendar,
     is_chn_busday,
     not_chn_busday,
-    ChineseHolidaysCalendar,
 )
 
 

@@ -8,12 +8,11 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
-from packaging.version import Version
-
-from tqdm import tqdm
 import numpy as np
 import pandas as pd
+import pytest
+from packaging.version import Version
+from tqdm import tqdm
 
 
 # %%

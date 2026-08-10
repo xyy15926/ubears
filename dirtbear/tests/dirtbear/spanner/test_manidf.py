@@ -8,19 +8,22 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
 import numpy as np
 import pandas as pd
 
 if __name__ == "__main__":
     from importlib import reload
+
     from dirtbear.spanner import manidf
 
     reload(manidf)
 
-from dirtbear.spanner.manidf import rename_overlaped
-from dirtbear.spanner.manidf import merge_dfs, pivot_tags
-from dirtbear.spanner.manidf import group_addup_apply
+from dirtbear.spanner.manidf import (
+    group_addup_apply,
+    merge_dfs,
+    pivot_tags,
+    rename_overlaped,
+)
 
 
 # %%
@@ -105,6 +108,8 @@ def test_merge_dfs():
     assert np.all(merged.iloc[:, 2] == merged.iloc[:, 4])
 
     merged = merge_dfs(dfs, ons="on", bys="by", tolerance=None)
+    assert not merged.empty
+    assert merged.shape[1] >= 4
 
 
 # %%

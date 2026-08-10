@@ -12,9 +12,9 @@ import pytest
 
 if __name__ == "__main__":
     from importlib import reload
-    from statbear.panel import metrics
-    from statbear.panel import sortable
+
     from dirtbear.spanner import dflog
+    from statbear.panel import metrics, sortable
 
     reload(metrics)
     reload(sortable)
@@ -22,8 +22,14 @@ if __name__ == "__main__":
 
 import numpy as np
 import pandas as pd
-from dirtbear.spanner.dflog import serdesc, serdiffm, dfdesc, dfdiffm
-from dirtbear.spanner.dflog import ProcessLogger
+
+from dirtbear.spanner.dflog import (
+    ProcessLogger,
+    dfdesc,
+    dfdiffm,
+    serdesc,
+    serdiffm,
+)
 
 
 # %%

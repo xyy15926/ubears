@@ -12,9 +12,10 @@ import pytest
 
 if __name__ == "__main__":
     from importlib import reload
+
     from dirtbear.dflater import callables
-    from flagbear.llp import parser
     from dirtbear.locale import calender
+    from flagbear.llp import parser
 
     reload(callables)
     reload(parser)
@@ -22,34 +23,33 @@ if __name__ == "__main__":
 
 import numpy as np
 import pandas as pd
+
 from dirtbear.dflater.callables import (
-    # Aggregation
-    max,
-    min,
-    sum,
-    avg,
-    nnfilter,
-    getn,
-    drop_duplicates,
     argmax,
-    argmin,
     argmaxs,
     argmins,
-    flat1_max,
-    coef_var,
-    # Transformation
-    sortby,
-    map,
-    sep_map,
-    isin,
+    avg,
     cb_fst,
     cb_max,
     cb_min,
-    mon_itvl,
+    coef_var,
     day_itvl,
-    is_busiday,
-    not_busiday,
+    drop_duplicates,
+    flat1_max,
     get_hour,
+    getn,
+    is_busiday,
+    isin,
+    map,
+    # Aggregation
+    max,
+    mon_itvl,
+    nnfilter,
+    not_busiday,
+    sep_map,
+    # Transformation
+    sortby,
+    sum,
 )
 from dirtbear.dflater.exoptim import get_envp
 

@@ -8,14 +8,14 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
-import logging
-
-import pandas as pd
-import jieba
-from jieba import posseg as pseg
-from importlib.resources import files
 import shutil
+from importlib.resources import files
+
+import jieba
+import pandas as pd
+import pytest
+from jieba import posseg as pseg
+
 from flagbear.slp.finer import get_tmp_path
 
 datan = files("dirtbear.data")

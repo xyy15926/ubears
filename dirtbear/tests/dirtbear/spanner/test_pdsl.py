@@ -9,23 +9,26 @@
 
 # %%
 from __future__ import annotations
+
 import pytest
 
 if __name__ == "__main__":
     from importlib import reload
-    from flagbear.slp import finer
+
     from dirtbear.spanner import pdsl
+    from flagbear.slp import finer
 
     reload(finer)
     reload(pdsl)
 
 import re
-from datetime import date
+
+import pandas as pd
 import sqlalchemy as sa
 from sqlalchemy import text
-import pandas as pd
-from flagbear.slp.finer import get_tmp_path, tmp_file
-from dirtbear.spanner.pdsl import tmp_table, jsonfy_df
+
+from dirtbear.spanner.pdsl import jsonfy_df, tmp_table
+from flagbear.slp.finer import tmp_file
 
 TMP_DIR = "pytest_tmpdir"
 TMP_FNAME = f"{TMP_DIR}/tmpf.tmp"

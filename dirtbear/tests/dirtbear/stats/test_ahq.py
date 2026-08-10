@@ -9,10 +9,10 @@
 
 # %%
 import numpy as np
-import pytest
 
 if __name__ == "__main__":
     from importlib import reload
+
     from dirtbear.stats import ahp
 
     reload(ahp)

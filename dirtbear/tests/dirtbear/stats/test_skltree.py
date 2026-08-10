@@ -12,6 +12,7 @@ from pytest import mark
 
 if __name__ == "__main__":
     from importlib import reload
+
     from dirtbear.stats import skltree
     from statbear.panel import freqs
 
@@ -22,10 +23,9 @@ import numpy as np
 from sklearn.tree import DecisionTreeClassifier
 
 from dirtbear.stats.skltree import (
-    tree_node_metric,
-    extract_paths_from_tree,
-    build_parent_from_children,
     biclf_select_nodes,
+    extract_paths_from_tree,
+    tree_node_metric,
 )
 
 
@@ -44,9 +44,9 @@ def make_data(
     )
     y = np.random.choice([0, 1], length)
     if add_nan:
-        X.iloc[np.random.choice(range(length), 2), 0] = np.nan
-        X.iloc[np.random.choice(range(length), 2), 5] = np.nan
-        X.iloc[np.random.choice(range(length), 1)] = np.nan
+        X[np.random.choice(range(length), 2), 0] = np.nan
+        X[np.random.choice(range(length), 2), 3] = np.nan
+        X[np.random.choice(range(length), 1), :] = np.nan
     return X, y
 
 

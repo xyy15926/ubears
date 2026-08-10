@@ -12,23 +12,22 @@ import pytest
 
 if __name__ == "__main__":
     from importlib import reload
-    from flagbear.str2 import dtyper, fliper
+
     from dirtbear.dflater import ex2df
+    from flagbear.str2 import dtyper, fliper
 
     reload(dtyper)
     reload(fliper)
     reload(ex2df)
 
+
 import numpy as np
 import pandas as pd
-import os
-import json
 
-from flagbear.str2.fliper import extract_field, rebuild_dict
 from dirtbear.dflater.ex2df import (
-    rebuild_rec2df,
     compress_hierarchy,
     flat_records,
+    rebuild_rec2df,
 )
 
 

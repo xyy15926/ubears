@@ -8,19 +8,17 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
-from pytest import mark
 import numpy as np
-import pandas as pd
 
 if __name__ == "__main__":
     from importlib import reload
+
     from dirtbear.docer import pdframe
 
     reload(pdframe)
 
-from flagbear.slp.finer import get_assets_path
 from dirtbear.docer.pdframe import extract_tables, format_table
+from flagbear.slp.finer import get_assets_path
 
 
 # %%

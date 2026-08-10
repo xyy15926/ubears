@@ -9,21 +9,25 @@
 
 # %%
 from __future__ import annotations
+
 import pytest
 
 if __name__ == "__main__":
     from importlib import reload
-    from flagbear.slp import finer, databundle
+
     from dirtbear.quant import dataloader
+    from flagbear.slp import databundle, finer
 
     reload(finer)
     reload(databundle)
     reload(dataloader)
 
-import pandas as pd
 import shutil
-from flagbear.slp.finer import get_tmp_path
+
+import pandas as pd
+
 from dirtbear.quant.dataloader import csv_cache
+from flagbear.slp.finer import get_tmp_path
 
 PYTEST_DIR = "tmp/pytest_tmpdir"
 TMP_DIR = get_tmp_path(PYTEST_DIR)

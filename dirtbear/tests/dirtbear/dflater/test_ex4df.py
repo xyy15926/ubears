@@ -8,28 +8,26 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
 
 if __name__ == "__main__":
     from importlib import reload
+
     from flagbear.str2 import fliper
-    from statbear.dflater import ex2df, ex4df
+    from dirtbear.dflater import ex2df, ex4df
 
     reload(fliper)
     reload(ex2df)
     reload(ex4df)
 
+
 import numpy as np
 import pandas as pd
-import os
-import json
 
-from flagbear.str2.fliper import extract_field, rebuild_dict
 from dirtbear.dflater.ex2df import rebuild_rec2df
 from dirtbear.dflater.ex4df import (
+    DFKGraph,
     agg_on_df,
     trans_on_df,
-    DFKGraph,
 )
 
 

@@ -8,28 +8,27 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
 
 if __name__ == "__main__":
     from importlib import reload
+
     from dirtbear.locale import pronoun
 
     reload(pronoun)
 
 import string
+
 from dirtbear.locale.pronoun import (
+    LASTNAME_ALTS,
     certno_parity,
     check_certno,
+    check_orgno,
+    orgno_parity,
     rand_certno,
+    rand_email,
     rand_mobile,
     rand_nname,
-    rand_email,
-    rand_orgname,
-    orgno_parity,
-    check_orgno,
     rand_orgno,
-    rand_addr,
-    LASTNAME_ALTS,
 )
 
 
