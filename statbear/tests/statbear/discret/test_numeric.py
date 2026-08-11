@@ -8,18 +8,22 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
 import numpy as np
 
 if __name__ == "__main__":
     from importlib import reload
+
     from statbear.panel import numeric
+
     reload(numeric)
 
 from statbear.discret.numeric import (
-    std_outlier, remove_std_outlier,
-    span_cut, edge_encode,
-    POS_FLAG, NEG_FLAG)
+    POS_FLAG,
+    edge_encode,
+    remove_std_outlier,
+    span_cut,
+    std_outlier,
+)
 
 
 # %%
@@ -58,19 +62,13 @@ def test_std_outlier():
 
 # %%
 def test_span_cut():
-    arr = np.concatenate([np.arange(10),
-                          np.arange(20, 30),
-                          np.arange(50, 70)])
+    arr = np.concatenate([np.arange(10), np.arange(20, 30), np.arange(50, 70)])
     assert np.all(span_cut(arr, 3) == [0, 14.5, 39.5, 69])
     assert np.all(span_cut(arr, None, 2.5) == [0, 14.5, 39.5, 69])
 
 
 # %%
 def test_edge_encode():
-    arr = np.concatenate([np.arange(10),
-                          np.arange(20, 30),
-                          np.arange(50, 70)])
+    arr = np.concatenate([np.arange(10), np.arange(20, 30), np.arange(50, 70)])
     bin_edges = span_cut(arr, 3)
     edge_encode(arr, bin_edges)
-
-

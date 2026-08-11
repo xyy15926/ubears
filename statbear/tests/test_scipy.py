@@ -8,17 +8,17 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
 import numpy as np
-from scipy.stats import contingency
 import pandas as pd
+import pytest
+from scipy.stats import contingency
 
 
 # %%
 def test_contingency_sortable_only():
     row = [1, 1, 2, 2, 3, 3]
     col = ["a", "a", "a", 1, 1, 1]
-    (re, ce), ctab = contingency.crosstab(row, col)
+    (re, ce), _ctab = contingency.crosstab(row, col)
     assert np.issubdtype(re.dtype, int)
     # Col will be casted into `<U21` implicitly.
     assert np.issubdtype(ce.dtype, str)
@@ -29,7 +29,7 @@ def test_contingency_sortable_only():
     # `ndarray.argsort` is called, namely umcompared mixed dtype are not
     # allowed.
     with pytest.raises(TypeError):
-        (re, ce), ctab = contingency.crosstab(row, col)
+        (re, ce), _ctab = contingency.crosstab(row, col)
     # While in the meantime, `pd.crosstab` will ignore NA.
     # But `scipy.contigency.crosstab` is 20 times faster than `pd.crosstab`.
     ret = pd.crosstab(row, col)

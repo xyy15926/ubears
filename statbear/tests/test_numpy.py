@@ -8,9 +8,9 @@
 # ---------------------------------------------------------
 
 # %%
+import numpy as np
 import pytest
 from packaging.version import Version
-import numpy as np
 
 
 # %%
@@ -20,15 +20,17 @@ import numpy as np
 # https://stackoverflow.com/questions/40659212/futurewarning-elementwise-comparison-failed-returning-scalar-but-in-the-futur
 # The behavior of comparison between numpy str and numerics ndarray isn't
 # decided yet and the scalar return may be changed.
-@pytest.mark.skipif(Version(np.__version__) >= Version("2.0"),
-                    reason="Comparison behavior isn't decided yet.")
+@pytest.mark.skipif(
+    Version(np.__version__) >= Version("2.0"),
+    reason="Comparison behavior isn't decided yet.",
+)
 def test_str_numarr_comparison_lt20():
     # The `ret` is scalar.
     with pytest.warns(FutureWarning):
         ret = np.arange(5).astype(str) == np.arange(5)
     assert np.isscalar(ret)
     with pytest.warns(FutureWarning):
-        ret = "a" == np.arange(5)
+        ret = np.arange(5) == "a"
     assert np.isscalar(ret)
 
     # This seems not to be ambiguous but FutureWarnings raised anyway.
@@ -38,13 +40,15 @@ def test_str_numarr_comparison_lt20():
 
 
 # No more FutureWarning raised.
-@pytest.mark.skipif(Version(np.__version__) < Version("2.0"),
-                    reason="Comparison behavior has been decided.")
+@pytest.mark.skipif(
+    Version(np.__version__) < Version("2.0"),
+    reason="Comparison behavior has been decided.",
+)
 def test_str_numarr_comparison_ge20():
     # The `ret` is not scalar.
     ret = np.arange(5).astype(str) == np.arange(5)
     assert not np.isscalar(ret)
-    ret = "a" == np.arange(5)
+    ret = np.arange(5) == "a"
     assert not np.isscalar(ret)
 
 

@@ -3,25 +3,27 @@
 #   Name: test_snap.py
 #   Author: xyy15926
 #   Created: 2024-04-11 09:11:58
-#   Updated: 2025-05-15 11:46:31
+#   Updated: 2026-08-10 21:50:12
 #   Description:
 # ---------------------------------------------------------
 
 # %%
-import pytest
 import numpy as np
 import pandas as pd
 
 if __name__ == "__main__":
     from importlib import reload
+
     from statbear.panel import snap
-    reload(ovdd)
+
+    reload(snap)
 
 from statbear.panel.snap import month_date, ovdd_from_duepay_records, snap_ovd
 
 
 # %%
 def ovd_recs():
+    # fmt: off
     recs = pd.DataFrame([
         ("2021-12-11"   , 0     , 0     , 2300),
         ("2022-01-11"   , 23    , 100   , 2200),
@@ -49,6 +51,7 @@ def ovd_recs():
         # No ending tail.
         ("2023-05-11"   , 34    , 100   , 600),
     ], columns=["due_date", "ovd_days", "due_amt", "rem_amt"])
+    # fmt: on
     recs["due_date"] = recs["due_date"].astype("M8[s]")
 
     return recs
@@ -68,48 +71,60 @@ def test_month_date():
     assert next_due_noend[-1] - due_date[-1] > np.timedelta64(30, "D")
 
     month_end = month_date(due_date, "monthend")
-    assert np.all(month_end - month_end.astype("M8[M]").astype("M8[D]")
-                  >= np.timedelta64(27, "D"))
+    assert np.all(
+        month_end - month_end.astype("M8[M]").astype("M8[D]")
+        >= np.timedelta64(27, "D")
+    )
 
     fixed_date = month_date(due_date, 28)
-    assert np.all(fixed_date - fixed_date.astype("M8[M]").astype("M8[D]")
-                  == np.timedelta64(27, "D"))
+    assert np.all(
+        fixed_date - fixed_date.astype("M8[M]").astype("M8[D]")
+        == np.timedelta64(27, "D")
+    )
     assert np.all(fixed_date > due_date)
 
     fixed_date = month_date(due_date, 1, False)
-    assert np.all(fixed_date - fixed_date.astype("M8[M]")
-                  == np.timedelta64(0, "D"))
+    assert np.all(
+        fixed_date - fixed_date.astype("M8[M]") == np.timedelta64(0, "D")
+    )
 
     fixed_date = month_date(due_date, 1, True)
     assert np.all(fixed_date > due_date)
-    assert np.all(fixed_date - fixed_date.astype("M8[M]")
-                  == np.timedelta64(0, "D"))
+    assert np.all(
+        fixed_date - fixed_date.astype("M8[M]") == np.timedelta64(0, "D")
+    )
 
     nm_fixed_date = month_date(due_date, 101)
     assert np.all(nm_fixed_date == fixed_date)
 
     fixed_date = month_date(due_date, 28, True)
     nm_fixed_date = month_date(due_date, 128, True)
-    assert np.all(nm_fixed_date - fixed_date.astype("M8[M]")
-                  > np.timedelta64(27, "D"))
+    assert np.all(
+        nm_fixed_date - fixed_date.astype("M8[M]") > np.timedelta64(27, "D")
+    )
 
 
 # %%
 def test_snap_ovd_precisely():
     recs = ovd_recs()
-    due_date = np.asarray(pd.to_datetime(recs["due_date"]), dtype="datetime64[D]")
+    due_date = np.asarray(
+        pd.to_datetime(recs["due_date"]), dtype="datetime64[D]"
+    )
     ovd_days = np.asarray(recs["ovd_days"], dtype="timedelta64[D]")
     rep_date = due_date + ovd_days
     due_amt = recs["due_amt"]
     rem_amt = recs["rem_amt"]
 
     ob_date = month_date(due_date, "monthend")
-    ovdt, ovda, mob, stop_recs = snap_ovd(due_date, rep_date, None, ob_date, due_amt, rem_amt)
+    ovdt, ovda, _mob, stop_recs = snap_ovd(
+        due_date, rep_date, None, ob_date, due_amt, rem_amt
+    )
     stop_recn = []
     for obd, srec in zip(ob_date, stop_recs):
         ovdn = len(list(filter(lambda x: x[1] < obd, srec)))
         stop_recn.append(ovdn)
     assert np.all(ovdt[:, -1] == np.asarray(stop_recn))
+    # fmt: off
     monthend_ret = np.array([
         [0  , 0 , 0     , 0 , 2300  , 0     , 0     , 2300  , 0     , 0],
         [20 , 1 , 20    , 1 , 2300  , 100   , 100   , 2300  , 100   , 100],
@@ -130,17 +145,21 @@ def test_snap_ovd_precisely():
         [31 , 1 , 0     , 0 , 900   , 100   , 200   , 700   , 0     , 0],
         [20 , 1 , 20    , 1 , 700   , 100   , 100   , 700   , 100   , 100],
     ])
+    # fmt: on
     movdt, movda = monthend_ret[:, :4], monthend_ret[:, 4:]
     assert np.all(ovdt == movdt)
     assert np.all(ovda == movda)
 
     ob_date = month_date(due_date, "nextdue")
-    ovdt, ovda, mob, stop_recs = snap_ovd(due_date, rep_date, None, ob_date, due_amt, rem_amt)
+    ovdt, ovda, _mob, stop_recs = snap_ovd(
+        due_date, rep_date, None, ob_date, due_amt, rem_amt
+    )
     stop_recn = []
     for obd, srec in zip(ob_date, stop_recs):
         ovdn = len(list(filter(lambda x: x[1] < obd, srec)))
         stop_recn.append(ovdn)
     assert np.all(ovdt[:, -1] == np.asarray(stop_recn))
+    # fmt: off
     nextdue_ret = np.array([
         [0  , 0 , 0     , 0 , 2300  , 0     , 100   , 2300  , 0     , 100],
         [23 , 1 , 0     , 0 , 2300  , 100   , 100   , 2200  , 0     , 100],
@@ -161,6 +180,7 @@ def test_snap_ovd_precisely():
         [0  , 0 , 0     , 0 , 700   , 0     , 100   , 700   , 0     , 100],
         [30 , 1 , 30    , 1 , 700   , 100   , 100   , 700   , 100   , 100],
     ])
+    # fmt: on
     novdt, novda = nextdue_ret[:, :4], nextdue_ret[:, 4:]
     assert np.all(ovdt == novdt)
     assert np.all(ovda == novda)
@@ -169,7 +189,9 @@ def test_snap_ovd_precisely():
 # %%
 def test_snap_ovd_precisely_ovdd_and_repd_conflicts():
     recs = ovd_recs()
-    due_date = np.asarray(pd.to_datetime(recs["due_date"]), dtype="datetime64[D]")
+    due_date = np.asarray(
+        pd.to_datetime(recs["due_date"]), dtype="datetime64[D]"
+    )
     ovd_days = np.asarray(recs["ovd_days"], dtype="timedelta64[D]")
     rep_date = due_date + ovd_days
     due_amt = recs["due_amt"]
@@ -177,12 +199,15 @@ def test_snap_ovd_precisely_ovdd_and_repd_conflicts():
     rep_date[-1] = np.datetime64("nat")
 
     ob_date = month_date(due_date, "monthend")
-    ovdt, ovda, mob, stop_recs = snap_ovd(due_date, rep_date, ovd_days, ob_date, due_amt, rem_amt)
+    ovdt, ovda, _mob, stop_recs = snap_ovd(
+        due_date, rep_date, ovd_days, ob_date, due_amt, rem_amt
+    )
     stop_recn = []
     for obd, srec in zip(ob_date, stop_recs):
         ovdn = len(list(filter(lambda x: x[1] < obd, srec)))
         stop_recn.append(ovdn)
     assert np.all(ovdt[:, -1] == np.asarray(stop_recn))
+    # fmt: off
     monthend_ret = np.array([
         [0  , 0 , 0     , 0 , 2300  , 0     , 0     , 2300  , 0     , 0],
         [20 , 1 , 20    , 1 , 2300  , 100   , 100   , 2300  , 100   , 100],
@@ -203,12 +228,15 @@ def test_snap_ovd_precisely_ovdd_and_repd_conflicts():
         [31 , 1 , 0     , 0 , 900   , 100   , 200   , 700   , 0     , 0],
         [20 , 1 , 20    , 1 , 700   , 100   , 100   , 700   , 100   , 100],
     ])
+    # fmt: on
     movdt, movda = monthend_ret[:, :4], monthend_ret[:, 4:]
     assert np.all(ovdt == movdt)
     assert np.all(ovda == movda)
 
     # month-end `ob_date` V.S. today `rep_date`.
-    ovdt, ovda, mob, stop_recs = snap_ovd(due_date, rep_date, None, ob_date, due_amt, rem_amt)
+    ovdt, ovda, _mob, stop_recs = snap_ovd(
+        due_date, rep_date, None, ob_date, due_amt, rem_amt
+    )
     stop_recn = []
     for obd, srec in zip(ob_date, stop_recs):
         ovdn = len(list(filter(lambda x: x[1] < obd, srec)))
@@ -218,12 +246,15 @@ def test_snap_ovd_precisely_ovdd_and_repd_conflicts():
     assert np.all(ovda == movda)
 
     ob_date = month_date(due_date, "nextdue_noend")
-    ovdt, ovda, mob, stop_recs = snap_ovd(due_date, rep_date, ovd_days, ob_date, due_amt, rem_amt)
+    ovdt, ovda, _mob, stop_recs = snap_ovd(
+        due_date, rep_date, ovd_days, ob_date, due_amt, rem_amt
+    )
     stop_recn = []
     for obd, srec in zip(ob_date, stop_recs):
         ovdn = len(list(filter(lambda x: x[1] < obd, srec)))
         stop_recn.append(ovdn)
     assert np.all(ovdt[:, -1] == np.asarray(stop_recn))
+    # fmt: off
     nextdue_noend_ret = np.array([
         [0  , 0 , 0     , 0 , 2300  , 0     , 100   , 2300  , 0     , 100],
         [23 , 1 , 0     , 0 , 2300  , 100   , 100   , 2200  , 0     , 100],
@@ -244,12 +275,15 @@ def test_snap_ovd_precisely_ovdd_and_repd_conflicts():
         [0  , 0 , 0     , 0 , 700   , 0     , 100   , 700   , 0     , 100],
         [34 , 1 , 0     , 0 , 700   , 100   , 100   , 600   , 0     , 0],
     ])
+    # fmt: on
     novdt, novda = nextdue_noend_ret[:, :4], nextdue_noend_ret[:, 4:]
     assert np.all(ovdt == novdt)
     assert np.all(ovda == novda)
 
     # 2099-12-31 `ob_date` V.S. today `rep_date`
-    ovdt, ovda, mob, stop_recs = snap_ovd(due_date, rep_date, None, ob_date, due_amt, rem_amt)
+    ovdt, ovda, _mob, stop_recs = snap_ovd(
+        due_date, rep_date, None, ob_date, due_amt, rem_amt
+    )
     stop_recn = []
     for obd, srec in zip(ob_date, stop_recs):
         ovdn = len(list(filter(lambda x: x[1] < obd, srec)))
@@ -264,19 +298,24 @@ def test_snap_ovd_precisely_ovdd_and_repd_conflicts():
 # %%
 def test_snap_ovd_precisely_noovdend():
     recs = ovd_recs().iloc[:-1]
-    due_date = np.asarray(pd.to_datetime(recs["due_date"]), dtype="datetime64[D]")
+    due_date = np.asarray(
+        pd.to_datetime(recs["due_date"]), dtype="datetime64[D]"
+    )
     ovd_days = np.asarray(recs["ovd_days"], dtype="timedelta64[D]")
     rep_date = due_date + ovd_days
     due_amt = recs["due_amt"]
     rem_amt = recs["rem_amt"]
 
     ob_date = month_date(due_date, "monthend")
-    ovdt, ovda, mob, stop_recs = snap_ovd(due_date, rep_date, None, ob_date, due_amt, rem_amt)
+    ovdt, ovda, _mob, stop_recs = snap_ovd(
+        due_date, rep_date, None, ob_date, due_amt, rem_amt
+    )
     stop_recn = []
     for obd, srec in zip(ob_date, stop_recs):
         ovdn = len(list(filter(lambda x: x[1] < obd, srec)))
         stop_recn.append(ovdn)
     assert np.all(ovdt[:, -1] == np.asarray(stop_recn))
+    # fmt: off
     monthend_ret = np.array([
         [0  , 0 , 0     , 0 , 2300  , 0     , 0     , 2300  , 0     , 0],
         [20 , 1 , 20    , 1 , 2300  , 100   , 100   , 2300  , 100   , 100],
@@ -296,17 +335,21 @@ def test_snap_ovd_precisely_noovdend():
         [28 , 1 , 20    , 1 , 1000  , 100   , 200   , 900   , 100   , 100],
         [31 , 1 , 0     , 0 , 900   , 100   , 200   , 700   , 0     , 0],
     ])
+    # fmt: on
     movdt, movda = monthend_ret[:, :4], monthend_ret[:, 4:]
     assert np.all(ovdt == movdt)
     assert np.all(ovda == movda)
 
     ob_date = month_date(due_date, "nextdue")
-    ovdt, ovda, mob, stop_recs = snap_ovd(due_date, rep_date, None, ob_date, due_amt, rem_amt)
+    ovdt, ovda, _mob, stop_recs = snap_ovd(
+        due_date, rep_date, None, ob_date, due_amt, rem_amt
+    )
     stop_recn = []
     for obd, srec in zip(ob_date, stop_recs):
         ovdn = len(list(filter(lambda x: x[1] < obd, srec)))
         stop_recn.append(ovdn)
     assert np.all(ovdt[:, -1] == np.asarray(stop_recn))
+    # fmt: off
     nextdue_ret = np.array([
         [0  , 0 , 0     , 0 , 2300  , 0     , 100   , 2300  , 0     , 100],
         [23 , 1 , 0     , 0 , 2300  , 100   , 100   , 2200  , 0     , 100],
@@ -326,6 +369,7 @@ def test_snap_ovd_precisely_noovdend():
         [31 , 1 , 31    , 1 , 900   , 100   , 200   , 900   , 100   , 200],
         [0  , 0 , 0     , 0 , 700   , 0     , 0     , 700   , 0     , 0],
     ])
+    # fmt: on
     novdt, novda = nextdue_ret[:, :4], nextdue_ret[:, 4:]
     assert np.all(ovdt == novdt)
     assert np.all(ovda == novda)
@@ -334,21 +378,27 @@ def test_snap_ovd_precisely_noovdend():
 # %%
 def test_snap_ovd_precisely_additional_obdate():
     recs = ovd_recs()
-    due_date = np.asarray(pd.to_datetime(recs["due_date"]), dtype="datetime64[D]")
+    due_date = np.asarray(
+        pd.to_datetime(recs["due_date"]), dtype="datetime64[D]"
+    )
     ovd_days = np.asarray(recs["ovd_days"], dtype="timedelta64[D]")
     rep_date = due_date + ovd_days
     due_amt = recs["due_amt"]
     rem_amt = recs["rem_amt"]
 
     ob_date = month_date(due_date, "monthend")
-    ob_date = np.asarray([ob_date[0] - 30, *ob_date,
-                          ob_date[-1] + 30, ob_date[-1] + 60])
-    ovdt, ovda, mob, stop_recs = snap_ovd(due_date, rep_date, None, ob_date, due_amt, rem_amt)
+    ob_date = np.asarray(
+        [ob_date[0] - 30, *ob_date, ob_date[-1] + 30, ob_date[-1] + 60]
+    )
+    ovdt, ovda, _mob, stop_recs = snap_ovd(
+        due_date, rep_date, None, ob_date, due_amt, rem_amt
+    )
     stop_recn = []
     for obd, srec in zip(ob_date, stop_recs):
         ovdn = len(list(filter(lambda x: x[1] < obd, srec)))
         stop_recn.append(ovdn)
     assert np.all(ovdt[:, -1] == np.asarray(stop_recn))
+    # fmt: off
     monthend_ret = np.array([
         [0  , 0 , 0     , 0 , 2300  , 0     , 0     , 2300  , 0     , 0],
         [0  , 0 , 0     , 0 , 2300  , 0     , 0     , 2300  , 0     , 0],
@@ -372,19 +422,24 @@ def test_snap_ovd_precisely_additional_obdate():
         [34 , 1 , 0     , 0 , 700   , 100   , 100   , 600   , 0     , 0],
         [0  , 0 , 0     , 0 , 600   , 0     , 0     , 600   , 0     , 0],
     ])
+    # fmt: on
     movdt, movda = monthend_ret[:, :4], monthend_ret[:, 4:]
     assert np.all(ovdt == movdt)
     assert np.all(ovda == movda)
 
     ob_date = month_date(due_date, "nextdue")
-    ob_date = np.asarray([ob_date[0] - 30, *ob_date,
-                          ob_date[-1] + 30, ob_date[-1] + 60])
-    ovdt, ovda, mob, stop_recs = snap_ovd(due_date, rep_date, None, ob_date, due_amt, rem_amt)
+    ob_date = np.asarray(
+        [ob_date[0] - 30, *ob_date, ob_date[-1] + 30, ob_date[-1] + 60]
+    )
+    ovdt, ovda, _mob, stop_recs = snap_ovd(
+        due_date, rep_date, None, ob_date, due_amt, rem_amt
+    )
     stop_recn = []
     for obd, srec in zip(ob_date, stop_recs):
         ovdn = len(list(filter(lambda x: x[1] < obd, srec)))
         stop_recn.append(ovdn)
     assert np.all(ovdt[:, -1] == np.asarray(stop_recn))
+    # fmt: off
     nextdue_ret = np.array([
         [0  , 0 , 0     , 0 , 2300  , 0     , 0     , 2300  , 0     , 0],
         [0  , 0 , 0     , 0 , 2300  , 0     , 100   , 2300  , 0     , 100],
@@ -408,6 +463,7 @@ def test_snap_ovd_precisely_additional_obdate():
         [34 , 1 , 0     , 0 , 700   , 100   , 100   , 600   , 0     , 0],
         [0  , 0 , 0     , 0 , 600   , 0     , 0     , 600   , 0     , 0],
     ])
+    # fmt: on
     novdt, novda = nextdue_ret[:, :4], nextdue_ret[:, 4:]
     assert np.all(ovdt == novdt)
     assert np.all(ovda == novda)
@@ -416,7 +472,9 @@ def test_snap_ovd_precisely_additional_obdate():
 # %%
 def test_snap_ovd_precisely_repeated_obdate():
     recs = ovd_recs()
-    due_date = np.asarray(pd.to_datetime(recs["due_date"]), dtype="datetime64[D]")
+    due_date = np.asarray(
+        pd.to_datetime(recs["due_date"]), dtype="datetime64[D]"
+    )
     ovd_days = np.asarray(recs["ovd_days"], dtype="timedelta64[D]")
     rep_date = due_date + ovd_days
     due_amt = recs["due_amt"]
@@ -424,12 +482,15 @@ def test_snap_ovd_precisely_repeated_obdate():
 
     ob_date = month_date(due_date, "monthend")
     ob_date[5] = ob_date[4]
-    ovdt, ovda, mob, stop_recs = snap_ovd(due_date, rep_date, None, ob_date, due_amt, rem_amt)
+    ovdt, ovda, _mob, stop_recs = snap_ovd(
+        due_date, rep_date, None, ob_date, due_amt, rem_amt
+    )
     stop_recn = []
     for obd, srec in zip(ob_date, stop_recs):
         ovdn = len(list(filter(lambda x: x[1] < obd, srec)))
         stop_recn.append(ovdn)
     assert np.all(ovdt[:, -1] == np.asarray(stop_recn))
+    # fmt: off
     monthend_ret = np.array([
         [0  , 0 , 0     , 0 , 2300  , 0     , 0     , 2300  , 0     , 0],
         [20 , 1 , 20    , 1 , 2300  , 100   , 100   , 2300  , 100   , 100],
@@ -450,6 +511,7 @@ def test_snap_ovd_precisely_repeated_obdate():
         [31 , 1 , 0     , 0 , 900   , 100   , 200   , 700   , 0     , 0],
         [20 , 1 , 20    , 1 , 700   , 100   , 100   , 700   , 100   , 100],
     ])
+    # fmt: on
     movdt, movda = monthend_ret[:, :4], monthend_ret[:, 4:]
     assert np.all(ovdt == movdt)
     assert np.all(ovda == movda)
@@ -457,12 +519,15 @@ def test_snap_ovd_precisely_repeated_obdate():
     ob_date = month_date(due_date, "nextdue")
     # Move one day forward to check the stop.
     ob_date[-2] = ob_date[-3] + 1
-    ovdt, ovda, mob, stop_recs = snap_ovd(due_date, rep_date, None, ob_date, due_amt, rem_amt)
+    ovdt, ovda, _mob, stop_recs = snap_ovd(
+        due_date, rep_date, None, ob_date, due_amt, rem_amt
+    )
     stop_recn = []
     for obd, srec in zip(ob_date, stop_recs):
         ovdn = len(list(filter(lambda x: x[1] < obd, srec)))
         stop_recn.append(ovdn)
     assert np.all(ovdt[:, -1] == np.asarray(stop_recn))
+    # fmt: off
     nextdue_ret = np.array([
         [0  , 0 , 0     , 0 , 2300  , 0     , 100   , 2300  , 0     , 100],
         [23 , 1 , 0     , 0 , 2300  , 100   , 100   , 2200  , 0     , 100],
@@ -483,6 +548,7 @@ def test_snap_ovd_precisely_repeated_obdate():
         [0  , 0 , 0     , 0 , 700   , 0     , 0     , 700   , 0     , 0],
         [30 , 1 , 30    , 1 , 700   , 100   , 100   , 700   , 100   , 100],
     ])
+    # fmt: on
     novdt, novda = nextdue_ret[:, :4], nextdue_ret[:, 4:]
     assert np.all(ovdt == novdt)
     assert np.all(ovda == novda)
@@ -491,19 +557,24 @@ def test_snap_ovd_precisely_repeated_obdate():
 # %%
 def test_snap_ovd_precisely_2Dduea():
     recs = ovd_recs()
-    due_date = np.asarray(pd.to_datetime(recs["due_date"]), dtype="datetime64[D]")
+    due_date = np.asarray(
+        pd.to_datetime(recs["due_date"]), dtype="datetime64[D]"
+    )
     ovd_days = np.asarray(recs["ovd_days"], dtype="timedelta64[D]")
     rep_date = due_date + ovd_days
     due_amt = np.stack([recs["due_amt"], recs["due_amt"]], axis=1)
     rem_amt = np.stack([recs["rem_amt"], recs["rem_amt"]], axis=1)
 
     ob_date = month_date(due_date, "monthend")
-    ovdt, ovda, mob, stop_recs = snap_ovd(due_date, rep_date, None, ob_date, due_amt, rem_amt)
+    ovdt, ovda, _mob, stop_recs = snap_ovd(
+        due_date, rep_date, None, ob_date, due_amt, rem_amt
+    )
     stop_recn = []
     for obd, srec in zip(ob_date, stop_recs):
         ovdn = len(list(filter(lambda x: x[1] < obd, srec)))
         stop_recn.append(ovdn)
     assert np.all(ovdt[:, -1] == np.asarray(stop_recn))
+    # fmt: off
     monthend_ret = np.array([
         [0  , 0 , 0     , 0 , 2300  , 0     , 0     , 2300  , 0     , 0],
         [20 , 1 , 20    , 1 , 2300  , 100   , 100   , 2300  , 100   , 100],
@@ -524,31 +595,43 @@ def test_snap_ovd_precisely_2Dduea():
         [31 , 1 , 0     , 0 , 900   , 100   , 200   , 700   , 0     , 0],
         [20 , 1 , 20    , 1 , 700   , 100   , 100   , 700   , 100   , 100],
     ])
+    # fmt: on
     movdt, movda = monthend_ret[:, :4], monthend_ret[:, 4:]
-    ovda_c1, ovda_c2 = ovda[:, np.arange(0, 12, 2)], ovda[:, np.arange(1, 12, 2)]
+    ovda_c1, ovda_c2 = (
+        ovda[:, np.arange(0, 12, 2)],
+        ovda[:, np.arange(1, 12, 2)],
+    )
     assert np.all(ovdt == movdt)
     assert np.all(ovda_c1 == ovda_c2)
     assert np.all(ovda_c1 == movda)
 
     # 2D `due_amt` with None `rem_amt`.
-    ovdt, ovda, mob, stop_recs = snap_ovd(due_date, rep_date, None, ob_date, due_amt, None)
+    ovdt, ovda, _mob, stop_recs = snap_ovd(
+        due_date, rep_date, None, ob_date, due_amt, None
+    )
     stop_recn = []
     for obd, srec in zip(ob_date, stop_recs):
         ovdn = len(list(filter(lambda x: x[1] < obd, srec)))
         stop_recn.append(ovdn)
     assert np.all(ovdt[:, -1] == np.asarray(stop_recn))
-    ovda_c1, ovda_c2 = ovda[:, np.arange(0, 12, 2)], ovda[:, np.arange(1, 12, 2)]
+    ovda_c1, ovda_c2 = (
+        ovda[:, np.arange(0, 12, 2)],
+        ovda[:, np.arange(1, 12, 2)],
+    )
     assert np.all(ovdt == movdt)
     assert np.all(ovda_c1 == ovda_c2)
     assert np.all((ovda_c1 == movda)[:, [1, 2, 4, 5]])
 
     ob_date = month_date(due_date, "nextdue")
-    ovdt, ovda, mob, stop_recs = snap_ovd(due_date, rep_date, None, ob_date, due_amt, rem_amt)
+    ovdt, ovda, _mob, stop_recs = snap_ovd(
+        due_date, rep_date, None, ob_date, due_amt, rem_amt
+    )
     stop_recn = []
     for obd, srec in zip(ob_date, stop_recs):
         ovdn = len(list(filter(lambda x: x[1] < obd, srec)))
         stop_recn.append(ovdn)
     assert np.all(ovdt[:, -1] == np.asarray(stop_recn))
+    # fmt: off
     nextdue_ret = np.array([
         [0  , 0 , 0     , 0 , 2300  , 0     , 100   , 2300  , 0     , 100],
         [23 , 1 , 0     , 0 , 2300  , 100   , 100   , 2200  , 0     , 100],
@@ -569,21 +652,30 @@ def test_snap_ovd_precisely_2Dduea():
         [0  , 0 , 0     , 0 , 700   , 0     , 100   , 700   , 0     , 100],
         [30 , 1 , 30    , 1 , 700   , 100   , 100   , 700   , 100   , 100],
     ])
+    # fmt: on
     novdt, novda = nextdue_ret[:, :4], nextdue_ret[:, 4:]
     assert np.all(ovdt == novdt)
-    ovda_c1, ovda_c2 = ovda[:, np.arange(0, 12, 2)], ovda[:, np.arange(1, 12, 2)]
+    ovda_c1, ovda_c2 = (
+        ovda[:, np.arange(0, 12, 2)],
+        ovda[:, np.arange(1, 12, 2)],
+    )
     assert np.all(ovdt == novdt)
     assert np.all(ovda_c1 == ovda_c2)
     assert np.all(ovda_c1 == novda)
 
     # 2D `due_amt` with None `rem_amt`.
-    ovdt, ovda, mob, stop_recs = snap_ovd(due_date, rep_date, None, ob_date, due_amt, None)
+    ovdt, ovda, _mob, stop_recs = snap_ovd(
+        due_date, rep_date, None, ob_date, due_amt, None
+    )
     stop_recn = []
     for obd, srec in zip(ob_date, stop_recs):
         ovdn = len(list(filter(lambda x: x[1] < obd, srec)))
         stop_recn.append(ovdn)
     assert np.all(ovdt[:, -1] == np.asarray(stop_recn))
-    ovda_c1, ovda_c2 = ovda[:, np.arange(0, 12, 2)], ovda[:, np.arange(1, 12, 2)]
+    ovda_c1, ovda_c2 = (
+        ovda[:, np.arange(0, 12, 2)],
+        ovda[:, np.arange(1, 12, 2)],
+    )
     assert np.all(ovdt == novdt)
     assert np.all(ovda_c1 == ovda_c2)
     assert np.all((ovda_c1 == novda)[:, [1, 2, 4, 5]])
@@ -592,13 +684,17 @@ def test_snap_ovd_precisely_2Dduea():
 # %%
 def check_snap_ovd(ob_date):
     recs = ovd_recs()
-    due_date = np.asarray(pd.to_datetime(recs["due_date"]), dtype="datetime64[D]")
+    due_date = np.asarray(
+        pd.to_datetime(recs["due_date"]), dtype="datetime64[D]"
+    )
     ovd_days = np.asarray(recs["ovd_days"], dtype="timedelta64[D]")
     rep_date = due_date + ovd_days
     due_amt = recs["due_amt"]
     rem_amt = recs["rem_amt"]
 
-    ovdt, ovda, mob, stop_recs = snap_ovd(due_date, rep_date, None, ob_date, due_amt, rem_amt)
+    ovdt, ovda, _mob, _stop_recs = snap_ovd(
+        due_date, rep_date, None, ob_date, due_amt, rem_amt
+    )
     ever_ovdd, ever_ovdp, stop_ovdd, stop_ovdp = ovdt.T
     ever_rema, ever_ovda, ever_duea, stop_rema, stop_ovda, stop_duea = ovda.T
 
@@ -606,51 +702,94 @@ def check_snap_ovd(ob_date):
     assert ever_ovdd.max() == ovd_days.max()
     # The calculation `(x+30)//31` is used to estimate periods only
     # works when periods is month.
-    assert np.all(((ever_ovdd + 30) // 31 == ever_ovdp)
-                  [(ob_date - due_date) <= np.timedelta64(31, "D")])
-    assert np.all(((stop_ovdd + 30) // 31 == stop_ovdp)
-                  [(ob_date - due_date) <= np.timedelta64(31, "D")])
+    assert np.all(
+        ((ever_ovdd + 30) // 31 == ever_ovdp)[
+            (ob_date - due_date) <= np.timedelta64(31, "D")
+        ]
+    )
+    assert np.all(
+        ((stop_ovdd + 30) // 31 == stop_ovdp)[
+            (ob_date - due_date) <= np.timedelta64(31, "D")
+        ]
+    )
     assert np.all((ever_ovdp * 100) == ever_ovda)
     assert np.all((stop_ovdp * 100) == stop_ovda)
     assert np.all(ever_duea >= ever_ovda)
 
-    return (ever_ovdd, ever_ovdp, stop_ovdd, stop_ovdp,
-            ever_rema, ever_ovda, ever_duea,
-            stop_rema, stop_ovda, stop_duea)
+    return (
+        ever_ovdd,
+        ever_ovdp,
+        stop_ovdd,
+        stop_ovdp,
+        ever_rema,
+        ever_ovda,
+        ever_duea,
+        stop_rema,
+        stop_ovda,
+        stop_duea,
+    )
 
 
 def check_ovdd_from_duepay_records(ob_date):
     recs = ovd_recs()
-    due_date = np.asarray(pd.to_datetime(recs["due_date"]), dtype="datetime64[D]")
+    due_date = np.asarray(
+        pd.to_datetime(recs["due_date"]), dtype="datetime64[D]"
+    )
     ovd_days = np.asarray(recs["ovd_days"], dtype="timedelta64[D]")
-    rep_date = due_date + ovd_days
+    due_date + ovd_days
     due_amt = recs["due_amt"]
     rem_amt = recs["rem_amt"]
 
-    (ever_ovdd, stop_ovdd, ever_ovdp, stop_ovdp, ever_ovda, stop_ovda,
-     ever_rema, stop_rema, ever_duea, stop_duea) = ovdd_from_duepay_records(
-        due_date, ovd_days, ob_date, due_amt, rem_amt)
+    (
+        ever_ovdd,
+        stop_ovdd,
+        ever_ovdp,
+        stop_ovdp,
+        ever_ovda,
+        stop_ovda,
+        ever_rema,
+        stop_rema,
+        ever_duea,
+        stop_duea,
+    ) = ovdd_from_duepay_records(due_date, ovd_days, ob_date, due_amt, rem_amt)
     assert np.all(ever_ovdd >= stop_ovdd)
     assert ever_ovdd.max() == ovd_days.max()
     # The calculation `(x+30)//31` is used to estimate periods only
     # works when periods is month.
-    assert np.all(((ever_ovdd + 30) // 31 == ever_ovdp)
-                  [(ob_date - due_date) <= np.timedelta64(31, "D")])
-    assert np.all(((stop_ovdd + 30) // 31 == stop_ovdp)
-                  [(ob_date - due_date) <= np.timedelta64(31, "D")])
+    assert np.all(
+        ((ever_ovdd + 30) // 31 == ever_ovdp)[
+            (ob_date - due_date) <= np.timedelta64(31, "D")
+        ]
+    )
+    assert np.all(
+        ((stop_ovdd + 30) // 31 == stop_ovdp)[
+            (ob_date - due_date) <= np.timedelta64(31, "D")
+        ]
+    )
     assert np.all((ever_ovdp * 100) == ever_ovda)
     assert np.all((stop_ovdp * 100) == stop_ovda)
     assert np.all(ever_duea >= ever_ovda)
 
-    return (ever_ovdd, ever_ovdp, stop_ovdd, stop_ovdp,
-            ever_rema, ever_ovda, ever_duea,
-            stop_rema, stop_ovda, stop_duea)
+    return (
+        ever_ovdd,
+        ever_ovdp,
+        stop_ovdd,
+        stop_ovdp,
+        ever_rema,
+        ever_ovda,
+        ever_duea,
+        stop_rema,
+        stop_ovda,
+        stop_duea,
+    )
 
 
 # %%
 def test_snap_ovdd_compared():
     recs = ovd_recs()
-    due_date = np.asarray(pd.to_datetime(recs["due_date"]), dtype="datetime64[D]")
+    due_date = np.asarray(
+        pd.to_datetime(recs["due_date"]), dtype="datetime64[D]"
+    )
 
     # Nextdue
     ob_date = month_date(due_date, "nextdue")

@@ -8,23 +8,25 @@
 # ---------------------------------------------------------
 
 # %%
-from pytest import mark
 import numpy as np
-from scipy.stats import entropy, contingency
+from pytest import mark
 from scipy.special import kl_div
+from scipy.stats import contingency, entropy
 
 if __name__ == "__main__":
     from importlib import reload
+
     from statbear.panel import metrics
+
     reload(metrics)
 
 from statbear.panel.metrics import (
-    cal_lifts_weighted,
-    cal_woes_weighted,
+    cal_ivs,
     cal_ivs_weighted,
     cal_lifts,
+    cal_lifts_weighted,
     cal_woes,
-    cal_ivs,
+    cal_woes_weighted,
 )
 
 
@@ -35,24 +37,24 @@ def test_lifts():
     b = np.zeros(60)
     b[:10], b[20:23], b[40:42] = [1] * 10, [1] * 3, [1] * 2
 
-    wux, wlifts, wax, wacl, wasc = cal_lifts_weighted(a, b)
-    lifts, acl, racl, kcorr, pv = cal_lifts(a, b)
+    _wux, wlifts, _wax, wacl, wasc = cal_lifts_weighted(a, b)
+    lifts, acl, racl, kcorr, _pv = cal_lifts(a, b)
     assert np.all(np.isclose(wlifts, lifts))
     assert np.all(np.isclose(lifts, [2, 0.6, 0.4]))
     assert np.all(np.isclose(wacl, acl))
     assert np.all(np.isclose(acl, [2, 1.3, 1]))
     assert kcorr > 0
 
-    wux, wlifts, wax, wacl, wasc = cal_lifts_weighted(aa, b)
-    lifts, acl, racl, kcorr, pv = cal_lifts(aa, b)
+    _wux, wlifts, _wax, wacl, wasc = cal_lifts_weighted(aa, b)
+    lifts, acl, racl, kcorr, _pv = cal_lifts(aa, b)
     assert np.all(np.isclose(wlifts, lifts))
     assert np.all(np.isclose(lifts, [0.4, 0.6, 2]))
     assert np.all(np.isclose(wacl, racl[::-1]))
     assert np.all(np.isclose(wacl, [2, 1.3, 1]))
     assert kcorr < 0
 
-    wux, wlifts, wax, wacl, wasc = cal_lifts_weighted(a, b, acc_keys=[2, 3])
-    lifts, acl, racl, kcorr, pv = cal_lifts(a, b, acc_keys=[2, 3])
+    _wux, wlifts, _wax, wacl, wasc = cal_lifts_weighted(a, b, acc_keys=[2, 3])
+    lifts, acl, racl, kcorr, _pv = cal_lifts(a, b, acc_keys=[2, 3])
     assert np.all(np.isclose(wlifts, lifts))
     assert np.all(np.isclose(lifts, [2, 0.6, 0.4]))
     assert np.all(np.isclose(wacl, acl))
@@ -60,8 +62,8 @@ def test_lifts():
     assert not wasc
     assert kcorr > 0
 
-    wux, wlifts, wax, wacl, wasc = cal_lifts_weighted(a, b, acc_keys=[3, 2])
-    lifts, acl, racl, kcorr, pv = cal_lifts(a, b, acc_keys=[3, 2])
+    _wux, wlifts, _wax, wacl, wasc = cal_lifts_weighted(a, b, acc_keys=[3, 2])
+    lifts, acl, racl, kcorr, _pv = cal_lifts(a, b, acc_keys=[3, 2])
     assert np.all(np.isclose(wlifts, lifts))
     assert np.all(np.isclose(lifts, [2, 0.6, 0.4]))
     assert np.all(np.isclose(wacl, racl[::-1]))
@@ -106,10 +108,11 @@ def test_ivs():
     assert np.isclose(iv11, iv22)
     assert np.isclose(iv1, iv11)
 
-    (f1, f2), ctab = contingency.crosstab(a, b)
+    (_f1, _f2), ctab = contingency.crosstab(a, b)
     freqr = ctab / ctab.sum(axis=0, keepdims=True)
-    iv_ent = (entropy(freqr[:, 0], freqr[:, 1])
-              + entropy(freqr[:, 1], freqr[:, 0]))
+    iv_ent = entropy(freqr[:, 0], freqr[:, 1]) + entropy(
+        freqr[:, 1], freqr[:, 0]
+    )
 
     assert np.isclose(iv_ent, iv1)
 
@@ -152,15 +155,20 @@ def test_ivs_with_freq_0():
     assert np.isclose(iv11, iv22)
     assert np.isclose(iv1, iv11)
 
-    (f1, f2), ctab = contingency.crosstab(a, b)
+    (_f1, _f2), ctab = contingency.crosstab(a, b)
     freqr = ctab / ctab.sum(axis=0, keepdims=True)
-    iv_kl = np.nan_to_num(kl_div(freqr[:, 0], freqr[:, 1])
-                          + kl_div(freqr[:, 1], freqr[:, 0]),
-                          False, 0, 0, 0).sum()
+    iv_kl = np.nan_to_num(
+        kl_div(freqr[:, 0], freqr[:, 1]) + kl_div(freqr[:, 1], freqr[:, 0]),
+        False,
+        0,
+        0,
+        0,
+    ).sum()
 
     assert np.isclose(iv1, iv_kl)
 
     # Entropy can't handle frequency with 0 while calculating KL-Div.
-    iv_ent = (entropy(freqr[:, 0], freqr[:, 1])
-              + entropy(freqr[:, 1], freqr[:, 0]))
+    iv_ent = entropy(freqr[:, 0], freqr[:, 1]) + entropy(
+        freqr[:, 1], freqr[:, 0]
+    )
     assert np.inf == iv_ent

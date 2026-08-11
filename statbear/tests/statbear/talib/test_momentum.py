@@ -9,25 +9,43 @@
 
 # %%
 import pytest
+
 try:
     import talib as ta
 except ImportError:
     pytestmark = pytest.mark.skip(reason="TA-Lib uninstalled.")
 import numpy as np
+
 if __name__ == "__main__":
     from importlib import reload
-    from statbear.talib import overlap
-    from statbear.talib import momentum
+
+    from statbear.talib import momentum, overlap
+
     reload(overlap)
     reload(momentum)
 
 from statbear.talib.momentum import (
-    macd, macd_ext, cci, trix,
-    bop, rsi, ultosc, mfi, cmo,
-    aroon, aroon_osc,
-    dm, di, dx, adx, adxr,
-    mom, willr,
-    stochf, stoch, stoch_rsi,
+    adx,
+    adxr,
+    aroon,
+    aroon_osc,
+    bop,
+    cci,
+    cmo,
+    di,
+    dm,
+    dx,
+    macd,
+    macd_ext,
+    mfi,
+    mom,
+    rsi,
+    stoch,
+    stoch_rsi,
+    stochf,
+    trix,
+    ultosc,
+    willr,
 )
 
 
@@ -50,30 +68,48 @@ def mock_data_all():
 
 # %%
 def test_macd():
-    high, close, low = mock_data()
+    _high, close, _low = mock_data()
     vmacd, vmacdsignal, vmacdhist = macd(close, 12, 26, 9)
     ta_macd, ta_macdsignal, ta_macdhist = ta.MACD(close, 12, 26, 9)
 
-    assert np.all(np.isclose(vmacd[~np.isnan(vmacd)],
-                             ta_macd[~np.isnan(ta_macd)]))
-    assert np.all(np.isclose(vmacdsignal[~np.isnan(vmacdsignal)],
-                             ta_macdsignal[~np.isnan(ta_macdsignal)]))
-    assert np.all(np.isclose(vmacdhist[~np.isnan(vmacdhist)],
-                             ta_macdhist[~np.isnan(ta_macdhist)]))
+    assert np.all(
+        np.isclose(vmacd[~np.isnan(vmacd)], ta_macd[~np.isnan(ta_macd)])
+    )
+    assert np.all(
+        np.isclose(
+            vmacdsignal[~np.isnan(vmacdsignal)],
+            ta_macdsignal[~np.isnan(ta_macdsignal)],
+        )
+    )
+    assert np.all(
+        np.isclose(
+            vmacdhist[~np.isnan(vmacdhist)],
+            ta_macdhist[~np.isnan(ta_macdhist)],
+        )
+    )
 
 
 # %%
 def test_macd_ext():
-    high, close, low = mock_data()
+    _high, close, _low = mock_data()
     vmacd, vmacdsignal, vmacdhist = macd_ext(close, 12, 0, 26, 0, 9, 2)
     ta_macd, ta_macdsignal, ta_macdhist = ta.MACDEXT(close, 12, 0, 26, 0, 9, 2)
 
-    assert np.all(np.isclose(vmacd[~np.isnan(vmacd)],
-                             ta_macd[~np.isnan(ta_macd)]))
-    assert np.all(np.isclose(vmacdsignal[~np.isnan(vmacdsignal)],
-                             ta_macdsignal[~np.isnan(ta_macdsignal)]))
-    assert np.all(np.isclose(vmacdhist[~np.isnan(vmacdhist)],
-                             ta_macdhist[~np.isnan(ta_macdhist)]))
+    assert np.all(
+        np.isclose(vmacd[~np.isnan(vmacd)], ta_macd[~np.isnan(ta_macd)])
+    )
+    assert np.all(
+        np.isclose(
+            vmacdsignal[~np.isnan(vmacdsignal)],
+            ta_macdsignal[~np.isnan(ta_macdsignal)],
+        )
+    )
+    assert np.all(
+        np.isclose(
+            vmacdhist[~np.isnan(vmacdhist)],
+            ta_macdhist[~np.isnan(ta_macdhist)],
+        )
+    )
 
 
 # %%
@@ -87,7 +123,7 @@ def test_cci():
 
 # %%
 def test_trix():
-    high, close, low = mock_data()
+    _high, close, _low = mock_data()
     val = trix(close, 14)
     ta_val = ta.TRIX(close, 14)
 
@@ -96,7 +132,7 @@ def test_trix():
 
 # %%
 def test_bop():
-    open_, high, low, close, volume = mock_data_all()
+    open_, high, low, close, _volume = mock_data_all()
     val = bop(open_, high, low, close)
     ta_val = ta.BOP(open_, high, low, close)
 
@@ -105,7 +141,7 @@ def test_bop():
 
 # %%
 def test_rsi():
-    high, close, low = mock_data()
+    _high, close, _low = mock_data()
     val = rsi(close, 30)
     ta_val = ta.RSI(close, 30)
 
@@ -114,7 +150,7 @@ def test_rsi():
 
 # %%
 def test_cmo():
-    high, close, low = mock_data()
+    _high, close, _low = mock_data()
     val = cmo(close, 30)
     ta_val = ta.CMO(close, 30)
 
@@ -132,7 +168,7 @@ def test_ultosc():
 
 # %%
 def test_mfi():
-    open_, high, low, close, volume = mock_data_all()
+    _open, high, low, close, volume = mock_data_all()
     val = mfi(high, low, close, volume, 14)
     ta_val = ta.MFI(high, low, close, volume, 14)
 
@@ -141,7 +177,7 @@ def test_mfi():
 
 # %%
 def test_aroon():
-    open_, high, low, close, volume = mock_data_all()
+    _open, high, low, _close, _volume = mock_data_all()
     adn, aup = aroon(high, low, 14)
     ta_adn, ta_aup = ta.AROON(high, low, 14)
 
@@ -151,7 +187,7 @@ def test_aroon():
 
 # %%
 def test_aroon_osc():
-    open_, high, low, close, volume = mock_data_all()
+    _open, high, low, _close, _volume = mock_data_all()
     val = aroon_osc(high, low, 14)
     ta_val = ta.AROONOSC(high, low, 14)
 
@@ -160,7 +196,7 @@ def test_aroon_osc():
 
 # %%
 def test_dm():
-    open_, high, low, close, volume = mock_data_all()
+    _open, high, low, _close, _volume = mock_data_all()
     pos_dm, neg_dm = dm(high, low, 14)
     ta_pos = ta.PLUS_DM(high, low, 14)
     ta_neg = ta.MINUS_DM(high, low, 14)
@@ -171,7 +207,7 @@ def test_dm():
 
 # %%
 def test_di():
-    open_, high, low, close, volume = mock_data_all()
+    _open, high, low, close, _volume = mock_data_all()
     pos_di, neg_di = di(high, low, close, 14)
     ta_pos = ta.PLUS_DI(high, low, close, 14)
     ta_neg = ta.MINUS_DI(high, low, close, 14)
@@ -182,7 +218,7 @@ def test_di():
 
 # %%
 def test_dx():
-    open_, high, low, close, volume = mock_data_all()
+    _open, high, low, close, _volume = mock_data_all()
     val = dx(high, low, close, 14)
     ta_val = ta.DX(high, low, close, 14)
 
@@ -191,7 +227,7 @@ def test_dx():
 
 # %%
 def test_adx():
-    open_, high, low, close, volume = mock_data_all()
+    _open, high, low, close, _volume = mock_data_all()
     val = adx(high, low, close, 14)
     ta_val = ta.ADX(high, low, close, 14)
 
@@ -200,7 +236,7 @@ def test_adx():
 
 # %%
 def test_adxr():
-    open_, high, low, close, volume = mock_data_all()
+    _open, high, low, close, _volume = mock_data_all()
     val = adxr(high, low, close, 14)
     ta_val = ta.ADXR(high, low, close, 14)
 
@@ -209,7 +245,7 @@ def test_adxr():
 
 # %%
 def test_mom():
-    open_, high, low, close, volume = mock_data_all()
+    _open, _high, _low, close, _volume = mock_data_all()
     val = mom(close, 10)
     ta_val = ta.MOM(close, 10)
 
@@ -218,7 +254,7 @@ def test_mom():
 
 # %%
 def test_willr():
-    open_, high, low, close, volume = mock_data_all()
+    _open, high, low, close, _volume = mock_data_all()
     val = willr(high, low, close, 14)
     ta_val = ta.WILLR(high, low, close, 14)
 
@@ -227,7 +263,7 @@ def test_willr():
 
 # %%
 def test_stochf():
-    open_, high, low, close, volume = mock_data_all()
+    _open, high, low, close, _volume = mock_data_all()
     fast_k, fast_d = stochf(high, low, close, 5, 10, 0)
     tafk, tafd = ta.STOCHF(high, low, close, 5, 10, 0)
 
@@ -237,7 +273,7 @@ def test_stochf():
 
 # %%
 def test_stoch():
-    open_, high, low, close, volume = mock_data_all()
+    _open, high, low, close, _volume = mock_data_all()
     slow_k, slow_d = stoch(high, low, close, 5, 10, 0, 14, 0)
     task, tasd = ta.STOCH(high, low, close, 5, 10, 0, 14, 0)
 
@@ -247,7 +283,7 @@ def test_stoch():
 
 # %%
 def test_stoch_rsi():
-    open_, high, low, close, volume = mock_data_all()
+    _open, _high, _low, close, _volume = mock_data_all()
     fast_k, fast_d = stoch_rsi(close, 14, 5, 10, 0)
     tafk, tafd = ta.STOCHRSI(close, 14, 5, 10, 0)
 

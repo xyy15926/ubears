@@ -9,32 +9,48 @@
 
 # %%
 import pytest
+
 try:
     import talib as ta
 except ImportError:
     pytestmark = pytest.mark.skip(reason="TA-Lib uninstalled.")
 import numpy as np
+
 if __name__ == "__main__":
     from importlib import reload
-    from statbear.talib import overlap
-    from statbear.talib import momentum
-    from statbear.talib import ptnrecog
+
+    from statbear.talib import momentum, overlap, ptnrecog
+
     reload(overlap)
     reload(momentum)
     reload(ptnrecog)
 
 from statbear.talib.ptnrecog import (
-    sma_excur,
-    belthold, closing_marubozu, doji, dragonfly_doji, gravestone_doji,
-    counter_attack, darkcloud_cover, doji_star, engulfing,
-    hammer, hangingman,
-    crows2, black_crows3, inside3, outside3,
-    stars_insouth3, white_soldiers3, line_strike3,
-    conceal_baby_swall, abandoned_baby,
-    evening_doji_star, evening_star,
-    gap_side_side_white,
-    break_away,
+    abandoned_baby,
     advance_block,
+    belthold,
+    black_crows3,
+    break_away,
+    closing_marubozu,
+    conceal_baby_swall,
+    counter_attack,
+    crows2,
+    darkcloud_cover,
+    doji,
+    doji_star,
+    dragonfly_doji,
+    engulfing,
+    evening_doji_star,
+    evening_star,
+    gap_side_side_white,
+    gravestone_doji,
+    hammer,
+    hangingman,
+    inside3,
+    line_strike3,
+    outside3,
+    stars_insouth3,
+    white_soldiers3,
 )
 
 
@@ -60,8 +76,8 @@ TEST_N = 1000
 
 # %%
 def test_belthold():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = belthold(open_, high, low, close)
         ta_val = ta.CDLBELTHOLD(open_, high, low, close)
 
@@ -70,8 +86,8 @@ def test_belthold():
 
 # %%
 def test_closing_marubozu():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = closing_marubozu(open_, high, low, close)
         ta_val = ta.CDLCLOSINGMARUBOZU(open_, high, low, close)
 
@@ -80,8 +96,8 @@ def test_closing_marubozu():
 
 # %%
 def test_doji():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = doji(open_, high, low, close)
         ta_val = ta.CDLDOJI(open_, high, low, close)
 
@@ -90,8 +106,8 @@ def test_doji():
 
 # %%
 def test_dragonfly_doji():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = dragonfly_doji(open_, high, low, close)
         ta_val = ta.CDLDRAGONFLYDOJI(open_, high, low, close)
 
@@ -100,8 +116,8 @@ def test_dragonfly_doji():
 
 # %%
 def test_gravestone_doji():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = gravestone_doji(open_, high, low, close)
         ta_val = ta.CDLGRAVESTONEDOJI(open_, high, low, close)
 
@@ -110,8 +126,8 @@ def test_gravestone_doji():
 
 # %%
 def test_counter_attack():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = counter_attack(open_, high, low, close)
         ta_val = ta.CDLCOUNTERATTACK(open_, high, low, close)
 
@@ -120,8 +136,8 @@ def test_counter_attack():
 
 # %%
 def test_darkcloud_cover():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = darkcloud_cover(open_, high, low, close, 0.5)
         ta_val = ta.CDLDARKCLOUDCOVER(open_, high, low, close, 0.5)
 
@@ -130,8 +146,8 @@ def test_darkcloud_cover():
 
 # %%
 def test_doji_star():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = doji_star(open_, high, low, close)
         ta_val = ta.CDLDOJISTAR(open_, high, low, close)
 
@@ -140,8 +156,8 @@ def test_doji_star():
 
 # %%
 def test_engulfing():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = engulfing(open_, high, low, close)
         ta_val = ta.CDLENGULFING(open_, high, low, close)
 
@@ -150,8 +166,8 @@ def test_engulfing():
 
 # %%
 def test_hammer():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = hammer(open_, high, low, close)
         ta_val = ta.CDLHAMMER(open_, high, low, close)
 
@@ -160,8 +176,8 @@ def test_hammer():
 
 # %%
 def test_hangingman():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = hangingman(open_, high, low, close)
         ta_val = ta.CDLHANGINGMAN(open_, high, low, close)
 
@@ -170,8 +186,8 @@ def test_hangingman():
 
 # %%
 def test_crows2():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = crows2(open_, high, low, close)
         ta_val = ta.CDL2CROWS(open_, high, low, close)
 
@@ -180,8 +196,8 @@ def test_crows2():
 
 # %%
 def test_blackcrows3():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = black_crows3(open_, high, low, close)
         ta_val = ta.CDL3BLACKCROWS(open_, high, low, close)
 
@@ -190,8 +206,8 @@ def test_blackcrows3():
 
 # %%
 def test_inside3():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = inside3(open_, high, low, close)
         ta_val = ta.CDL3INSIDE(open_, high, low, close)
 
@@ -200,8 +216,8 @@ def test_inside3():
 
 # %%
 def test_outside3():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = outside3(open_, high, low, close)
         ta_val = ta.CDL3OUTSIDE(open_, high, low, close)
 
@@ -210,8 +226,8 @@ def test_outside3():
 
 # %%
 def test_starsinsouth3():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = stars_insouth3(open_, high, low, close)
         ta_val = ta.CDL3STARSINSOUTH(open_, high, low, close)
 
@@ -220,8 +236,8 @@ def test_starsinsouth3():
 
 # %%
 def test_whitesoldiers3():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = white_soldiers3(open_, high, low, close)
         ta_val = ta.CDL3WHITESOLDIERS(open_, high, low, close)
 
@@ -230,8 +246,8 @@ def test_whitesoldiers3():
 
 # %%
 def test_line_strike_3():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = line_strike3(open_, high, low, close)
         ta_val = ta.CDL3LINESTRIKE(open_, high, low, close)
 
@@ -240,8 +256,8 @@ def test_line_strike_3():
 
 # %%
 def test_abandoned_baby():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = abandoned_baby(open_, high, low, close)
         ta_val = ta.CDLABANDONEDBABY(open_, high, low, close)
 
@@ -250,8 +266,8 @@ def test_abandoned_baby():
 
 # %%
 def test_evening_doji_star():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = evening_doji_star(open_, high, low, close)
         ta_val = ta.CDLEVENINGDOJISTAR(open_, high, low, close)
 
@@ -260,8 +276,8 @@ def test_evening_doji_star():
 
 # %%
 def test_evening_star():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = evening_star(open_, high, low, close)
         ta_val = ta.CDLEVENINGSTAR(open_, high, low, close)
 
@@ -270,8 +286,8 @@ def test_evening_star():
 
 # %%
 def test_gap_side_side_white():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = gap_side_side_white(open_, high, low, close)
         ta_val = ta.CDLGAPSIDESIDEWHITE(open_, high, low, close)
 
@@ -280,8 +296,8 @@ def test_gap_side_side_white():
 
 # %%
 def test_conceal_baby_swall():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = conceal_baby_swall(open_, high, low, close)
         ta_val = ta.CDLCONCEALBABYSWALL(open_, high, low, close)
 
@@ -290,8 +306,8 @@ def test_conceal_baby_swall():
 
 # %%
 def test_break_away():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = break_away(open_, high, low, close)
         ta_val = ta.CDLBREAKAWAY(open_, high, low, close)
 
@@ -300,8 +316,8 @@ def test_break_away():
 
 # %%
 def test_advance_block():
-    for i in range(TEST_N):
-        open_, high, low, close, volume = mock_data_all()
+    for _i in range(TEST_N):
+        open_, high, low, close, _volume = mock_data_all()
         val = advance_block(open_, high, low, close)
         ta_val = ta.CDLADVANCEBLOCK(open_, high, low, close)
 

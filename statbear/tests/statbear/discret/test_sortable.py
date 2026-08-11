@@ -8,21 +8,21 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
 import numpy as np
 
 if __name__ == "__main__":
     from importlib import reload
-    from statbear.discret import sortable
-    from statbear.discret import numeric
+
+    from statbear.discret import numeric, sortable
+
     reload(sortable)
     reload(numeric)
 
-import scipy.stats as ss
-from sklearn.datasets import load_iris
 from scipy.stats import contingency
+from sklearn.datasets import load_iris
+
 from statbear.discret.numeric import edge_encode
-from statbear.discret.sortable import tree_cut, chimerge_cut
+from statbear.discret.sortable import chimerge_cut, tree_cut
 
 
 # %%
@@ -30,7 +30,7 @@ def test_tree_cut():
     X, y = load_iris(return_X_y=True)
     edges, ctab = tree_cut(X[:, 0], y)
     ords = edge_encode(X[:, 0], edges)
-    (ux, uy), cctab = contingency.crosstab(ords, y)
+    (_ux, _uy), cctab = contingency.crosstab(ords, y)
     assert np.all(np.isclose(ctab, cctab))
 
 
@@ -38,8 +38,5 @@ def test_chimerge_cut():
     X, y = load_iris(return_X_y=True)
     edges, ctab = chimerge_cut(X[:, 0], y)
     ords = edge_encode(X[:, 0], edges)
-    (ux, uy), cctab = contingency.crosstab(ords, y)
+    (_ux, _uy), cctab = contingency.crosstab(ords, y)
     assert np.all(np.isclose(ctab, cctab))
-
-
-

@@ -8,10 +8,11 @@
 # ---------------------------------------------------------
 
 # %%
-import pytest
-from typing import Tuple, List, Any
+from typing import Any
+
 import numpy as np
 import numpy_financial as npf
+import pytest
 from scipy import optimize
 
 
@@ -34,19 +35,23 @@ def test_future_value():
 
     # Payment is paid at the end of each period, namely the last payment
     # is paid at the same time with the return cash in.
-    npf_fve = npf.fv(rate=monthly_rate,
-                     nper=n_months,
-                     pv=present_value,
-                     pmt=payment_each,
-                     when="end")
+    npf_fve = npf.fv(
+        rate=monthly_rate,
+        nper=n_months,
+        pv=present_value,
+        pmt=payment_each,
+        when="end",
+    )
 
     # Payment is paid at the begin of each period, namely the firat payment
     # is paid at the same time with the present value cash out.
-    npf_fvb = npf.fv(rate=monthly_rate,
-                     nper=n_months,
-                     pv=present_value,
-                     pmt=payment_each,
-                     when="begin")
+    npf_fvb = npf.fv(
+        rate=monthly_rate,
+        nper=n_months,
+        pv=present_value,
+        pmt=payment_each,
+        when="begin",
+    )
 
     fve = 0
     fve += present_value * (1 + monthly_rate) ** n_months
@@ -54,8 +59,11 @@ def test_future_value():
 
     fvb = 0
     fvb += present_value * (1 + monthly_rate) ** n_months
-    fvb += payment_each * ((1 + monthly_rate) ** (n_months + 1)
-                           - 1 - monthly_rate) / monthly_rate
+    fvb += (
+        payment_each
+        * ((1 + monthly_rate) ** (n_months + 1) - 1 - monthly_rate)
+        / monthly_rate
+    )
 
     assert np.isclose(npf_fve + fve, 0)
     assert np.isclose(npf_fvb + fvb, 0)
@@ -75,17 +83,21 @@ def test_present_value():
     payment_each = 100
     future_value = 100
 
-    npf_pve = npf.pv(rate=monthly_rate,
-                     nper=n_months,
-                     pmt=payment_each,
-                     fv=future_value,
-                     when="end")
+    npf_pve = npf.pv(
+        rate=monthly_rate,
+        nper=n_months,
+        pmt=payment_each,
+        fv=future_value,
+        when="end",
+    )
 
-    npf_pvb = npf.pv(rate=monthly_rate,
-                     nper=n_months,
-                     pmt=payment_each,
-                     fv=future_value,
-                     when="begin")
+    npf_pvb = npf.pv(
+        rate=monthly_rate,
+        nper=n_months,
+        pmt=payment_each,
+        fv=future_value,
+        when="begin",
+    )
 
     fve = 0
     fve += future_value
@@ -94,8 +106,12 @@ def test_present_value():
 
     fvb = 0
     fvb += future_value
-    fvb += (payment_each * (1 + monthly_rate)
-            * ((1 + monthly_rate) ** n_months - 1) / monthly_rate)
+    fvb += (
+        payment_each
+        * (1 + monthly_rate)
+        * ((1 + monthly_rate) ** n_months - 1)
+        / monthly_rate
+    )
     pvb = fvb / (1 + monthly_rate) ** n_months
 
     assert np.all(np.isclose(npf_pve + pve, 0))
@@ -158,12 +174,15 @@ def test_irr():
     npf_pmte = npf.pmt(r, nper, pv, fv, "end")
 
     # Future value and the last payment are all at the end of the last period.
-    vals = np.concatenate([[pv], np.repeat(npf_pmte, nper - 1), [npf_pmte + fv]])
+    vals = np.concatenate(
+        [[pv], np.repeat(npf_pmte, nper - 1), [npf_pmte + fv]]
+    )
     npf_irr = npf.irr(vals)
 
     def irrx(r):
         rr = np.logspace(0, len(vals) - 1, len(vals), base=1 + r)
         return np.sum(vals / rr)
+
     irr = optimize.bisect(irrx, 0, 1)
 
     assert np.isclose(npf_irr, r)
@@ -205,9 +224,11 @@ def irr2rate(
     mmr = allr / nper
     yr = mmr * 12
 
-    print(f"万元系数：{mr * 10000} \n",
-          f"总费率：{allr * 100:0.4f}% \n",
-          f"年费率：{yr * 100:0.4f}% \n",
-          f"月息：{mmr * 1000:0.4f}%")
+    print(
+        f"万元系数：{mr * 10000} \n",  # noqa: RUF001
+        f"总费率：{allr * 100:0.4f}% \n",  # noqa: RUF001
+        f"年费率：{yr * 100:0.4f}% \n",  # noqa: RUF001
+        f"月息：{mmr * 1000:0.4f}%",  # noqa: RUF001
+    )
 
     return mr * 10000, allr * 100, mmr * 1000, yr * 100
