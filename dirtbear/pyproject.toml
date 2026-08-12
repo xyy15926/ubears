@@ -38,6 +38,9 @@ dependencies = [
 [project.urls]
 homepage = "https://github.com/xyy15926"
 
+[project.scripts]
+mdnorm = "dirtbear.docer.mdnorm.cli:main"
+
 
 # ***************************** Build with hatcling
 # Hatchling ref:

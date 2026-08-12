@@ -644,7 +644,7 @@ packages:
 - pypi: ./
   name: dirtbear
   version: 0.1.1
-  sha256: dee6fe59664ae02dfc2e1006955a010da45619a1994b8d1e93550390acf072d1
+  sha256: ed04e06bdf90c2e111eeff9d15387ed990ce11418804ff4253f20dc22a487bde
   requires_dist:
   - chinese-calendar
   - flagbear

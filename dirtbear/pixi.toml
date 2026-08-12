@@ -94,6 +94,7 @@ pypi-check = { cmd = "python -m twine check dist/*" }
 # Ref: https://zhuanlan.zhihu.com/p/682004873
 pypi-uptest = { cmd = "python -m twine upload --repository testpypi dist/*" }
 pypi-upload = { cmd = "python -m twine upload dist/*" }
+mdnorm = { cmd = "python -m dirtbear.docer.mdnorm.cli" }
 
 [activation]
 scripts = []
