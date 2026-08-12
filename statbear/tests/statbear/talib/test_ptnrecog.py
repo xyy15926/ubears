@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # ---------------------------------------------------------
-#   Name: test_candlestick.py
+#   Name: test_ptnrecog.py
 #   Author: xyy15926
 #   Created: 2024-11-25 13:59:19
 #   Updated: 2025-01-21 15:07:22

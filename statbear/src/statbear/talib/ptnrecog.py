@@ -7,7 +7,7 @@
 #   Description:
 #   Ref: https://github.com/frgomes/ta-lib_code/blob/master/ta-lib/c/src/ta_func/
 #   Ref: https://www.fmlabs.com/reference/default.htm
-#   Ref: https:https://blog.csdn.net/weixin_43420026/article/details/126743440
+#   Ref: https://blog.csdn.net/weixin_43420026/article/details/126743440
 #   Ref: https://blog.csdn.net/suiyingy/article/details/118661718
 # ---------------------------------------------------------
 
@@ -31,7 +31,7 @@ logger.info("Logging Start.")
 # %%
 def sma_excur(
     close: np.ndarray,
-    timeperiod: 10,
+    timeperiod: int = 10,
 ) -> np.ndarray:
     """Simple moving average without current item.
 
@@ -431,7 +431,7 @@ def counter_attack(
         & (close[1:] > open_[1:])
         & (np.abs(close[1:] - close[:-1]) < equal[:-1])
     ] = 100
-    # Upper bar and then donwer bar.
+    # Upper bar and then downer bar.
     ret_[
         (rb[:-1] > bodylong[:-1])
         & (close[:-1] > open_[:-1])
@@ -469,7 +469,7 @@ def darkcloud_cover(
 
     Return:
     --------------------------
-    DarkCloud Cover: np.ndarray filled with 0, -100
+    Counter Attack: np.ndarray filled with 0, -100
     """
     if len(close) < 11:
         logger.warning(
@@ -1168,7 +1168,7 @@ def conceal_baby_swall(
     low: np.ndarray,
     close: np.ndarray,
 ) -> np.ndarray:
-    """3 Line Strike.
+    """Conceal Baby Swallow.
 
     4 Candle Pattern:
     --------------------------

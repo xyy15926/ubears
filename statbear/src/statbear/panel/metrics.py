@@ -31,7 +31,7 @@ logger.info("Logging Start.")
 def cal_lifts_from_ctab(
     ctab: np.ndarray,
     acc_map: list | None = None,
-) -> tuple:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, float, float]:
     """Calculate lifts from crosstab.
 
     Calculate lifts, accumulating lift with crosstab.
@@ -133,7 +133,7 @@ def cal_woes_from_ctab(ctab: np.ndarray) -> np.ndarray:
     ivs = (freqr[:, 1] - freqr[:, 0]) * woes
 
     # np.nan_to_num(woes, False, 0, 0, 0)
-    np.nan_to_num(ivs, False, 0, 0, 0)
+    ivs = np.nan_to_num(ivs, False, 0, 0, 0)
 
     return woes, ivs
 
@@ -189,7 +189,16 @@ def cal_lifts_weighted(
     ascending: bool | None = None,
     return_counts: bool = False,
     return_cor: bool = False,
-) -> tuple:
+) -> tuple[
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    bool,
+    float | None,
+    float | None,
+    np.ndarray | None,
+]:
     """Calculate lifts.
 
     Calculate lifts, accumulating lift for 1-D `X` and 1-D `y`.
@@ -289,7 +298,7 @@ def cal_woes_weighted(
     x: np.ndarray,
     y: np.ndarray,
     weights: np.ndarray | None = None,
-) -> tuple:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Calculate WOEs and IVs for each elements.
 
     Calculate WOEs, IVs of `x` and `y` each elements in sortable `x`.

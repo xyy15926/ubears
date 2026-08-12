@@ -35,14 +35,14 @@ DUM_OVDP = 7
 
 
 # %%
-def snap_ovd(
+def snap_ovd(  # noqa: C901
     due_date: list | np.ndarray,
     rep_date: list | np.ndarray = None,
     ovd_days: list | np.ndarray = None,
     ob_date: list | np.ndarray = None,
     due_amt: list | np.ndarray = None,
     rem_amt: list | np.ndarray = None,
-) -> tuple[np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, list]:
     """Calculate the snapshot from the repayment cashflow.
 
     1. Use two queues, that differs in if to include the edge records, to
@@ -121,7 +121,7 @@ def snap_ovd(
         obds = np.asarray(ob_date, dtype="M8[D]")
     if ovd_days is None:
         repds = np.asarray(rep_date, dtype="M8[D]")
-        if np.isnan(repds).sum() > 0:
+        if np.isnat(repds).sum() > 0:
             logger.warning(
                 "NaT will be replaced with today in repayment dates."
             )
@@ -326,14 +326,24 @@ def snap_ovd(
 
 
 # %%
-@warnings.deprecated("Use `snap_ovdd` instead.")
-def ovdd_from_duepay_records(
+def ovdd_from_duepay_records(  # noqa: C901
     due_date: list | np.ndarray,
     ovd_days: list | np.ndarray,
     ob_date: list | np.ndarray = None,
     due_amt: list | np.ndarray = None,
     rem_amt: list | np.ndarray = None,
-) -> tuple[np.ndarray]:
+) -> tuple[
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+]:
     """Calculate overdue days from duepay records.
 
     ATTENTION: USE `snap_ovd` INSTEAD.
@@ -433,8 +443,8 @@ def ovdd_from_duepay_records(
 
     Params:
     ----------------------
-    due_date: Sequence of duepayment date, which should be datetime64 or
-      string that could be casted into datetime64 by NumPy.
+    due_date: Sequence of due-payment dates, should be datetime64 or
+      strings that can be cast into datetime64 by NumPy.
     ovd_days: Sequence of overdue days of each repayments.
     ob_date: Sequence of observation date for each duepayment point.
       If no argument passed, this will be the `due_date` after shifting
@@ -463,6 +473,7 @@ def ovdd_from_duepay_records(
     ever_duea: Maximum (or the first) duepay amount ever.
     stop_duea: Ditto.
     """
+    warnings.warn("Use `snap_ovd` instead.", DeprecationWarning, stacklevel=2)
     dueds = np.asarray(due_date, dtype="datetime64[D]")
     if ob_date is None:
         obds = np.concatenate(
@@ -475,25 +486,25 @@ def ovdd_from_duepay_records(
     das = [0] * len(ovd_days) if due_amt is None else due_amt
     ras = [0] * len(ovd_days) if rem_amt is None else rem_amt
 
-    OTD = np.timedelta64(0, "D")
-    rec_N = len(due_date)
+    otd = np.timedelta64(0, "D")
+    rec_n = len(due_date)
 
     # fmt: off
-    ever_ovdd = [0] * rec_N  # Number of overdue days ever occuring during the period.
-    stop_ovdd = [0] * rec_N  # Number of overdue days at the end of the period.
-    ever_ovdp = [0] * rec_N  # Number of overdue periods ever occuring during the period.
-    stop_ovdp = [0] * rec_N  # Number of overdue periods at the end of the period.
-    ovd_Q = deque()
-    ever_duea = [0] * rec_N
-    stop_duea = [0] * rec_N
-    ever_rema = [0] * rec_N
-    stop_rema = [0] * rec_N
-    ever_ovda = [0] * rec_N
-    stop_ovda = [0] * rec_N
+    ever_ovdd = [0] * rec_n  # Number of overdue days ever occuring during the period.
+    stop_ovdd = [0] * rec_n  # Number of overdue days at the end of the period.
+    ever_ovdp = [0] * rec_n  # Number of overdue periods ever occuring during the period.
+    stop_ovdp = [0] * rec_n  # Number of overdue periods at the end of the period.
+    ovd_q = deque()
+    ever_duea = [0] * rec_n
+    stop_duea = [0] * rec_n
+    ever_rema = [0] * rec_n
+    stop_rema = [0] * rec_n
+    ever_ovda = [0] * rec_n
+    stop_ovda = [0] * rec_n
     # fmt: on
 
     for idx, dued, ovdd, obd, duea, rema in zip(
-        range(rec_N), dueds, ovdds, obds, das, ras
+        range(rec_n), dueds, ovdds, obds, das, ras
     ):
         if dued > obd:
             logger.warning(f"Invalid observation date in records at {dued}.")
@@ -501,10 +512,10 @@ def ovdd_from_duepay_records(
         # if dued == np.datetime64("2022-04-11", "D"):
         #     set_trace()
         repd = dued + ovdd
-        if len(ovd_Q) == 0:
+        if len(ovd_q) == 0:
             if repd < obd:
                 ever_ovdd[idx] = ovdd
-                stop_ovdd[idx] = OTD
+                stop_ovdd[idx] = otd
                 ever_ovdp[idx] = 1 if ovdd > 0 else 0
                 stop_ovdp[idx] = 0
 
@@ -520,7 +531,7 @@ def ovdd_from_duepay_records(
                 # observation point strictly, which representes the rest of the
                 # overdue days that can only be observed later.
                 if repd > obd:
-                    ovd_Q.append((dued, repd, duea, rema))
+                    ovd_q.append((dued, repd, duea, rema))
 
                 ever_ovdd[idx] = obd - dued
                 stop_ovdd[idx] = obd - dued
@@ -534,33 +545,33 @@ def ovdd_from_duepay_records(
                 ever_rema[idx] = rema + ever_duea[idx]
                 stop_rema[idx] = rema + stop_duea[idx]
         else:
-            last_dued, last_repd, last_duea, last_rema = ovd_Q[0]
+            last_dued, last_repd, last_duea, last_rema = ovd_q[0]
             # set_trace()
             if last_repd > repd:
                 logger.warning(f"Invalid overdue day in records at {dued}.")
 
             if last_repd > obd:
                 if obd > dued:
-                    ovd_Q.append((dued, repd, duea, rema))
+                    ovd_q.append((dued, repd, duea, rema))
 
                 ever_ovdd[idx] = obd - last_dued
                 stop_ovdd[idx] = obd - last_dued
-                ever_ovdp[idx] = len(ovd_Q)
-                stop_ovdp[idx] = len(ovd_Q)
+                ever_ovdp[idx] = len(ovd_q)
+                stop_ovdp[idx] = len(ovd_q)
 
-                ever_ovda[idx] = sum([ele[2] for ele in ovd_Q])
-                stop_ovda[idx] = sum([ele[2] for ele in ovd_Q])
+                ever_ovda[idx] = sum([ele[2] for ele in ovd_q])
+                stop_ovda[idx] = sum([ele[2] for ele in ovd_q])
 
                 if obd == dued:
-                    ovd_Q.append((dued, repd, duea, rema))
+                    ovd_q.append((dued, repd, duea, rema))
 
                 # If `duea[idx] + rema[idx] == rema[idx-1]`, the following
                 # assignment must lead to the same result:
                 #   ever_rema[idx] = rema + ever_duea[idx]
                 #   stop_rema[idx] = rema + stop_duea[idx]
                 # Else the perception of remain amount isn't defined well.
-                ever_duea[idx] = sum([ele[2] for ele in ovd_Q])
-                stop_duea[idx] = sum([ele[2] for ele in ovd_Q])
+                ever_duea[idx] = sum([ele[2] for ele in ovd_q])
+                stop_duea[idx] = sum([ele[2] for ele in ovd_q])
                 ever_rema[idx] = last_rema + last_duea
                 stop_rema[idx] = last_rema + last_duea
             else:
@@ -576,52 +587,52 @@ def ovdd_from_duepay_records(
                 # `>` represent that the duepay amount won't be included at the
                 # duepay day.
                 if last_repd > dued:
-                    ever_ovdp[idx] = len(ovd_Q) + 1
-                    ever_duea[idx] = sum([ele[2] for ele in ovd_Q]) + duea
-                    ever_ovda[idx] = sum([ele[2] for ele in ovd_Q]) + duea
+                    ever_ovdp[idx] = len(ovd_q) + 1
+                    ever_duea[idx] = sum([ele[2] for ele in ovd_q]) + duea
+                    ever_ovda[idx] = sum([ele[2] for ele in ovd_q]) + duea
                 elif last_repd == dued:
-                    ever_ovdp[idx] = len(ovd_Q)
-                    ever_duea[idx] = sum([ele[2] for ele in ovd_Q]) + duea
-                    ever_ovda[idx] = sum([ele[2] for ele in ovd_Q])
+                    ever_ovdp[idx] = len(ovd_q)
+                    ever_duea[idx] = sum([ele[2] for ele in ovd_q]) + duea
+                    ever_ovda[idx] = sum([ele[2] for ele in ovd_q])
                 else:
-                    ever_ovdp[idx] = len(ovd_Q)
-                    ever_duea[idx] = sum([ele[2] for ele in ovd_Q])
-                    ever_ovda[idx] = sum([ele[2] for ele in ovd_Q])
+                    ever_ovdp[idx] = len(ovd_q)
+                    ever_duea[idx] = sum([ele[2] for ele in ovd_q])
+                    ever_ovda[idx] = sum([ele[2] for ele in ovd_q])
 
                 if repd > obd and obd > dued:
-                    ovd_Q.append((dued, repd, duea, rema))
+                    ovd_q.append((dued, repd, duea, rema))
 
-                while len(ovd_Q) > 0:
-                    last_dued, last_repd, last_duea, last_rema = ovd_Q[0]
+                while len(ovd_q) > 0:
+                    last_dued, last_repd, last_duea, last_rema = ovd_q[0]
                     if last_repd == obd:
                         stop_ovdd[idx] = obd - last_dued
-                        stop_ovdp[idx] = len(ovd_Q)
-                        stop_ovda[idx] = sum([ele[2] for ele in ovd_Q])
-                        stop_duea[idx] = sum([ele[2] for ele in ovd_Q])
+                        stop_ovdp[idx] = len(ovd_q)
+                        stop_ovda[idx] = sum([ele[2] for ele in ovd_q])
+                        stop_duea[idx] = sum([ele[2] for ele in ovd_q])
                         stop_rema[idx] = last_rema + last_duea
-                        while len(ovd_Q) > 0 and last_repd <= obd:
+                        while len(ovd_q) > 0 and last_repd <= obd:
                             last_dued, last_repd, last_duea, last_rema = (
-                                ovd_Q.popleft()
+                                ovd_q.popleft()
                             )
                         break
                     elif last_repd > obd:
                         stop_ovdd[idx] = obd - last_dued
-                        stop_ovdp[idx] = len(ovd_Q)
-                        stop_ovda[idx] = sum([ele[2] for ele in ovd_Q])
-                        stop_duea[idx] = sum([ele[2] for ele in ovd_Q])
+                        stop_ovdp[idx] = len(ovd_q)
+                        stop_ovda[idx] = sum([ele[2] for ele in ovd_q])
+                        stop_duea[idx] = sum([ele[2] for ele in ovd_q])
                         stop_rema[idx] = last_rema + last_duea
                         break
                     else:
-                        ovd_Q.popleft()
+                        ovd_q.popleft()
                 else:
-                    stop_ovdd[idx] = OTD
+                    stop_ovdd[idx] = otd
                     stop_ovdp[idx] = 0
                     stop_ovda[idx] = 0
                     stop_duea[idx] = 0
                     stop_rema[idx] = rema + stop_duea[idx]
 
                 if repd > obd and obd == dued:
-                    ovd_Q.append((dued, repd, duea, rema))
+                    ovd_q.append((dued, repd, duea, rema))
 
     return (
         np.asarray(ever_ovdd).astype(np.int_),

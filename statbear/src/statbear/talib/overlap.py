@@ -42,7 +42,7 @@ def ma(
     matype: Moving average type.
       0: Simple MA.
       2: MA with weights of descending range distribution.
-      3: MA with wieghts of triangular distribution.
+      3: MA with weights of triangular distribution.
 
     Return:
     --------------------------
@@ -637,10 +637,10 @@ def sar_ext(
 # %%
 def ht_trendline(close: np.ndarray) -> np.ndarray:
     """Hilbert Transform - Trendline."""
-    pass
+    raise NotImplementedError
 
 
 # %%
 def mama(close: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """MESA Adaptive Moving Average."""
-    pass
+    raise NotImplementedError

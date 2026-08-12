@@ -21,12 +21,9 @@
 from __future__ import annotations
 
 import logging
-import sys
 
 import numpy as np
 from scipy.stats import contingency
-
-MAXSIZE = sys.maxsize
 
 # %%
 logging.basicConfig(
@@ -39,8 +36,8 @@ logger.info("Logging Start.")
 
 
 # %%
-# TODO: Implement gropuby refering to `enhanced_freqs`.
-def gropuby(
+# TODO: Implement groupby refering to `enhanced_freqs`.
+def groupby(
     keys: list,
     values: np.ndarray | None = None,
     agg: callable | None = None,
@@ -318,7 +315,7 @@ def chi2_only(freqs: np.ndarray) -> float:
     """
     expf = contingency.expected_freq(freqs)
     chi2 = (expf - freqs) ** 2 / expf
-    np.nan_to_num(chi2, False, nan=0, posinf=0, neginf=0)
+    chi2 = np.nan_to_num(chi2, False, nan=0, posinf=0, neginf=0)
     return chi2.sum()
 
 

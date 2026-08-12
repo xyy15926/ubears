@@ -736,7 +736,7 @@ def check_ovdd_from_duepay_records(ob_date):
         pd.to_datetime(recs["due_date"]), dtype="datetime64[D]"
     )
     ovd_days = np.asarray(recs["ovd_days"], dtype="timedelta64[D]")
-    due_date + ovd_days
+    _rep_date = due_date + ovd_days
     due_amt = recs["due_amt"]
     rem_amt = recs["rem_amt"]
 

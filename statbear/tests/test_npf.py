@@ -3,13 +3,11 @@
 #   Name: test_npf.py
 #   Author: xyy15926
 #   Created: 2024-07-12 15:02:14
-#   Updated: 2024-09-20 20:52:04
+#   Updated: 2026-08-12 10:18:52
 #   Description:
 # ---------------------------------------------------------
 
 # %%
-from typing import Any
-
 import numpy as np
 import numpy_financial as npf
 import pytest
@@ -213,7 +211,7 @@ def test_mirr():
 def irr2rate(
     irr: float = 0.092,
     nper: int = 36,
-) -> Any:
+) -> tuple[float, float, float, float]:
     mirr = irr / 12
     # The payment for per 1 * period.
     mr = (1 + mirr) ** nper / ((1 + mirr) ** nper - 1) * mirr

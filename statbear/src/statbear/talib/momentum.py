@@ -35,7 +35,7 @@ def macd(
     fastperiod: int = 12,
     slowperiod: int = 26,
     signalperiod: int = 9,
-) -> tuple[np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Exponential moving average convergence and divergence.
 
     Compare the divergence between the fast EMA with shorter period and
@@ -94,10 +94,10 @@ def macd_ext(
     slowmatype: int = 0,
     signalperiod: int = 9,
     signalmatype: int = 0,
-) -> tuple[np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Moving average convergence and divergence.
 
-    Just like MACD, but the MA type could be speicfied instead of the predefed
+    Just like MACD, but the MA type could be specified instead of the predefined
     EMA.
 
     Compare the divergence between the fast MA with shorter period and
@@ -483,7 +483,7 @@ def dm(
 def di(
     high: np.ndarray,
     low: np.ndarray,
-    close: np.ndrray,
+    close: np.ndarray,
     timeperiod: int = 14,
 ) -> np.ndarray:
     """Directional Movement Index.
@@ -528,7 +528,7 @@ def di(
 def dx(
     high: np.ndarray,
     low: np.ndarray,
-    close: np.ndrray,
+    close: np.ndarray,
     timeperiod: int = 14,
 ) -> np.ndarray:
     """Directional Movement Index.
@@ -554,7 +554,7 @@ def dx(
 def adx(
     high: np.ndarray,
     low: np.ndarray,
-    close: np.ndrray,
+    close: np.ndarray,
     timeperiod: int = 14,
 ) -> np.ndarray:
     """Average Directional Movement Index.
@@ -582,7 +582,7 @@ def adx(
 def adxr(
     high: np.ndarray,
     low: np.ndarray,
-    close: np.ndrray,
+    close: np.ndarray,
     timeperiod: int = 14,
 ) -> np.ndarray:
     """Average Directional Movement Rating.

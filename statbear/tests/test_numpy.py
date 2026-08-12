@@ -132,7 +132,7 @@ def test_unique_nan():
 
 # %%
 # `Non-0 / 0` and `0 / 0` are different in warning messages.
-def test_zero_divivde():
+def test_zero_divide():
     with pytest.warns(RuntimeWarning, match="divide by zero encountered"):
         np.array(1) / np.array(0)
     with pytest.warns(RuntimeWarning, match="invalid value encountered"):

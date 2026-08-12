@@ -49,7 +49,7 @@ def tree_cut(
     n_bins: int = N_BINS,
     freq_min: float = FREQ_MIN,
     min_impurity_decrease: float = IMPURITY_DECREASE_MIN,
-) -> tuple:
+) -> tuple[np.ndarray, np.ndarray]:
     """Cut sortable into bins with DecisionTreeClassifier.
 
     Cut `x` into `n_bins` by DescisionTreeClassifier with gini as criterion.
@@ -142,7 +142,7 @@ def chimerge_cut(
     y: np.ndarray | list | pd.Series,
     n_bins: int = N_BINS,
     pvalue_max: float = PVALUE_MAX,
-) -> tuple:
+) -> tuple[np.ndarray, np.ndarray]:
     """Cut sortable into bins according to Chi-stat.
 
     Cut `x` into `n_bins` with infomation from `y` bottom-up, in which
@@ -250,7 +250,7 @@ def _merge_bins(
     ctab: np.ndarray,
     bin_edges: np.ndarray,
     merge_idx: int,
-) -> tuple:
+) -> tuple[np.ndarray, np.ndarray]:
     """Merge adjacent bins in crosstab.
 
     Merge given bins according to `merge_idx`
