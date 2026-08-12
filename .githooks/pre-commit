@@ -51,11 +51,17 @@ staged=$(git diff --cached --name-only)
 # 1. Avoid committing pixi.lock alone.
 others=$(echo "$staged" | grep -v 'pixi.lock')
 if [ -z "$others" ]; then
-  echo "❌ 禁止单独提交 pixi.lock，请随其他改动一起提交"
-  exit 1
+    echo "❌ Do not commit pixi.lock alone."
+    exit 1
 fi
 # 2. Add pixi.lock automatically.
-git diff --name-only | grep 'pixi.lock' | xargs -r git add 2>/dev/null
+git diff --name-only . | grep 'pixi.lock' | xargs -r git add 2>/dev/null
 git ls-files --others --exclude-standard | grep 'pixi.lock' | xargs -r git add 2>/dev/null
+# 3. Use Ruff check the files.
+staged_without_del_py=$(git diff --cached --name-only --diff-filter=ACMR | grep '\.py$')
+if [ -n "$staged_without_del_py" ]; then
+    ruff check $staged_without_del_py || exit 1
+    ruff format --check $staged_without_del_py || exit 1
+fi
 
 exit 0
