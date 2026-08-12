@@ -557,39 +557,29 @@ def test_fmt_latex_row_with_indent():
 
 
 def test_format_first_latex_line_with_before():
-    result = _format_first_latex_line(
-        "| a | $$", 1, [3], "left", ""
-    )
+    result = _format_first_latex_line("| a | $$", 1, [3], "left", "")
     assert "a" in result
     assert "$$" in result
 
 
 def test_format_first_latex_line_no_before():
-    result = _format_first_latex_line(
-        "| $$", 0, [], "left", ""
-    )
+    result = _format_first_latex_line("| $$", 0, [], "left", "")
     assert "$$" in result
 
 
 def test_format_last_latex_line_with_after():
-    result = _format_last_latex_line(
-        "  = z$$ | b |", 2, [3, 3], 2, "left", ""
-    )
+    result = _format_last_latex_line("  = z$$ | b |", 2, [3, 3], 2, "left", "")
     assert "$$" in result
     assert "b" in result
 
 
 def test_format_last_latex_line_no_after():
-    result = _format_last_latex_line(
-        "  = z$$ |", 2, [3, 3], 2, "left", ""
-    )
+    result = _format_last_latex_line("  = z$$ |", 2, [3, 3], 2, "left", "")
     assert "$$" in result
 
 
 def test_format_last_latex_line_no_dollar():
-    result = _format_last_latex_line(
-        "  no dollar here", 2, [3], 2, "left", ""
-    )
+    result = _format_last_latex_line("  no dollar here", 2, [3], 2, "left", "")
     assert "no dollar here" in result
 
 
@@ -668,9 +658,7 @@ def test_align_md_tables_center():
 
 def test_align_md_tables_multiple_tables():
     content = (
-        "| a | b |\n|---|---|\n| 1 | 2 |\n"
-        "\n"
-        "| c | d |\n|---|---|\n| 3 | 4 |"
+        "| a | b |\n|---|---|\n| 1 | 2 |\n\n| c | d |\n|---|---|\n| 3 | 4 |"
     )
     result = align_md_tables(content, align="left")
     assert "| a" in result
@@ -719,12 +707,6 @@ def test_align_md_tables_in_multiple_code_blocks():
 
 
 def test_align_md_tables_latex_block():
-    content = (
-        "| a | b |\n"
-        "|---|---|\n"
-        "| 1 | $$\n"
-        "  x + y\n"
-        "  = z$$ |"
-    )
+    content = "| a | b |\n|---|---|\n| 1 | $$\n  x + y\n  = z$$ |"
     result = align_md_tables(content, align="left")
     assert "|" in result

@@ -59,7 +59,9 @@ def test_process_md_string_normalize_and_align():
 
 
 def test_process_md_string_comments_and_align():
-    content = "```python\nx = 1  # comment\n```\n\n| a | b |\n|---|---|\n| 1 | 2 |"
+    content = (
+        "```python\nx = 1  # comment\n```\n\n| a | b |\n|---|---|\n| 1 | 2 |"
+    )
     result = process_md_string(content, comments=True, align="left")
     assert "# comment" in result
     assert "|" in result

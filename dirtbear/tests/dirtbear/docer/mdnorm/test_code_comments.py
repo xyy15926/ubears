@@ -95,7 +95,9 @@ def test_align_code_comments_only_pure_comments():
 
 
 def test_align_code_comments_mixed_pure_and_code():
-    content = "```\nx = 1  # code comment\n# pure comment\ny = 2  # another\n```"
+    content = (
+        "```\nx = 1  # code comment\n# pure comment\ny = 2  # another\n```"
+    )
     result = _align_code_comments(content)
     lines = result.split("\n")
     code_lines = [line for line in lines if "=" in line and "#" in line]

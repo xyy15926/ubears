@@ -154,7 +154,11 @@ def test_normalize_md_ordered_list():
     result = _normalize_md(content)
     lines = result.split("\n")
     for line in lines:
-        assert line.startswith("1.") or line.startswith("2.") or line.startswith("3.")
+        assert (
+            line.startswith("1.")
+            or line.startswith("2.")
+            or line.startswith("3.")
+        )
 
 
 def test_normalize_md_nested_unordered_list():
