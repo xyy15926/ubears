@@ -236,8 +236,10 @@ def edge_encode(
     -----------------
     Ordially labeled array range from 1, len(edges).
     """
-    if check_range:
-        assert np.all(arr <= edges[-1]) and np.all(arr >= edges[0])
+    if check_range and not (
+        np.all(arr <= edges[-1]) and np.all(arr >= edges[0])
+    ):
+        raise ValueError("Array values must be within edge bounds")
     edges = edges[1:-1]
     labeled = np.apply_along_axis(lambda x: np.searchsorted(edges, x), 0, arr)
 

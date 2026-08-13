@@ -236,7 +236,8 @@ class Lexer:
                 in_level = token_precs[tok_st[-1][0]]
 
             if out_type == RPAR:
-                assert tok_st[-1][0] == LPAR
+                if tok_st[-1][0] != LPAR:
+                    raise ValueError("Mismatched parentheses")
                 tok_st.pop()
             else:
                 tok_st.append(tok)

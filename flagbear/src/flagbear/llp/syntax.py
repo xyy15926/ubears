@@ -166,7 +166,11 @@ class LRItem:
         """
         # Only the first LRItem of the production can register the LRItems
         # derived from `lr_list`.
-        assert self.cur == 0
+        if self.cur != 0:
+            raise RuntimeError(
+                "Only the first LRItem of the production "
+                "can register the LRItems derived from `lr_list`."
+            )
 
         # Set the list storing all LRItems.
         self.start = self.index = len(lr_list)

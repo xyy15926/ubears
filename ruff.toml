@@ -23,45 +23,45 @@ indent-width = 4
 # select = ["E4", "E7", "E9", "F"]
 select = [
     # 基础
-    "E",          # pycodestyle 错误
-    "W",          # pycodestyle 警告
-    "F",          # pyflakes
+    "E",            # pycodestyle 错误
+    "W",            # pycodestyle 警告
+    "F",            # pyflakes
     # 代码质量
-    "B",          # bugbear
-    "C4",         # 推导式
-    "UP",         # 语法升级
-    "SIM",        # 简化写法
-    "PERF",       # 性能
-    "RUF",        # ruff 自有规则
+    "B",            # bugbear
+    "C4",           # 推导式
+    "UP",           # 语法升级
+    "SIM",          # 简化写法
+    "PERF",         # 性能
+    "RUF",          # ruff 自有规则
     # 安全
-    "S",          # bandit 安全
+    "S",            # bandit 安全
     # 代码风格
-    "I",          # import 排序
-    "N",          # 命名
-    "D",          # docstring
+    "I",            # import 排序
+    "N",            # 命名
+    "D",            # docstring
     # 错误处理
-    "TRY",        # try/except 规范
+    "TRY",          # try/except 规范
     # 其他
-    "LOG",        # logging
-    "C90",        # 复杂度
-    "TCH",        # 类型标注导入
-    "T20",        # 检测 print
+    "LOG",          # logging
+    "C90",          # 复杂度
+    "TCH",          # 类型标注导入
+    "T20",          # 检测 print
 ]
 ignore = [
     # Docstring
-    "D100",       # 模块不需要 docstring
-    "D104",       # 包不需要 docstring
-    "D107",       # __init__ 不强制 docstring
+    "D100",         # 模块不需要 docstring
+    "D104",         # 包不需要 docstring
+    "D107",         # __init__ 不强制 docstring
     # 代码质量
-    "S101",       # 允许 assert（测试中常用）
-    "TRY003",     # 不强制 raise from
-    "E501",       # `ruff format` 尽量处理，但 `ruff check` 不报错
+    "TRY003",       # 不强制 raise from
+    "E501",         # `ruff format` 尽量处理，但 `ruff check` 不报错
     # 命名规则 - 项目使用匈牙利命名法和数学符号惯例
-    "N802",       # 函数名非小写（如 LR0, LALR, camelCase 等缩写）
-    "N803",       # 参数名非小写（如 N 表示数量，_F/_D/_ST/_Q 类型后缀）
-    "N806",       # 函数内变量非小写（常量、匈牙利命名法）
-    "N812",       # 导入别名非小写（如 MAXINT）
-    "N818",       # 异常名无 Error 后缀（如 UnrecoverableException）
+    "N802",         # 函数名非小写（如 LR0, LALR, camelCase 等缩写）
+    "N803",         # 参数名非小写（如 N 表示数量，_F/_D/_ST/_Q 类型后缀）
+    "N806",         # 函数内变量非小写（常量、匈牙利命名法）
+    "N812",         # 导入别名非小写（如 MAXINT）
+    "N818",         # 异常名无 Error 后缀（如 UnrecoverableException）
+    "RUF003",       # 允许全角符号
 ]
 fixable = ["ALL"]
 unfixable = []
@@ -69,14 +69,14 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [lint.per-file-ignores]
 "**/tests/**/*.py" = [
-    "S101",       # 允许 assert
-    "S108",       # 允许不安全的临时文件路径
-    "S301",       # 允许 pickle 反序列化
-    "S307",       # 允许 eval() 调用
-    "S324",       # 允许不安全的哈希函数（md5）
-    "D",          # 测试文件不要求 docstring
-    "ANN",        # 测试文件不要求类型标注
-    "T20",        # 允许 print
+    "S101",         # 允许 assert
+    "S108",         # 允许不安全的临时文件路径
+    "S301",         # 允许 pickle 反序列化
+    "S307",         # 允许 eval() 调用
+    "S324",         # 允许不安全的哈希函数（md5）
+    "D",            # 测试文件不要求 docstring
+    "ANN",          # 测试文件不要求类型标注
+    "T20",          # 允许 print
 ]
 
 [lint.isort]

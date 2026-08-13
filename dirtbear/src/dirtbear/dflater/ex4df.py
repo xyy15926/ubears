@@ -305,7 +305,8 @@ class DFKGraph:
         # Init node reference for searching the nodes to locate the DF of
         # the attributions of the nodes.
         if node_df is None:
-            assert ref_dfs, "Nodes and entity's DF can't all be None."
+            if not ref_dfs:
+                raise ValueError("Nodes and entity's DF can't all be None.")
             node_refs = []
             for rdf_name, rdf in ref_dfs.items():
                 # Skip the DF that is not about nodes.
@@ -352,9 +353,10 @@ class DFKGraph:
                     rdf = ref_dfs[ntype]
                     # Inner-join will keep the order of the `rdf`.
                     _mref = pd.merge(rdf, node_ref, on=fnid, how="inner")
-                    assert _mref.shape[0] == rdf.shape[0], (
-                        "All nodes must be included in `node_df`."
-                    )
+                    if _mref.shape[0] != rdf.shape[0]:
+                        raise ValueError(
+                            "All nodes must be included in `node_df`."
+                        )
                     # node_ref.loc[_mref[fnid], "__iloc__"] = (
                     #     np.arange(_mref.shape[0])
                     # )
@@ -378,7 +380,8 @@ class DFKGraph:
         if np.isscalar(edge_joinkey):
             edge_joinkey = [edge_joinkey]
         if edge_df is None:
-            assert ref_dfs, "Nodes and entity's DF can't all be None."
+            if not ref_dfs:
+                raise ValueError("Nodes and entity's DF can't all be None.")
             nec_keys = np.unique([*edge_joinkey, fsrc, ftgt]).tolist()
             edge_refs = []
             for rdf_name, rdf in ref_dfs.items():
@@ -412,9 +415,10 @@ class DFKGraph:
                     _mref = pd.merge(
                         rdf, edge_ref, on=edge_joinkey, how="inner"
                     )
-                    assert _mref.shape[0] == rdf.shape[0], (
-                        "All edges must be included in `edge_df`."
-                    )
+                    if _mref.shape[0] != rdf.shape[0]:
+                        raise ValueError(
+                            "All edges must be included in `edge_df`."
+                        )
                     edge_ref.iloc[
                         _mref["__iloc__"].values,
                         edge_ref.columns.get_loc("__iloc__"),

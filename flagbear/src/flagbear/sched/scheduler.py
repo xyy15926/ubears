@@ -213,9 +213,8 @@ class DAGScheduler:
                 ) from e
 
         task_dag = self.task_dag
-        assert tid in task_dag.leaf_nodes, (
-            f"Tasks depended by {tid} should be done."
-        )
+        if tid not in task_dag.leaf_nodes:
+            raise RuntimeError(f"Tasks depended by {tid} should be done.")
 
         # Remove the task from the dag and then submit the ready tasks.
         task_node = task_dag.get_node(tid)

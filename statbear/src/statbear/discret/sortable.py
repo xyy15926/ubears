@@ -189,7 +189,8 @@ def chimerge_cut(
     bins_edges: List of bin edges for cutting.
     ctab: Cross table of final bins.
     """
-    assert x.ndim == 1 and y.ndim == 1
+    if x.ndim != 1 or y.ndim != 1:
+        raise ValueError("x and y must be 1-D arrays")
     (unis_x, _unis_y), ctab = contingency.crosstab(x, y)
     bin_edges = np.array([*unis_x, unis_x[-1]])
 

@@ -280,7 +280,8 @@ def map(*args):
         raise TypeError("No valid mapping reference is provided.")
 
     if isinstance(ref, dict):
-        assert len(args) == 1, "Invalid mapping source."
+        if len(args) != 1:
+            raise ValueError("Invalid mapping source.")
         ret = [ref.get(ele, default) for ele in args[0]]
     else:
         if len(args) == 1:

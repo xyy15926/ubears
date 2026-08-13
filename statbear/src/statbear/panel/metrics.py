@@ -54,7 +54,8 @@ def cal_lifts_from_ctab(
     corr_ken: Kendall-tau correlation.
     pv: P-value of Kendall-tau.
     """
-    assert ctab.ndim == 2 and ctab.shape[1] == 2
+    if ctab.ndim != 2 or ctab.shape[1] != 2:
+        raise ValueError("ctab must be 2-D with 2 columns")
 
     cavg = ctab[:, 1].sum() / ctab.sum()
     lifts = ctab[:, 1] / ctab.sum(axis=1) / cavg
@@ -105,7 +106,8 @@ def cal_lifts(
     corr_ken: Kendall-tau correlation.
     pv: P-value of Kendall-tau.
     """
-    assert x.ndim == 1 and y.ndim == 1
+    if x.ndim != 1 or y.ndim != 1:
+        raise ValueError("x and y must be 1-D arrays")
     (ux, _uy), ctab = contingency.crosstab(x, y)
     if acc_keys is not None:
         acc_keys = np.searchsorted(ux, acc_keys)
@@ -126,7 +128,8 @@ def cal_woes_from_ctab(ctab: np.ndarray) -> np.ndarray:
     woes: WOEs of each uniques.
     ivs: IVs of each uniques.
     """
-    assert ctab.ndim == 2 and ctab.shape[1] == 2
+    if ctab.ndim != 2 or ctab.shape[1] != 2:
+        raise ValueError("ctab must be 2-D with 2 columns")
 
     freqr = ctab / ctab.sum(axis=0, keepdims=True)
     woes = np.log(freqr[:, 1] / freqr[:, 0])
@@ -153,7 +156,8 @@ def cal_woes(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray]:
     woes: WOEs of each uniques.
     ivs: IVs of each uniques.
     """
-    assert x.ndim == 1 and y.ndim == 1
+    if x.ndim != 1 or y.ndim != 1:
+        raise ValueError("x and y must be 1-D arrays")
     (_ux, _uy), ctab = contingency.crosstab(x, y)
     return cal_woes_from_ctab(ctab)
 

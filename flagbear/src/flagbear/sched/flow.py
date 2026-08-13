@@ -192,9 +192,10 @@ class Flow(TaskProxyBase):
 
     def __enter__(self) -> Context:
         """Enter the newly-inited context."""
-        assert self.func is None, (
-            "Only empty Flow could be used as a task container."
-        )
+        if self.func is not None:
+            raise RuntimeError(
+                "Only empty Flow could be used as a task container."
+            )
         ctx = SimpleContext(
             self.task_results,
             self.scheduler,

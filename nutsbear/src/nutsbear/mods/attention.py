@@ -375,7 +375,8 @@ class MultiheadAttention(nn.Module):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
         self.heads_n = heads_n
-        assert tsz % heads_n == 0, "Embedding dim is not divisible by nheads."
+        if tsz % heads_n != 0:
+            raise ValueError("Embedding dim is not divisible by nheads.")
         self.hsz = tsz // heads_n
         self.dropout_p = dropout_p
         self._qkv_same_embed_dim = qsz == ksz and ksz == vsz
@@ -623,12 +624,14 @@ class MultiheadAttention(nn.Module):
         if key_padding_mask is None and attn_mask is None and not is_causal:
             return None
         # Query length is required to generate causal mask.
-        assert not (is_causal and query is None and attn_mask is None), (
-            "Query or attn_mask is required to generate causal attention mask."
-        )
-        assert key_padding_mask is None or key_padding_mask.dim() == 2, (
-            "Only 2D key padding mask with shape(bsz, kvslen) is allowed."
-        )
+        if is_causal and query is None and attn_mask is None:
+            raise ValueError(
+                "Query or attn_mask is required to generate causal attention mask."
+            )
+        if key_padding_mask is not None and key_padding_mask.dim() != 2:
+            raise ValueError(
+                "Only 2D key padding mask with shape(bsz, kvslen) is allowed."
+            )
 
         # Infer shapes from masks and tensors.
         shapes = _infer_mask_shapes(
@@ -730,7 +733,8 @@ class SimpleMHA(nn.Module):
         super().__init__()
         self.heads_n = heads_n
         self.hsz = tsz // heads_n
-        assert tsz % heads_n == 0, "Embeding dim is not divisible by nheads."
+        if tsz % heads_n != 0:
+            raise ValueError("Embeding dim is not divisible by nheads.")
         self.dropout_p = dropout_p
         if not out_proj and qksz != vsz:
             logger.warning("Output size isn't the same with the query size.")

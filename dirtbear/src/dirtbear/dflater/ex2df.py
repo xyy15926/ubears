@@ -147,7 +147,10 @@ def rebuild_rec2df(  # noqa: C901
         # Convert `index_dict` into MultiIndex.
         for ival in index_dict.values():
             if isinstance(ival, list):
-                assert len(ival) == len(vals)
+                if len(ival) != len(vals):
+                    raise ValueError(
+                        f"Length mismatch: {len(ival)} != {len(vals)}"
+                    )
                 index_arrays.append(ival)
             else:
                 index_arrays.append([ival] * len(vals))

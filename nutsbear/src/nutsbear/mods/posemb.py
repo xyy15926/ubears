@@ -160,7 +160,8 @@ class SinPE(nn.Module):
 
         *_____, slen, sz = x.size()
         if pos is not None:
-            assert pos.size(-1) == slen, "All positions must be provided."
+            if pos.size(-1) != slen:
+                raise ValueError("All positions must be provided.")
         else:
             pos = slen
         return x + self.get_pe(pos, sz, **factory_kwargs)
@@ -232,10 +233,12 @@ class RotaryPE(nn.Module):
         dtype = x.dtype if torch.is_floating_point(x) else torch.float32
         factory_kwargs = {"device": x.device, "dtype": dtype}
         *_____, slen, sz = x.size()
-        assert sz == self.embed_sz, "Embedding size must be the same."
+        if sz != self.embed_sz:
+            raise ValueError("Embedding size must be the same.")
 
         if pos is not None:
-            assert pos.size(-1) == slen, "All positions must be provided."
+            if pos.size(-1) != slen:
+                raise ValueError("All positions must be provided.")
             max_pos = torch.max(pos)
             if self.cos_cache is None or max_pos >= self.cos_cache.size(0):
                 self.rotary_cache(max_pos + 1, **factory_kwargs)
