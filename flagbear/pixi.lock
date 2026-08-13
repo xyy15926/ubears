@@ -330,7 +330,7 @@ packages:
 - pypi: ./
   name: flagbear
   version: 0.1.1
-  sha256: 5f2406c7adef3b33ac522c444add6283f59a06371017d25626e66cec57d6abba
+  sha256: 0426f03fa2b72a5a7a56699d9976e31021d91a5bab28a98380b8452db81a297f
   requires_python: '>=3.10'
   editable: true
 - pypi: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/d3/8a/44032265776062a89171285ede55a0bdaadc8ac00f27f0512a71a9e3e1c8/hatchling-1.29.0-py3-none-any.whl

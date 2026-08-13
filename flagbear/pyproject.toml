@@ -29,6 +29,11 @@ extra = [ ]
 [project.urls]
 homepage = "https://github.com/xyy15926"
 
+[project.scripts]
+flagbear-cast = "flagbear.cli.cast:main"
+flagbear-extract = "flagbear.cli.extract:main"
+flagbear-storage = "flagbear.cli.storage:main"
+
 
 # ***************************** Build with hatcling
 # Hatchling ref:
@@ -102,3 +107,6 @@ include = [
     "tests/**/*.py",
 ]
 target-version = "py310"
+
+[tool.ruff.lint.per-file-ignores]
+"src/flagbear/cli/**/*.py" = ["T20"]
